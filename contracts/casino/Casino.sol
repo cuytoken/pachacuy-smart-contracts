@@ -8,9 +8,12 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Burn
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "./ICasinoCallback.sol";
+import "../random/IRandomGenerator.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract Casino is
+    ICasinoCallback,
     Initializable,
     ERC1155Upgradeable,
     AccessControlUpgradeable,
@@ -27,8 +30,12 @@ contract Casino is
 
     uint256 uniqueCasinoContestId;
     IERC20Upgradeable public pachacuyToken;
+    IRandomGenerator public randomGenerator;
 
+    bytes32 requestId;
+    uint256 randomness;
     /**
+
      * @param _casinoOwner: Creator of the Casino contest
      * @param keyHash: Hash to be used for minting tickets for each casino
      * @param contestName: Name of the Casino contest created
@@ -81,7 +88,10 @@ contract Casino is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
-    function initialize(address _pachaCuyTokenAddress) public initializer {
+    function initialize(
+        address _pachaCuyTokenAddress,
+        address _randomGeneratorAddress
+    ) public initializer {
         __ERC1155_init(
             "https://cuytoken.com/pachacuy-game/api/token/{id}.json"
         );
@@ -96,6 +106,22 @@ contract Casino is
         _grantRole(MINTER_ROLE, _msgSender());
 
         pachacuyToken = IERC20Upgradeable(_pachaCuyTokenAddress);
+        randomGenerator = IRandomGenerator(_randomGeneratorAddress);
+    }
+
+    function fulfillRandomness(bytes32 _requestId, uint256 _randomness)
+        public
+        override
+    {
+        // this is the callback for the random generated number
+        requestId = _requestId;
+        randomness = _randomness;
+    }
+
+    function getRandomNumber() public override returns (bytes32 _requestId) {
+        _requestId = randomGenerator.getRandomNumber();
+        requestId = _requestId;
+        return _requestId;
     }
 
     function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {

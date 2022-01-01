@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@chainlink/contracts": "^0.3.0",
+    "@openzeppelin/contracts": "^4.4.1",
     "@openzeppelin/contracts-upgradeable": "^4.4.1"
   }
 }
