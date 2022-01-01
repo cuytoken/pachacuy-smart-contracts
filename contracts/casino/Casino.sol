@@ -8,12 +8,11 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Burn
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "./ICasinoCallback.sol";
 import "../random/IRandomGenerator.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract Casino is
-    ICasinoCallback,
+    IRandomGenerator,
     Initializable,
     ERC1155Upgradeable,
     AccessControlUpgradeable,
@@ -34,8 +33,8 @@ contract Casino is
 
     bytes32 requestId;
     uint256 randomness;
+    
     /**
-
      * @param _casinoOwner: Creator of the Casino contest
      * @param keyHash: Hash to be used for minting tickets for each casino
      * @param contestName: Name of the Casino contest created
@@ -155,7 +154,7 @@ contract Casino is
     }
 
     /**
-     * @notice Assigns the 'Entrepreneur' role to an accout. An 'Entrepreneur' is able to own lands and purchase assets
+     * @notice Assigns the 'Entrepreneur' role to an account. An 'Entrepreneur' is able to own lands and purchase assets
      * @dev _account changes a to 'Entrepreneur' role. Only callable by Admin
      * @param _account to be upgrade to 'Entrepreneur'
      */
@@ -244,6 +243,7 @@ contract Casino is
      * @dev _account changes a to 'Entrepreneur' role. Only callable by Admin
      * @param _contestName: Name of Casino contest to create
      * @param _ticketPrice: Price to be paid in PACHACUY tokens to enter the Casino Contest
+     // PENDIENTE - inlcuir el 
      */
     function createCasinoContest(
         string memory _contestName,

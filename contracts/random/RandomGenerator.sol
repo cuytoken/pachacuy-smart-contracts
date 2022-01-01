@@ -3,7 +3,7 @@ pragma solidity ^0.8.2;
 
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "../casino/ICasinoCallback.sol";
+import "./IRandomGenerator.sol";
 
 contract RandomGenerator is VRFConsumerBase, AccessControl {
     bytes32 internal keyHash;
@@ -12,7 +12,7 @@ contract RandomGenerator is VRFConsumerBase, AccessControl {
     uint256 public randomResult;
     address public casinoContractAddress;
 
-    ICasinoCallback public casinoCallback;
+    IRandomGenerator public casinoCallback;
 
     bytes32 public constant BACKEND_ADMIN_ROLE =
         keccak256("BACKEND_ADMIN_ROLE");
@@ -37,7 +37,7 @@ contract RandomGenerator is VRFConsumerBase, AccessControl {
 
         grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         grantRole(DEFAULT_ADMIN_ROLE, _casinoContractAddress);
-        casinoCallback = ICasinoCallback(_casinoContractAddress);
+        casinoCallback = IRandomGenerator(_casinoContractAddress);
     }
 
     /**
@@ -71,6 +71,6 @@ contract RandomGenerator is VRFConsumerBase, AccessControl {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         casinoContractAddress = _casinoAddress;
-        casinoCallback = ICasinoCallback(_casinoAddress);
+        casinoCallback = IRandomGenerator(_casinoAddress);
     }
 }
