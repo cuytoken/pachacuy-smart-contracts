@@ -220,7 +220,7 @@ contract Casino is
             .uniqueCasinoContestId;
         mint(_msgSender(), _uniqueCasinoContestId, _addresses.length, "");
 
-        // transfer to all addresss from msg.sender
+        // transfer to all addresses from msg.sender
         uint128 ix = 0;
         uint256 balanceTickets;
         while (ix < _addresses.length) {
@@ -243,7 +243,6 @@ contract Casino is
      * @dev _account changes a to 'Entrepreneur' role. Only callable by Admin
      * @param _contestName: Name of Casino contest to create
      * @param _ticketPrice: Price to be paid in PACHACUY tokens to enter the Casino Contest
-     // PENDIENTE - inlcuir el 
      */
     function createCasinoContest(
         string memory _contestName,
