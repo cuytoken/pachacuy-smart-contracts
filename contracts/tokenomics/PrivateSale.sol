@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -105,7 +104,7 @@ contract PrivateSale is
         isActivePrivateSaleOne
         whenNotPaused
     {
-        uint256 _amountPachaCuyTokens = exchangeBusdToPachaCuy(_amountBusd);
+        uint256 _amountPachaCuyTokens = getAmountPachaCuyFromBusd(_amountBusd);
 
         require(
             _amountPachaCuyTokens + soldPrivateSaleOne <= maxPrivateSaleOne,
@@ -127,7 +126,12 @@ contract PrivateSale is
         isActivePrivateSaleTwo
         whenNotPaused
     {
-        uint256 _amountPachaCuyTokens = exchangeBusdToPachaCuy(_amountBusd);
+        require(
+            busdToken.balanceOf(_msgSender()) >= _amountBusd,
+            "Private Sale: caller does not have enough BUSD to trasact."
+        );
+
+        uint256 _amountPachaCuyTokens = getAmountPachaCuyFromBusd(_amountBusd);
 
         require(
             _amountPachaCuyTokens + soldPrivateSaleTwo <= maxPrivateSaleTwo,
@@ -148,12 +152,12 @@ contract PrivateSale is
         internal
         returns (uint256)
     {
-        // user gives allowance to sc
+        // user gives Busd allowance to Smart Contract
 
-        // checks whether sc has allowance from user
+        // checks whether Smart Contract has allowance from user
         require(
             busdToken.allowance(_msgSender(), address(this)) >= _amountBusd,
-            "Private Sale 1: purchaser needs to give allowance to Smart Contract"
+            "Private Sale 1: purchaser needs to give allowance to Smart Contract."
         );
 
         // SC transfers busd from purchaser to wallet private sale
@@ -164,7 +168,7 @@ contract PrivateSale is
         );
 
         // calculates exchange amount of Pacha Cuy tokens
-        uint256 _amountPachaCuyTokens = exchangeBusdToPachaCuy(_amountBusd);
+        uint256 _amountPachaCuyTokens = getAmountPachaCuyFromBusd(_amountBusd);
 
         // transfers Pacha Cuy tokens to purchaser
         pachaCuyToken.safeTransfer(_msgSender(), _amountPachaCuyTokens);
@@ -179,8 +183,8 @@ contract PrivateSale is
         return _amountPachaCuyTokens;
     }
 
-    function exchangeBusdToPachaCuy(uint256 _amount)
-        internal
+    function getAmountPachaCuyFromBusd(uint256 _amountBusd)
+        public
         view
         returns (uint256)
     {
@@ -189,7 +193,7 @@ contract PrivateSale is
             "Private Sale: Exchange rate needs to be set."
         );
 
-        return _amount.mul(currentExchangeRatePrivateSale).div(1e18);
+        return _amountBusd.mul(currentExchangeRatePrivateSale).div(1e18);
     }
 
     function setExchangeRatePrivateSale(uint256 _rate)
