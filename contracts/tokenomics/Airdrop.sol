@@ -23,8 +23,7 @@ contract Airdrop is
     mapping(address => bool) hasAccountReceivedAirdrop;
     address[] airdropAccountList;
     uint256 public maxAmountAirdropToken;
-    event EnrolledInAirdrop(address _account);
-    event AirdropDelivered(address _account);
+    event AirdropDelivered(address _account, uint256 _amount);
 
     // pachacuy token
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -66,75 +65,32 @@ contract Airdrop is
         maxAmountAirdropToken = _maxAmountAirdropToken;
     }
 
-    /**
-     * @notice Indicates wheter a particular address is waiting for a token delivered through airdrop
-     * @param _account: address to be checked wheter is waiting for the airdrop to be delivered
-     * @return boolean inidicating whether an address is waiting for an airdrop token
-     */
-    function amIEnrolledInAirdrop(address _account) public view returns (bool) {
-        return isAccountInAirdrop[_account];
-    }
-
-    /**
-     * @notice Used for a user to enroll in the airdrop process
-     * @param _account: address to be added to the list of future receivers of the airdrop
-     */
-    function enrollInAirDrop(address _account) public whenNotPaused {
-        require(
-            !hasAccountReceivedAirdrop[_account],
-            "Airdrop: airdrop already claimed."
-        );
-        require(
-            !isAccountInAirdrop[_account],
-            "Airdrop: You are already enrolled in the airdrop."
-        );
-        require(
-            airdropAccountList.length <= maxAmountAirdropToken,
-            "Airdrop: list is full."
-        );
-
-        isAccountInAirdrop[_account] = true;
-        airdropAccountList.push(_account);
-        emit EnrolledInAirdrop(_account);
-    }
+    mapping(address => uint256) airdropReceived;
 
     /**
      * @notice Sends airdrop tokens in batches.
      * @param _addresses: list of accounts to received airdrop tokens
      */
-    function sendAirdropBatch(address[] memory _addresses)
-        public
-        onlyRole(BACKEND_ADMIN)
-        whenNotPaused
-    {
+    function sendAirdropBatch(
+        address[] memory _addresses,
+        uint256[] memory _amounts
+    ) public onlyRole(BACKEND_ADMIN) whenNotPaused {
+        uint256 _amountToAirdrop;
+        for (uint256 iy = 0; iy < _amounts.length; iy++) {
+            _amountToAirdrop += _amounts[iy];
+        }
+        require(
+            pachaCuyToken.balanceOf(address(this)) >= _amountToAirdrop,
+            "Airdrop: Not enough balance for airdrop."
+        );
+
         for (uint256 ix = 0; ix < _addresses.length; ix++) {
             address _account = _addresses[ix];
-            if (isAccountInAirdrop[_account]) {
-                pachaCuyToken.safeTransfer(_account, 1);
-                isAccountInAirdrop[_account] = false;
-                hasAccountReceivedAirdrop[_account] = true;
-                emit AirdropDelivered(_account);
-            }
-        }
-    }
-
-    /**
-     * @notice Delivers airdrop tokens to all enrolled accounts
-     * @dev It does verify whether accounto has received a token previously
-     */
-    function sendAllRemainingAirdrop()
-        public
-        onlyRole(BACKEND_ADMIN)
-        whenNotPaused
-    {
-        for (uint256 ix = 0; ix < airdropAccountList.length; ix++) {
-            address _account = airdropAccountList[ix];
-            if (isAccountInAirdrop[_account]) {
-                pachaCuyToken.safeTransfer(_account, 1);
-                isAccountInAirdrop[_account] = false;
-                hasAccountReceivedAirdrop[_account] = true;
-                emit AirdropDelivered(_account);
-            }
+            uint256 _amount = _amounts[ix];
+            pachaCuyToken.safeTransfer(_account, _amount);
+            // guardar cuenta y cantidad de airdrops recibidos
+            airdropReceived[_account] += _amount; // mapping
+            emit AirdropDelivered(_account, _amount);
         }
     }
 

@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /// @custom:security-contact lee@cuytoken.com
-contract PachaCuy is
+contract Vesting is
     Initializable,
     ERC20Upgradeable,
     ERC20BurnableUpgradeable,
@@ -168,7 +168,7 @@ contract PachaCuy is
         }
     }
 
-    function removesVestingSchemaForaccount(address _account)
+    function removesVestingSchemaForAccount(address _account)
         public
         onlyRole(BACKEND_ADMIN)
     {
@@ -229,11 +229,6 @@ contract PachaCuy is
         vestingAccounts[_msgSender()].currentVestingPeriod += _deltaIndex;
         vestingAccounts[_msgSender()].totalFundsClaimed += _fundsToTransfer;
     }
-
-    function sendAirDropBatch(address[] memory _addresses, uint256 _amount)
-        public
-        onlyRole(BACKEND_ADMIN)
-    {}
 
     // every role will have a specific fund allocated to him
     // after a month each role will be able to withdraw a specific amount until it consumes all his fund
