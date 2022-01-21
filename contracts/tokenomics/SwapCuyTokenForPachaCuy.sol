@@ -51,8 +51,8 @@ contract SwapCuyTokenForPachaCuy is
         swapWallet = _swapWallet;
         exchangeRate = _exchangeRate;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(PAUSER_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(PAUSER_ROLE, _msgSender());
     }
 
     function swapCuyTokenForPachaCuy(uint256 _amountCuyToken)

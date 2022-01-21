@@ -17,7 +17,6 @@ contract Vesting is
 {
     // Managing contracts
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 public constant BACKEND_ADMIN = keccak256("BACKEND_ADMIN");
 
     // Vesting Roles
     bytes32 public constant MARKETING_ADV_ROLE =
@@ -92,7 +91,7 @@ contract Vesting is
         address _account,
         uint256 _fundsToVestForThisAccount,
         string memory _typeOfAccount //
-    ) public onlyRole(BACKEND_ADMIN) {
+    ) public whenNotPaused onlyRole(DEFAULT_ADMIN_ROLE) {
         // verify that account is not vesting
         require(
             !vestingAccounts[_account].isVesting,
@@ -146,7 +145,8 @@ contract Vesting is
 
     function removesVestingSchemaForAccount(address _account)
         public
-        onlyRole(BACKEND_ADMIN)
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        whenNotPaused
     {
         // verify that account is vesting
         require(
