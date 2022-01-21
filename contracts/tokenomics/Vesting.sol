@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract Vesting is
     Initializable,
-    ERC20Upgradeable,
-    ERC20BurnableUpgradeable,
     PausableUpgradeable,
+    ReentrancyGuardUpgradeable,
     AccessControlUpgradeable
 {
     // Managing contracts
@@ -24,123 +24,99 @@ contract Vesting is
         keccak256("MARKETING_ADV_ROLE");
     bytes32 public constant TEAM_ROLE = keccak256("TEAM_ROLE");
 
+    using SafeMathUpgradeable for uint256;
+
     // vesting
     uint128 vestingPeriods;
     uint128 gapBetweenVestingPeriods; // expressed in months
     mapping(address => VestingPerAccount) vestingAccounts;
 
     // pachacuy token
-    ERC20Upgradeable pachaCuyToken;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    IERC20Upgradeable pachaCuyToken;
 
-    struct FundsAllocation {
-        uint256 privateSale;
-        uint256 cuytokenExchange;
-        uint256 publicSale;
+    // vesting funds for two roles: mkt/adv and team
+    struct Funds {
         uint256 team;
         uint256 mktAndAdvisors;
-        uint256 airDrop;
-        uint256 liquidityPool;
-        uint256 gameRewards;
-        uint256 phaseTwo;
-        uint256 phaseX;
     }
 
-    // Funds allocated
-    FundsAllocation fundsAllocationFinal;
+    // Funds for allocation - cap
+    Funds fundsForAllocation;
     // Funds effectively allocated
-    FundsAllocation fundsEffectivelyAllocated;
+    Funds fundsAllocated;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
-
-    function getDecimals() internal pure returns (uint256) {
-        return 10**18;
-    }
 
     function initialize(
         uint128 _vestingPeriods,
         uint128 _gapBetweenVestingPeriods,
         address _pachaCuyAddress
     ) public initializer {
-        __ERC20Burnable_init();
         __Pausable_init();
         __AccessControl_init();
 
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(PAUSER_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(PAUSER_ROLE, _msgSender());
 
         // vesting
         vestingPeriods = _vestingPeriods;
         gapBetweenVestingPeriods = _gapBetweenVestingPeriods;
-        pachaCuyToken = ERC20Upgradeable(_pachaCuyAddress);
+        pachaCuyToken = IERC20Upgradeable(_pachaCuyAddress);
         settingVestingStateStructs();
     }
 
+    // Each person vesting info
     struct VestingPerAccount {
-        uint256 totalFundsForVesting;
+        bool isVesting;
+        uint256 fundsToVestForThisAccount;
         uint256 currentVestingPeriod;
-        uint256 totalFundsClaimed;
+        uint256 totalFundsVested;
         uint256[] datesForVesting;
         bytes32 typeOfAccount;
     }
 
     function settingVestingStateStructs() private {
-        // Funds allocated
-        fundsAllocationFinal = FundsAllocation(
-            2 * 10**6 * getDecimals(),
-            25 * 10**5 * getDecimals(),
-            8 * 10**6 * getDecimals(),
-            10 * 10**6 * getDecimals(),
-            7 * 10**6 * getDecimals(),
-            1 * 10**6 * getDecimals(),
-            26 * 10**6 * getDecimals(),
-            26 * 10**6 * getDecimals(),
-            6 * 10**6 * getDecimals(),
-            115 * 10**5 * getDecimals()
+        // Total funds for allocation
+        fundsForAllocation = Funds(
+            10 * million() * 10**getDecimals(),
+            7 * million() * 10**getDecimals()
         );
 
         // Funds effectively allocated
-        fundsEffectivelyAllocated = FundsAllocation(
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        );
+        fundsAllocated = Funds(0, 0);
     }
 
     function createVestingSchemaForAccount(
         address _account,
-        uint256 _totalFundsForVestingPerAccount,
+        uint256 _fundsToVestForThisAccount,
         string memory _typeOfAccount //
     ) public onlyRole(BACKEND_ADMIN) {
+        // verify that account is not vesting
+        require(
+            !vestingAccounts[_account].isVesting,
+            "Vesting: This account already has a vesting schema."
+        );
+
         // verify roles
         require(
-            keccak256(abi.encodePacked(_typeOfAccount)) == MARKETING_ADV_ROLE ||
-                keccak256(abi.encodePacked(_typeOfAccount)) == TEAM_ROLE,
-            "Token Admin: Only MARKETING_ADV_ROLE and TEAM_ROLE roles are available."
+            isMarketingRole(_typeOfAccount) || isTeamRole(_typeOfAccount),
+            "Vesting: Only MARKETING_ADV_ROLE and TEAM_ROLE roles are available."
         );
 
         // verify enough funds for allocation
-        uint256 fundsAllocatedForType;
-        uint256 totalFundsForType;
-        if (keccak256(abi.encodePacked(_typeOfAccount)) == MARKETING_ADV_ROLE) {
-            fundsAllocatedForType = fundsEffectivelyAllocated.mktAndAdvisors;
-            totalFundsForType = fundsAllocationFinal.mktAndAdvisors;
-        } else if (keccak256(abi.encodePacked(_typeOfAccount)) == TEAM_ROLE) {
-            fundsAllocatedForType = fundsEffectivelyAllocated.team;
-            totalFundsForType = fundsAllocationFinal.team;
-        }
+        uint256 _fundsAllocated = isMarketingRole(_typeOfAccount)
+            ? fundsAllocated.mktAndAdvisors
+            : fundsAllocated.team;
+        uint256 _fundsForAllocation = isMarketingRole(_typeOfAccount)
+            ? fundsForAllocation.mktAndAdvisors
+            : fundsForAllocation.team;
+
         require(
-            fundsAllocatedForType != 0 &&
-                (fundsAllocatedForType + _totalFundsForVestingPerAccount) <=
-                totalFundsForType,
-            "Token Admin: Not enough balance to allocate vesting."
+            (_fundsAllocated + _fundsToVestForThisAccount) <=
+                _fundsForAllocation,
+            "Vesting: Not enough funds to allocate for vesting."
         );
 
         uint256[] memory _datesForVesting = new uint256[](vestingPeriods);
@@ -153,18 +129,18 @@ contract Vesting is
         }
 
         vestingAccounts[_account] = VestingPerAccount(
-            _totalFundsForVestingPerAccount,
+            true,
+            _fundsToVestForThisAccount,
             0,
             0,
             _datesForVesting,
             keccak256(abi.encodePacked(_typeOfAccount))
         );
 
-        if (keccak256(abi.encodePacked(_typeOfAccount)) == MARKETING_ADV_ROLE) {
-            fundsEffectivelyAllocated
-                .mktAndAdvisors += _totalFundsForVestingPerAccount;
-        } else if (keccak256(abi.encodePacked(_typeOfAccount)) == TEAM_ROLE) {
-            fundsEffectivelyAllocated.team += _totalFundsForVestingPerAccount;
+        if (isMarketingRole(_typeOfAccount)) {
+            fundsAllocated.mktAndAdvisors += _fundsToVestForThisAccount;
+        } else {
+            fundsAllocated.team += _fundsToVestForThisAccount;
         }
     }
 
@@ -172,24 +148,31 @@ contract Vesting is
         public
         onlyRole(BACKEND_ADMIN)
     {
+        // verify that account is vesting
+        require(
+            !vestingAccounts[_account].isVesting,
+            "Vesting: This account does not have a vesting schema."
+        );
+
         VestingPerAccount memory vestingAcc = vestingAccounts[_account];
 
         bytes32 _typeOfAccount = vestingAcc.typeOfAccount;
         require(
             _typeOfAccount == MARKETING_ADV_ROLE || _typeOfAccount == TEAM_ROLE,
-            "Token Admin: Only MARKETING_ADV_ROLE and TEAM_ROLE roles could be removed."
+            "Vesting: Only MARKETING_ADV_ROLE and TEAM_ROLE roles could be removed."
         );
 
-        uint256 _totalFundsToUpdate = vestingAcc.totalFundsForVesting -
-            vestingAcc.totalFundsClaimed;
+        uint256 _totalFundsToUpdate = vestingAcc.fundsToVestForThisAccount -
+            vestingAcc.totalFundsVested;
 
         if (_typeOfAccount == MARKETING_ADV_ROLE) {
-            fundsEffectivelyAllocated.mktAndAdvisors -= _totalFundsToUpdate;
+            fundsAllocated.mktAndAdvisors -= _totalFundsToUpdate;
         } else if (_typeOfAccount == TEAM_ROLE) {
-            fundsEffectivelyAllocated.team -= _totalFundsToUpdate;
+            fundsAllocated.team -= _totalFundsToUpdate;
         }
 
         vestingAccounts[_account] = VestingPerAccount(
+            false,
             0,
             0,
             0,
@@ -198,42 +181,64 @@ contract Vesting is
         );
     }
 
-    function claimTokensWithVesting() public {
+    function claimTokensWithVesting() public whenNotPaused nonReentrant {
+        // verify that account is vesting
+        require(
+            vestingAccounts[_msgSender()].isVesting,
+            "Vesting: This account does not have a vesting schema."
+        );
+
         VestingPerAccount memory vestingAcc = vestingAccounts[_msgSender()];
         bytes32 _typeOfAccount = vestingAcc.typeOfAccount;
         require(
             _typeOfAccount == MARKETING_ADV_ROLE || _typeOfAccount == TEAM_ROLE,
-            "Token Admin: Only MARKETING_ADV_ROLE and TEAM_ROLE roles could be removed."
+            "Vesting: Only MARKETING_ADV_ROLE and TEAM_ROLE roles could be removed."
         );
-        uint256 _currVestinPeriod = vestingAcc.currentVestingPeriod;
+        uint256 _currVestingPeriod = vestingAcc.currentVestingPeriod;
         uint256 _currentDateOfVesting = vestingAcc.datesForVesting[
-            _currVestinPeriod
+            _currVestingPeriod
         ];
         uint256 _todayClaimTime = block.timestamp;
         require(
             _todayClaimTime > _currentDateOfVesting,
-            "Token Admin: You already claimed tokens for the current vesting period."
+            "Vesting: You already claimed tokens for the current vesting period."
         );
         require(
-            _currVestinPeriod < vestingPeriods,
-            "Token Admin: All tokens for vesting have been claimed."
+            _currVestingPeriod < vestingPeriods,
+            "Vesting: All tokens for vesting have been claimed."
         );
         // implement safe math
-        uint256 _deltaIndex = (_todayClaimTime - _currentDateOfVesting) /
-            (30 days);
-        uint256 _fundsToTransfer = (vestingAcc.totalFundsForVesting /
-            vestingPeriods) * _deltaIndex;
+        uint256 _deltaIndex = _todayClaimTime.sub(_currentDateOfVesting).div(
+            30 days
+        );
+
+        uint256 _fundsToTransfer = vestingAcc
+            .fundsToVestForThisAccount
+            .div(vestingPeriods)
+            .mul(_deltaIndex + 1);
 
         pachaCuyToken.transfer(_msgSender(), _fundsToTransfer);
 
-        vestingAccounts[_msgSender()].currentVestingPeriod += _deltaIndex;
-        vestingAccounts[_msgSender()].totalFundsClaimed += _fundsToTransfer;
+        vestingAccounts[_msgSender()].currentVestingPeriod += (_deltaIndex + 1);
+        vestingAccounts[_msgSender()].totalFundsVested += _fundsToTransfer;
     }
 
-    // every role will have a specific fund allocated to him
-    // after a month each role will be able to withdraw a specific amount until it consumes all his fund
-    // set amount of vesting periods
-    // linerly claim an amount of tokens in each vesting period
+    function isMarketingRole(string memory _typeOfAccount)
+        internal
+        pure
+        returns (bool)
+    {
+        return
+            keccak256(abi.encodePacked(_typeOfAccount)) == MARKETING_ADV_ROLE;
+    }
+
+    function isTeamRole(string memory _typeOfAccount)
+        internal
+        pure
+        returns (bool)
+    {
+        return keccak256(abi.encodePacked(_typeOfAccount)) == TEAM_ROLE;
+    }
 
     function pause() public onlyRole(PAUSER_ROLE) {
         _pause();
@@ -243,30 +248,11 @@ contract Vesting is
         _unpause();
     }
 
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override whenNotPaused {
-        super._beforeTokenTransfer(from, to, amount);
+    function getDecimals() internal pure returns (uint256) {
+        return 8;
     }
 
-    // periodo de vesting desde que empieza a colaborar
-    // interface para intercambiar cuytokens for pacha cuy tokens
-    //      solamente se puede vender el 50% de y hay un ratio en particular para intercambiar por PCUY
-
-    // blockear 26M de tokens para el liquidity pool
-    // private sale mintear 100MM
-    // public sale block 8MM
-    // team billetera mintear 10MM
-    // marketing mintear 7MM
-    // airdrop guardar billeteras a quien se les ha dado el airdrop
-    //    nosotros decidimos cuando entregar el airdrop. se reparte después
-    //    los usuarios pueden consultar que estan en airdrop
-    //    retornar el disponible de cuanto airdrop queda
-    // pool de recompensas 26MM
-    // fase 2 - 6MM
-    // fase x - 11.5
-
-    // considerar que durante el vesting la persona se le puede dar de baja
+    function million() internal pure returns (uint256) {
+        return 10**6;
+    }
 }
