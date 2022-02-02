@@ -16,7 +16,7 @@ contract PachaCuyBSC is
     constructor() initializer {}
 
     function initialize() public initializer {
-        __ERC20_init("Pacha Cuy", "PCUY");
+        __ERC20_init("BUSD", "BUSD");
         __AccessControl_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());

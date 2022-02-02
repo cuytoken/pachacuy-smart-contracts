@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -9,14 +8,11 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /// @custom:security-contact lee@cuytoken.com
-contract MyToken is
+contract PrivateSaleOne is
     Initializable,
-    ERC20Upgradeable,
     PausableUpgradeable,
     AccessControlUpgradeable
 {
-    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-
     // Upgrades
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeMathUpgradeable for uint256;
@@ -31,11 +27,11 @@ contract MyToken is
     uint256 public exchangeRate;
 
     // total cap: 1.5 millions
-    uint256 maxCapTokensToSell = 15 * 10**5 * 10**18;
-    uint256 amountPachacuySold = 0;
+    uint256 maxCapTokensToSell;
+    uint256 amountPachacuySold;
 
     // list of customers
-    address[] listOfCustomers = new address[](0);
+    address[] listOfCustomers;
 
     // events
     event PachaCuyPurchased(
@@ -68,7 +64,6 @@ contract MyToken is
         address _custodianWallet,
         uint256 _rate
     ) public initializer {
-        __ERC20_init("MyToken", "MTK");
         __Pausable_init();
         __AccessControl_init();
 
@@ -76,10 +71,13 @@ contract MyToken is
         custodianWallet = _custodianWallet;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _grantRole(PAUSER_ROLE, _msgSender());
 
         // setting exchange rate
         setExchangeRatePrivateSale(_rate);
+
+        // setting max cap
+        maxCapTokensToSell = 15 * 10**5 * 10**18;
+        listOfCustomers = new address[](0);
     }
 
     function purchaseTokensWithBusd(uint256 _amountBusd) public whenNotPaused {
@@ -139,28 +137,39 @@ contract MyToken is
         );
     }
 
+    // Consult Balance of a customer
+    function queryBalance(address _account)
+        external
+        view
+        returns (
+            address _walletCusomter,
+            uint256 _busdSpent,
+            uint256 _pachacuyPurchased,
+            uint256 _rate
+        )
+    {
+        _walletCusomter = customers[_account]._wallet;
+        _busdSpent = customers[_account]._amountBusdSpent;
+        _pachacuyPurchased = customers[_account]._amountPachacuyToDeliver;
+        _rate = customers[_account]._exchangeRate;
+    }
+
     function retrieveListOfCustomers()
         external
         view
-        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (address[] memory)
     {
         return listOfCustomers;
     }
 
     function amountPachacuyLeftToSell() external view returns (uint256) {
-        return maxCapTokensToSell - amountPachacuySold;
+        return maxCapTokensToSell.sub(amountPachacuySold);
     }
 
     function setExchangeRatePrivateSale(uint256 _rate)
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        require(
-            _rate == exchangeRate,
-            "Private sale: amount does not match a defined rate."
-        );
-
         emit ExchangeRateChange(exchangeRate, _rate);
 
         exchangeRate = _rate;
@@ -179,19 +188,11 @@ contract MyToken is
         return _amountBusd.mul(exchangeRate);
     }
 
-    function pause() public onlyRole(PAUSER_ROLE) {
+    function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-    function unpause() public onlyRole(PAUSER_ROLE) {
+    function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
-    }
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override whenNotPaused {
-        super._beforeTokenTransfer(from, to, amount);
     }
 }
