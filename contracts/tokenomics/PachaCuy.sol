@@ -23,7 +23,7 @@ contract PachaCuy is Initializable, ERC20Upgradeable, ERC20BurnableUpgradeable {
         __ERC20Burnable_init();
 
         //_privateSale
-        _mint(_privateSale, 2 * million() * 10**decimals());
+        _mint(_privateSale, 3 * million() * 10**decimals());
 
         //_cuyTokenToPachacuy
         _mint(_cuyTokenToPachacuy, 25 * 10**5 * 10**decimals());

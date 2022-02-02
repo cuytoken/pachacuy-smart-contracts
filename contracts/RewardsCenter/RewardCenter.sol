@@ -11,7 +11,7 @@ import "../random/IRandomGenerator.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract RewardsCenter is
-    IRandomGenerator,
+    //IRandomGenerator,
     Initializable,
     ERC20Upgradeable,
     PausableUpgradeable,
@@ -276,8 +276,9 @@ contract RewardsCenter is
             return 0;
         } else {
             winnersResult[_msgSender()] = RandomResultStruct(true, false, 0);
-            bytes32 _requestId = randomGenerator.getRandomNumber();
-            winnersRequestId[_requestId] = _msgSender();
+            // bytes32 _requestId = randomGenerator.getRandomNumberCasino();
+            // winnersRequestId[_requestId] = _msgSender();
+            winnersRequestId["0"] = _msgSender();
         }
         return 0;
     }
@@ -309,7 +310,7 @@ contract RewardsCenter is
 
     function fulfillRandomness(bytes32 _requestId, uint256 _randomness)
         public
-        override
+    // override
     {
         // _result is between 1 and 99
         uint256 _result = _randomness.mod(100).add(1);
@@ -320,10 +321,18 @@ contract RewardsCenter is
         );
     }
 
-    function getRandomNumber() public override returns (bytes32 _requestId) {
-        _requestId = randomGenerator.getRandomNumber();
-        requestId = _requestId;
-        return _requestId;
+    function getRandomNumber()
+        public
+        pure
+            // override
+        returns (
+            bytes32 _requestId
+        )
+    {
+        // _requestId = randomGenerator.getRandomNumberCasino();
+        // requestId = _requestId;
+        // return _requestId;
+        return "0";
     }
 
     /**

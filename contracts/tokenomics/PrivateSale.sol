@@ -104,6 +104,11 @@ contract PrivateSale is
         isActivePrivateSaleOne
         whenNotPaused
     {
+        require(
+            _amountBusd <= 500 * 10**18,
+            "Private Sale: maximun amount of purchase surphased."
+        );
+
         uint256 _amountPachaCuyTokens = getAmountPachaCuyFromBusd(_amountBusd);
 
         require(
@@ -126,6 +131,11 @@ contract PrivateSale is
         isActivePrivateSaleTwo
         whenNotPaused
     {
+        require(
+            _amountBusd <= 1000 * 10**18,
+            "Private Sale: maximun amount of purchase surphased."
+        );
+
         require(
             busdToken.balanceOf(_msgSender()) >= _amountBusd,
             "Private Sale: caller does not have enough BUSD to trasact."
@@ -193,7 +203,7 @@ contract PrivateSale is
             "Private Sale: Exchange rate needs to be set."
         );
 
-        return _amountBusd.mul(currentExchangeRatePrivateSale).div(1e18);
+        return _amountBusd.mul(currentExchangeRatePrivateSale);
     }
 
     function setExchangeRatePrivateSale(uint256 _rate)

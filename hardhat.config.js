@@ -23,6 +23,12 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 module.exports = {
   solidity: "0.8.4",
   networks: {
+    localhost: {
+      url: "http://127.0.0.1:8545/",
+      timeout: 800000,
+      gas: "auto",
+      gasPrice: "auto",
+    },
     rinkeby: {
       url: process.env.RINKEBY_TESNET_URL,
       accounts: [process.env.ADMIN_ACCOUNT_PRIVATE_KEY],
@@ -30,6 +36,20 @@ module.exports = {
       gas: "auto",
       gasPrice: "auto",
     },
+    bsctestnet: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      chainId: 97,
+      accounts: [process.env.ADMIN_ACCOUNT_PRIVATE_KEY],
+      gas: 50000,
+      gasPrice: "auto",
+      timeout: 800000,
+    },
+    // bscmainnet: {
+    //   url: "https://bsc-dataseed.binance.org/",
+    //   chainId: 56,
+    //   gasPrice: 20000000000,
+    //   accounts: [process.env.BSCMAINNET_ADMIN_ACCOUNT_PRIVATE_KEY],
+    // },
   },
   compilers: [
     {
@@ -51,7 +71,7 @@ module.exports = {
       },
     },
     {
-      version: "0.8.4",
+      version: "0.8.2",
       settings: {
         optimizer: {
           enabled: true,
@@ -60,5 +80,6 @@ module.exports = {
       },
     },
   ],
-  etherscan: { apiKey: "YQMUUX2R57P76I9RARFARCKG5B3VQ71FNJ" },
+  etherscan: { apiKey: process.env.PACHACUY_BSCSCAN_API_KEY },
+  // etherscan: { apiKey: process.env.PACHACUY_ETHERSCAN },
 };

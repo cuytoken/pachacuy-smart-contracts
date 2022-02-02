@@ -50,8 +50,7 @@ contract Vesting is
 
     function initialize(
         uint128 _vestingPeriods,
-        uint128 _gapBetweenVestingPeriods,
-        address _pachaCuyAddress
+        uint128 _gapBetweenVestingPeriods
     ) public initializer {
         __Pausable_init();
         __AccessControl_init();
@@ -62,7 +61,6 @@ contract Vesting is
         // vesting
         vestingPeriods = _vestingPeriods;
         gapBetweenVestingPeriods = _gapBetweenVestingPeriods;
-        pachaCuyToken = IERC20Upgradeable(_pachaCuyAddress);
         settingVestingStateStructs();
     }
 
@@ -238,6 +236,13 @@ contract Vesting is
         returns (bool)
     {
         return keccak256(abi.encodePacked(_typeOfAccount)) == TEAM_ROLE;
+    }
+
+    function setPachaCuyAddress(address _pachaCuyToken)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        pachaCuyToken = IERC20Upgradeable(_pachaCuyToken);
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {

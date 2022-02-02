@@ -108,7 +108,7 @@ contract SwapCuyTokenForPachaCuy is
             "Private Sale: Exchange rate needs to be set."
         );
 
-        return _amountCuyToken.div(exchangeRate).mul(1e18);
+        return _amountCuyToken.mul(1000).div(exchangeRate).div(10);
     }
 
     function setPachaCuyAddress(address _pachaCuyToken)

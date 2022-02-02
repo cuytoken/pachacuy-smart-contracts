@@ -12,7 +12,7 @@ import "../random/IRandomGenerator.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract Casino is
-    IRandomGenerator,
+    //IRandomGenerator,
     Initializable,
     ERC1155Upgradeable,
     AccessControlUpgradeable,
@@ -110,17 +110,22 @@ contract Casino is
 
     function fulfillRandomness(bytes32 _requestId, uint256 _randomness)
         public
-        override
+//        override
     {
         // this is the callback for the random generated number
         requestId = _requestId;
         randomness = _randomness;
     }
 
-    function getRandomNumber() public override returns (bytes32 _requestId) {
-        _requestId = randomGenerator.getRandomNumber();
-        requestId = _requestId;
-        return _requestId;
+    function getRandomNumber() 
+    public 
+    pure
+    //override 
+    returns (bytes32 _requestId) {
+        // _requestId = randomGenerator.getRandomNumberCasino();
+        // requestId = _requestId;
+        // return _requestId;
+        return "0";
     }
 
     function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
