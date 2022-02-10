@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 /// @custom:security-contact lee@cuytoken.com
-contract PrivateSaleOne is
+contract PrivateSaleTwo is
     Initializable,
     PausableUpgradeable,
     AccessControlUpgradeable,
@@ -31,6 +31,9 @@ contract PrivateSaleOne is
 
     // rate
     uint256 public exchangeRate;
+
+    // max purchase per wallet
+    uint256 public limitPerWallet;
 
     // total cap: 1.5 millions
     uint256 maxCapTokensToSell;
@@ -84,6 +87,7 @@ contract PrivateSaleOne is
         // setting max cap
         maxCapTokensToSell = 15 * 10**5 * 10**18; // 1.5 M
         listOfCustomers = new address[](0);
+        limitPerWallet = 3000;
     }
 
     function purchaseTokensWithBusd(uint256 _amountBusd)
@@ -102,7 +106,7 @@ contract PrivateSaleOne is
         );
 
         require(
-            _amountBusdSpent.add(_amountBusd) <= 1500 * 10**18,
+            _amountBusdSpent.add(_amountBusd) <= limitPerWallet * 10**18,
             "Private Sale Two: 1500 BUSD es el limite de compra por billetera."
         );
 
