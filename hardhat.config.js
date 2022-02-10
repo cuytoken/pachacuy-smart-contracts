@@ -44,12 +44,12 @@ module.exports = {
       gasPrice: "auto",
       timeout: 800000,
     },
-    // bscmainnet: {
-    //   url: "https://bsc-dataseed.binance.org/",
-    //   chainId: 56,
-    //   gasPrice: 20000000000,
-    //   accounts: [process.env.BSCMAINNET_ADMIN_ACCOUNT_PRIVATE_KEY],
-    // },
+    bscmainnet: {
+      url: "https://bsc-dataseed.binance.org/",
+      chainId: 56,
+      gasPrice: "auto",
+      accounts: [process.env.ADMIN_ACCOUNT_PRIVATE_KEY],
+    },
   },
   compilers: [
     {

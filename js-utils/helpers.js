@@ -36,8 +36,8 @@ function infoHelper(net) {
     };
   } else if (net == "BSCNET") {
     privateSaleNet = {
-      _busdToken: "",
-      _walletPrivateSale: "",
+      _busdToken: "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+      _walletPrivateSale: "0x77A45071c532b71Cb4c99126D9A98c1D86276D3A",
     };
   }
 
@@ -62,17 +62,6 @@ function infoHelper(net) {
     _maxPublicSale: 25,
   };
   var publicSaleNet;
-  if (net == "TESTNET") {
-    publicSaleNet = {
-      _walletPublicSale: process.env.ADMIN_ACCOUNT_PUBLIC_KEY,
-      _busdToken: "0x8301f2213c0eed49a7e28ae4c3e91722919b8b47",
-    };
-  } else if (net == "BSCNET") {
-    publicSaleNet = {
-      _walletPublicSale: "",
-      _busdToken: "",
-    };
-  }
 
   // Vesting
   var commonVesting = {
@@ -140,7 +129,7 @@ function infoHelper(net) {
 
     // Public Sale
     ...commonPublicSale,
-    ...publicSaleNet,
+    // ...publicSaleNet,
 
     // Vesting
     ...commonVesting,

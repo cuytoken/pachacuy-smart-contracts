@@ -4,7 +4,8 @@ const hre = require("hardhat");
 const { upgrades, ethers } = require("hardhat");
 const { getImplementation, infoHelper } = require("../js-utils/helpers");
 // var NET = "RINKEBYTESTNET"; // BSCTESTNET
-var NET = "BSCTESTNET";
+// var NET = "BSCTESTNET";
+var NET = "BSCNET";
 const _3M = ethers.BigNumber.from("3000000000000000000000000");
 
 async function main() {
@@ -19,13 +20,13 @@ async function main() {
   // console.log("PachaCuyBSC I:", implementationAddressPCBSC);
 
   // PrivateSaleOne
-  var { _exchangeRatePrivateSaleOne } = infoHelper(NET);
+  var { _exchangeRatePrivateSaleOne, _busdToken, _walletPrivateSale } =
+    infoHelper(NET);
 
   const PrivateSaleOne = await hre.ethers.getContractFactory("PrivateSaleOne");
   const privateSaleOne = await upgrades.deployProxy(PrivateSaleOne, [
-    // pachaCuyBSC.address,
-    "0xAEBff8F209a895b22B1F87714319B12C3d12ACf6",
-    process.env.WALLET_FOR_FUNDS,
+    "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+    "0x77A45071c532b71Cb4c99126D9A98c1D86276D3A",
     _exchangeRatePrivateSaleOne,
   ]);
   await privateSaleOne.deployed();
@@ -33,22 +34,22 @@ async function main() {
   console.log("PrivateSaleOne Proxy:", privateSaleOne.address);
   console.log("PrivateSaleOne I:", implementationAddressPS);
 
-  try {
-    await pachaCuyBSC.mint(owner.address, _3M);
-    await pachaCuyBSC.mint(process.env.WALLET_FOR_FUNDS, _3M);
-  } catch (error) {
-    console.log("Error final setting:", error);
-  }
+  // try {
+  //   await pachaCuyBSC.mint(owner.address, _3M);
+  //   await pachaCuyBSC.mint(process.env.WALLET_FOR_FUNDS, _3M);
+  // } catch (error) {
+  //   console.log("Error final setting:", error);
+  // }
 
   // verify contracts
-  try {
-    await hre.run("verify:verify", {
-      address: implementationAddressPCBSC,
-      constructorArguments: [],
-    });
-  } catch (error) {
-    console.error("Error veryfing - BUSD mock", error);
-  }
+  // try {
+  //   await hre.run("verify:verify", {
+  //     address: implementationAddressPCBSC,
+  //     constructorArguments: [],
+  //   });
+  // } catch (error) {
+  //   console.error("Error veryfing - BUSD mock", error);
+  // }
 
   try {
     await hre.run("verify:verify", {

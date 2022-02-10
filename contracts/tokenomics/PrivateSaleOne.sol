@@ -1,21 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract PrivateSaleOne is
     Initializable,
     PausableUpgradeable,
-    AccessControlUpgradeable
+    AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable
 {
     // Upgrades
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using SafeMathUpgradeable for uint256;
+
+    // White list
+    mapping(address => bool) whiteList;
+    bool public whitelistFilterActive;
 
     // BUSD token
     IERC20Upgradeable busdToken;
@@ -80,11 +86,23 @@ contract PrivateSaleOne is
         listOfCustomers = new address[](0);
     }
 
-    function purchaseTokensWithBusd(uint256 _amountBusd) public whenNotPaused {
+    function purchaseTokensWithBusd(uint256 _amountBusd)
+        public
+        whenNotPaused
+        nonReentrant
+    {
         // Max 500 BUSD per account
         uint256 _amountBusdSpent = customers[_msgSender()]._amountBusdSpent;
+        uint256 _amountPachacuyPrev = customers[_msgSender()]
+            ._amountPachacuyToDeliver;
+
         require(
-            _amountBusdSpent <= 500 * 10**18,
+            whiteList[_msgSender()] || !whitelistFilterActive,
+            "Private Sale: Customer is not in Whitelist."
+        );
+
+        require(
+            _amountBusdSpent.add(_amountBusd) <= 500 * 10**18,
             "Private Sale: 500 BUSD is the maximun amount of purchase."
         );
 
@@ -97,7 +115,7 @@ contract PrivateSaleOne is
         // Verify id customer has given allowance to Private Sale smart contract
         require(
             busdToken.allowance(_msgSender(), address(this)) >= _amountBusd,
-            "Private Sale Customer didn't give allowance."
+            "Private Sale: Customer didn't give allowance."
         );
 
         uint256 _amountPachaCuyToPurchase = getAmountPachaCuyFromBusd(
@@ -109,7 +127,7 @@ contract PrivateSaleOne is
             maxCapTokensToSell.sub(amountPachacuySold).sub(
                 _amountPachaCuyToPurchase
             ) >= 0,
-            "Private Sale: not enough pachacuy to sell."
+            "Private Sale: not enough Pachacuy to sell."
         );
 
         // SC transfers BUSD from purchaser to custodian wallet
@@ -119,7 +137,7 @@ contract PrivateSaleOne is
         customers[_msgSender()] = Customer(
             _msgSender(),
             _amountBusdSpent.add(_amountBusd),
-            _amountPachaCuyToPurchase,
+            _amountPachacuyPrev.add(_amountPachaCuyToPurchase),
             exchangeRate
         );
 
@@ -154,6 +172,41 @@ contract PrivateSaleOne is
         _rate = customers[_account]._exchangeRate;
     }
 
+    // fills customers in whitelist
+    function addToWhitelistBatch(address[] memory _addresses)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        whenNotPaused
+    {
+        for (uint256 iy = 0; iy < _addresses.length; iy++) {
+            whiteList[_addresses[iy]] = true;
+        }
+    }
+
+    function enableWhitelistFilter()
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        whenNotPaused
+    {
+        require(
+            !whitelistFilterActive,
+            "Private Sale: Whitelist filter already active."
+        );
+        whitelistFilterActive = true;
+    }
+
+    function disableWhitelistFilter()
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        whenNotPaused
+    {
+        require(
+            whitelistFilterActive,
+            "Private Sale: Whitelist filter already active."
+        );
+        whitelistFilterActive = false;
+    }
+
     function retrieveListOfCustomers()
         external
         view
@@ -164,6 +217,18 @@ contract PrivateSaleOne is
 
     function amountPachacuyLeftToSell() external view returns (uint256) {
         return maxCapTokensToSell.sub(amountPachacuySold);
+    }
+
+    function amountPachacuySoldSoFar() external view returns (uint256) {
+        return amountPachacuySold;
+    }
+
+    function setAddressBusd(address _busdAddress)
+        public
+        whenNotPaused
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        busdToken = IERC20Upgradeable(_busdAddress);
     }
 
     function setExchangeRatePrivateSale(uint256 _rate)
