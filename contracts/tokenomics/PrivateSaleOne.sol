@@ -32,6 +32,9 @@ contract PrivateSaleOne is
     // rate
     uint256 public exchangeRate;
 
+    // max purchase per wallet
+    uint256 public limitPerWallet;
+
     // total cap: 1.5 millions
     uint256 maxCapTokensToSell;
     uint256 amountPachacuySold;
@@ -84,6 +87,7 @@ contract PrivateSaleOne is
         // setting max cap
         maxCapTokensToSell = 15 * 10**5 * 10**18;
         listOfCustomers = new address[](0);
+        limitPerWallet = 500;
     }
 
     function purchaseTokensWithBusd(uint256 _amountBusd)
@@ -102,7 +106,7 @@ contract PrivateSaleOne is
         );
 
         require(
-            _amountBusdSpent.add(_amountBusd) <= 500 * 10**18,
+            _amountBusdSpent.add(_amountBusd) <= limitPerWallet * 10**18,
             "Private Sale: 500 BUSD is the maximun amount of purchase."
         );
 
