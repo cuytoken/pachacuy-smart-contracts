@@ -130,8 +130,9 @@ function infoHelper(net) {
       _busdToken: "0x8F1C7AAf8EC93A500657aEc7C030d392fd4cAA13",
       _tokenName: "TEST NFT",
       _tokenSymbol: "TEST",
-      _maxSupply: 3000,
+      _maxSupply: 20,
       _nftCurrentPrice: ethers.utils.parseEther("30"),
+      _baseUri: "ipfs://QmYgUJeJWAbsYGxnNQT5frLJfVT85R5HhPr6kYbrZSUytJ/",
     };
   } else if (net == "BSCNET") {
     pachacuyNftCollection = {
@@ -140,6 +141,7 @@ function infoHelper(net) {
       _tokenSymbol: "PCUYMOCHE",
       _maxSupply: 3000,
       _nftCurrentPrice: ethers.utils.parseEther("30"),
+      _baseUri: "ipfs://___/",
     };
   }
 

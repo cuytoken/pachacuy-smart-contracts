@@ -59,13 +59,15 @@ contract PachacuyNftCollection is
     // custodian wallet for busd
     address public custodianWallet;
 
+    // baseUri
+    string public baseUri;
+
     // whitelist
     struct Whitelister {
         address account;
         bool claimed;
         bool inWhitelist;
     }
-    bool public whitelistEnabled;
     mapping(address => Whitelister) whitelist;
 
     // Reserved NFT
@@ -81,7 +83,8 @@ contract PachacuyNftCollection is
         uint256 _maxSupply,
         uint256 _nftCurrentPrice,
         address _busdAddress,
-        address _custodianWallet
+        address _custodianWallet,
+        string memory _baseUri
     ) public initializer {
         __ERC721_init(_tokenName, _tokenSymbol);
         __ERC721Enumerable_init();
@@ -97,9 +100,9 @@ contract PachacuyNftCollection is
 
         maxSupply = _maxSupply;
         nftCurrentPrice = _nftCurrentPrice;
-        whitelistEnabled = true;
         busdToken = IERC20Upgradeable(_busdAddress);
         custodianWallet = _custodianWallet;
+        baseUri = _baseUri;
     }
 
     /**
@@ -134,6 +137,13 @@ contract PachacuyNftCollection is
             _tokenIdCounter.increment();
             tokenId = _tokenIdCounter.current();
         }
+
+        if (tokenId >= maxSupply) {
+            revert(
+                "Pachachuy NFT Collection: the ID count has reached its maximun supply."
+            );
+        }
+
         _safeMint(to, tokenId);
     }
 
@@ -146,6 +156,11 @@ contract PachacuyNftCollection is
         require(
             !_exists(id),
             "Pachacuy NFT Collection: This NFT id has been minted already."
+        );
+
+        require(
+            id >= 0 && id < maxSupply,
+            "Pachacuy NFT Collection: incorrect ID out of bounds."
         );
 
         _safeMint(to, id);
@@ -262,33 +277,12 @@ contract PachacuyNftCollection is
         whenNotPaused
     {
         for (uint256 i = 0; i < _ids.length; i++) {
-            reservedNft[_ids[i]] = true;
-            listOfReservedNft.push(_ids[i]);
+            uint256 id = _ids[i];
+            if (id >= 0 && id < maxSupply && !reservedNft[id]) {
+                reservedNft[id] = true;
+                listOfReservedNft.push(id);
+            }
         }
-    }
-
-    function enableWhitelist()
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        whenNotPaused
-    {
-        require(
-            !whitelistEnabled,
-            "Private Sale: Whitelist filter already active."
-        );
-        whitelistEnabled = true;
-    }
-
-    function disableWhitelist()
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        whenNotPaused
-    {
-        require(
-            whitelistEnabled,
-            "Private Sale: Whitelist filter already inactive."
-        );
-        whitelistEnabled = false;
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -320,8 +314,8 @@ contract PachacuyNftCollection is
                 : "";
     }
 
-    function _baseURI() internal pure override returns (string memory) {
-        return "ipfs://QmYgUJeJWAbsYGxnNQT5frLJfVT85R5HhPr6kYbrZSUytJ/";
+    function _baseURI() internal view override returns (string memory) {
+        return baseUri;
     }
 
     function _beforeTokenTransfer(
