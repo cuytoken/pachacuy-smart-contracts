@@ -3,3 +3,5 @@ build
 **/artifacts/
 .openzeppelin/
 cache/
+
+.env

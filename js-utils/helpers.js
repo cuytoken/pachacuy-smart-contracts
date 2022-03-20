@@ -2,8 +2,14 @@ require("dotenv").config();
 
 const { ethers, providers } = require("ethers");
 
-function getImplementation(address) {
-  return upgrades.erc1967.getImplementationAddress(address);
+function getImplementation(contract) {
+  if (typeof contract == "string") {
+    return upgrades.erc1967.getImplementationAddress(contract);
+  }
+  if (!!contract.address) {
+    return upgrades.erc1967.getImplementationAddress(contract.address);
+  }
+  return null;
 }
 
 function decimals() {
@@ -29,9 +35,9 @@ function infoHelper(net) {
     _exchangeRatePrivateSaleTwo: 50,
   };
   var privateSaleNet;
-  if (net == "TESTNET") {
+  if (net == "BSCTESTNET") {
     privateSaleNet = {
-      _busdToken: "0x8301f2213c0eed49a7e28ae4c3e91722919b8b47",
+      _busdToken: "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee",
       _walletPrivateSale: process.env.WALLET_FOR_FUNDS,
     };
   } else if (net == "BSCNET") {
@@ -118,6 +124,25 @@ function infoHelper(net) {
     };
   }
 
+  var pachacuyNftCollection;
+  if (net == "BSCTESTNET") {
+    pachacuyNftCollection = {
+      _busdToken: "0x8F1C7AAf8EC93A500657aEc7C030d392fd4cAA13",
+      _tokenName: "TEST NFT",
+      _tokenSymbol: "TEST",
+      _maxSupply: 3000,
+      _nftCurrentPrice: ethers.utils.parseEther("30"),
+    };
+  } else if (net == "BSCNET") {
+    pachacuyNftCollection = {
+      _busdToken: "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+      _tokenName: "Pachachuy Moche NFT",
+      _tokenSymbol: "PCUYMOCHE",
+      _maxSupply: 3000,
+      _nftCurrentPrice: ethers.utils.parseEther("30"),
+    };
+  }
+
   return {
     // private sale
     ...commonPrivateSale,
@@ -145,6 +170,9 @@ function infoHelper(net) {
 
     // Random Number Generator
     ...randomNGNet,
+
+    // NFT
+    ...pachacuyNftCollection,
   };
 }
 

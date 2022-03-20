@@ -87,7 +87,8 @@ contract PrivateSaleTwo is
         // setting max cap
         maxCapTokensToSell = 15 * 10**5 * 10**18; // 1.5 M
         listOfCustomers = new address[](0);
-        limitPerWallet = 3000;
+        limitPerWallet = 1500;
+        whitelistFilterActive = true;
     }
 
     function purchaseTokensWithBusd(uint256 _amountBusd)
@@ -262,5 +263,9 @@ contract PrivateSaleTwo is
 
     function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
+    }
+
+    function setLimitPerWallet() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        limitPerWallet = 1500;
     }
 }
