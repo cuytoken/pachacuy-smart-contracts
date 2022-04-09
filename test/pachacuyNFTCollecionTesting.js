@@ -1,6 +1,12 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { infoHelper } = require("../js-utils/helpers");
+const {
+  getImplementation,
+  infoHelper,
+  FENOMENO,
+  MISTICO,
+  LEGENDARIO,
+} = require("../js-utils/helpers");
 var bUSD, pcuyNFTC, BUSD, PachacuyNftCollection, baseUri;
 
 describe("NFT Moche Collection", function () {
@@ -44,6 +50,7 @@ describe("NFT Moche Collection", function () {
       BUSD = await gcf("BUSD");
       bUSD = await dp(BUSD, []);
       await bUSD.deployed();
+      const NETWORK = "BSCTESTNET";
 
       // FNT
       var {
@@ -53,19 +60,28 @@ describe("NFT Moche Collection", function () {
         _maxSupply,
         _nftCurrentPrice,
         _baseUri,
-      } = infoHelper("BSCTESTNET");
+      } = infoHelper(NETWORK);
       maxSupply = _maxSupply;
       baseUri = _baseUri;
       PachacuyNftCollection = await gcf("PachacuyNftCollection");
-      pcuyNFTC = await dp(PachacuyNftCollection, [
-        _tokenName,
-        _tokenSymbol,
-        _maxSupply,
-        _nftCurrentPrice,
-        bUSD.address,
-        process.env.WALLET_FOR_FUNDS,
-        _baseUri,
-      ]);
+      pcuyNFTC = await dp(
+        PachacuyNftCollection,
+        [
+          _tokenName,
+          _tokenSymbol,
+          _maxSupply,
+          _nftCurrentPrice,
+          bUSD.address,
+          process.env.WALLET_FOR_FUNDS,
+          _baseUri,
+          FENOMENO,
+          MISTICO,
+          LEGENDARIO,
+        ],
+        {
+          kind: "uups",
+        }
+      );
       nftCurrentPrice = _nftCurrentPrice;
       await pcuyNFTC.deployed();
 
@@ -295,10 +311,10 @@ describe("NFT Moche Collection", function () {
     it("Cannot purchase an ID out of bunds", async () => {
       await expect(
         pcuyNFTC.connect(deysi).purchaseNftWithBusdAndId(maxSupply)
-      ).to.revertedWith("Pachacuy NFT Collection: incorrect ID out of bounds.");
+      ).to.revertedWith("Pachacuy NFT Collection: ID pass it not valid.");
       await expect(
         pcuyNFTC.connect(deysi).purchaseNftWithBusdAndId(maxSupply + 1)
-      ).to.revertedWith("Pachacuy NFT Collection: incorrect ID out of bounds.");
+      ).to.revertedWith("Pachacuy NFT Collection: ID pass it not valid.");
     });
   });
 
