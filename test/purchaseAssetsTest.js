@@ -23,7 +23,7 @@ describe("Purchase Testing", function () {
   var gcf = hre.ethers.getContractFactory;
   var dp = upgrades.deployProxy;
   var BN = ethers.BigNumber.from;
-  var BUSD = (amount) => BN(`${amount}000000`);
+  var BUSD = (amount) => BN(`${amount}000000000000000000`);
   var signers;
   var pe = ethers.utils.parseEther;
   var RandomNumberGenerator;
@@ -49,8 +49,6 @@ describe("Purchase Testing", function () {
       huidobro,
       custodianWallet,
     ] = signers;
-    console.log("owner: ", owner.address);
-    console.log("alice: ", alice.address);
   });
 
   describe("Set Up", async function () {
@@ -64,7 +62,6 @@ describe("Purchase Testing", function () {
       RandomNumberV2Mock = await gcf("RandomNumberV2Mock");
       randomNumberV2Mock = await RandomNumberV2Mock.deploy();
       await randomNumberV2Mock.deployed();
-      console.log("randomNumberV2Mock", randomNumberV2Mock.address);
 
       // PurchaseAssetController
       PurchaseAssetController = await gcf("PurchaseAssetController");
@@ -80,11 +77,12 @@ describe("Purchase Testing", function () {
         }
       );
       await purchaseAssetController.deployed();
-      console.log("PurchaseAssetController", purchaseAssetController.address);
 
       // Guinea Pig Erc
+      var name = "In-game NFT Assets";
+      var symbol = "PACHAGAME";
       NftProducerPachacuy = await gcf("NftProducerPachacuy");
-      nftProducerPachacuy = await dp(NftProducerPachacuy, [], {
+      nftProducerPachacuy = await dp(NftProducerPachacuy, [name, symbol], {
         kind: "uups",
       });
       await nftProducerPachacuy.deployed();
@@ -147,6 +145,7 @@ describe("Purchase Testing", function () {
     it("Fulfill random number, mint right NFT", async () => {
       // testing _guineaPigId and ranceAndGender
       _guineaPigId = 2;
+      var uuid = 0; // counter starts at 0
       ranceAndGender = "INTI MALE";
       requestId = 432423;
       randomWords = [2131432235423, 324325234146];
@@ -158,6 +157,7 @@ describe("Purchase Testing", function () {
           alice.address,
           BUSD(15).toString(),
           _guineaPigId,
+          uuid,
           ranceAndGender
         );
 
@@ -170,10 +170,7 @@ describe("Purchase Testing", function () {
           randomWords
         );
 
-      var res = await nftProducerPachacuy.balanceOf(
-        alice.address,
-        _guineaPigId
-      );
+      var res = await nftProducerPachacuy.balanceOf(alice.address, uuid);
       expect(res.toNumber()).to.equal(1);
     });
 
@@ -217,7 +214,8 @@ describe("Purchase Testing", function () {
       randomWords,
       ix,
       resultIds,
-      resultRaceGender
+      resultRaceGender,
+      uuids
     ) {
       var tx = await randomNumberV2Mock.fulfillRandomWords(
         requestId,
@@ -239,8 +237,12 @@ describe("Purchase Testing", function () {
           account.address,
           BUSD(ix * 5).toString(),
           resultIds[i],
+          uuids[i],
           resultRaceGender[i]
         );
+
+      var res = await nftProducerPachacuy.balanceOf(account.address, uuids[i]);
+      expect(res.toNumber()).to.equal(1);
     }
 
     var resultIds;
@@ -267,6 +269,7 @@ describe("Purchase Testing", function () {
       var ix = 1;
       var raceRandomArray = [40, 69, 80, 84, 90, 94, 97, 99];
       var genderRandomArray = [2, 1, 2, 1, 2, 1, 2, 1];
+      var uuids = [1, 2, 3, 4, 5, 6, 7, 8];
 
       for (let i = 0; i < raceRandomArray.length; i++) {
         // for (let i = 0; i < 1; i++) {
@@ -281,7 +284,8 @@ describe("Purchase Testing", function () {
           randomWords,
           ix,
           resultIds,
-          resultRaceGender
+          resultRaceGender,
+          uuids
         );
       }
     });
@@ -292,6 +296,7 @@ describe("Purchase Testing", function () {
       var ix = 2;
       var raceRandomArray = [10, 19, 40, 49, 55, 79, 91, 99];
       var genderRandomArray = [2, 1, 2, 1, 2, 1, 2, 1];
+      var uuids = [9, 10, 11, 12, 13, 14, 15, 16];
 
       for (let i = 0; i < raceRandomArray.length; i++) {
         // for (let i = 0; i < 1; i++) {
@@ -306,7 +311,8 @@ describe("Purchase Testing", function () {
           randomWords,
           ix,
           resultIds,
-          resultRaceGender
+          resultRaceGender,
+          uuids
         );
       }
     });
@@ -317,6 +323,7 @@ describe("Purchase Testing", function () {
       var ix = 3;
       var raceRandomArray = [4, 9, 15, 29, 40, 59, 80, 99];
       var genderRandomArray = [2, 1, 2, 1, 2, 1, 2, 1];
+      var uuids = [17, 18, 19, 20, 21, 22, 23, 24];
 
       for (let i = 0; i < raceRandomArray.length; i++) {
         // for (let i = 0; i < 1; i++) {
@@ -331,13 +338,15 @@ describe("Purchase Testing", function () {
           randomWords,
           ix,
           resultIds,
-          resultRaceGender
+          resultRaceGender,
+          uuids
         );
       }
     });
 
     it("Purchase with big numbers", async () => {
       var ix = 3;
+      var uuid = 25;
       await puchaseWithIndex(bob, ix);
       var randomWords = [
         BN("8384392923432432908409238409209803924"),
@@ -345,24 +354,18 @@ describe("Purchase Testing", function () {
       ];
 
       tx = await randomNumberV2Mock.fulfillRandomWords(requestId, randomWords);
-      await expect(tx).to.emit(
-        purchaseAssetController,
-        "GuineaPigPurchaseFinish"
-      );
-      // .withArgs(
-      //   alice.address,
-      //   BUSD(15).toString(),
-      //   _guineaPigId,
-      //   ranceAndGender
-      // );
+      await expect(tx)
+        .to.emit(purchaseAssetController, "GuineaPigPurchaseFinish")
+        .withArgs(bob.address, BUSD(15).toString(), 6, uuid, "INTI FEMALE");
 
-      await expect(tx).to.emit(randomNumberV2Mock, "RandomNumberDelivered");
-      // .withArgs(
-      //   requestId,
-      //   purchaseAssetController.address,
-      //   alice.address,
-      //   randomWords
-      // );
+      await expect(tx)
+        .to.emit(randomNumberV2Mock, "RandomNumberDelivered")
+        .withArgs(
+          requestId,
+          purchaseAssetController.address,
+          bob.address,
+          randomWords
+        );
     });
   });
 });

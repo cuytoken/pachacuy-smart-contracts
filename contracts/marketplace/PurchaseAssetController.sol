@@ -53,6 +53,9 @@ contract PurchaseAssetController is
     // custodian wallet for busd
     address public custodianWallet;
 
+    // price of each pacha
+    uint256 public landPrice;
+
     // Verifies that customer has one transaction at a time
     /**
      * @dev Transaction objects that indicates type of the current transaction
@@ -76,17 +79,16 @@ contract PurchaseAssetController is
     }
     mapping(uint256 => LikelihoodData) likelihoodData;
 
-    //
-    event RandomNumberReceived(address _account, uint256[] _randomNumbers);
-    event Number(uint256 _randomNumber);
-
+    // Marks the beginning of a guinea pig purchase
     event GuineaPigPurchaseFinish(
         address _account,
         uint256 price,
         uint256 _guineaPigId,
+        uint256 _uuid,
         string _raceAndGender
     );
 
+    // Marks the end of a guinea pig purchase
     event GuineaPigPurchaseInit(
         address _account,
         uint256 price,
@@ -94,11 +96,13 @@ contract PurchaseAssetController is
         address custodianWallet
     );
 
-    event SoFarSoGood2(
-        uint256 _ix,
+    // Purchase of Land event
+    event PurchaseLand(
         address _account,
-        uint256 _randomNumber,
-        uint256 _randomNumber2
+        uint256 uuid,
+        uint256 landPrice,
+        uint256 _location,
+        address custodianWallet
     );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -120,6 +124,8 @@ contract PurchaseAssetController is
         busdToken = IERC20Upgradeable(_busdAddress);
         custodianWallet = _custodianWallet;
 
+        landPrice = 200 * 1e18;
+
         // Guniea pig purchase - likelihood
         _setLikelihoodAndPrices();
 
@@ -132,11 +138,7 @@ contract PurchaseAssetController is
     function fulfillRandomness(
         address _account,
         uint256[] memory _randomNumbers
-    ) external {
-        require(
-            address(randomNumberGenerator) == _msgSender(),
-            "PurchaseAC: Only random number generator can fulfill randomness"
-        );
+    ) external onlyRole(RNG_GENERATOR) {
         Transaction memory _tx = ongoingTransaction[_account];
 
         if (_compareStrings(_tx.transactionType, "PURCHASE_GUINEA_PIG")) {
@@ -146,13 +148,8 @@ contract PurchaseAssetController is
                 _randomNumbers[0],
                 _randomNumbers[1]
             );
-            // delete ongoingTransaction[_account];
+            delete ongoingTransaction[_account];
             return;
-        }
-        // Vericar que quien llama es Random Number Generator SC
-        emit RandomNumberReceived(_account, _randomNumbers);
-        for (uint256 i = 0; i < _randomNumbers.length; i++) {
-            emit Number(_randomNumbers[i]);
         }
     }
 
@@ -204,6 +201,42 @@ contract PurchaseAssetController is
         emit GuineaPigPurchaseInit(_msgSender(), price, _ix, custodianWallet);
     }
 
+    /**
+     * @dev Buy a guinea pig by using an index (_ix represents a specific prive of three)
+     * @param _location Location of the land from 1 to 697
+     */
+    function purchaseLandWithBusd(uint256 _location) external {
+        require(
+            busdToken.balanceOf(_msgSender()) >= landPrice,
+            "PurchaseAC: Not enough BUSD balance."
+        );
+
+        // Verify id customer has given allowance to the PurchaseAC contract
+        require(
+            busdToken.allowance(_msgSender(), address(this)) >= landPrice,
+            "PurchaseAC: Allowance has not been given."
+        );
+
+        // SC transfers BUSD from purchaser to custodian wallet
+        busdToken.safeTransferFrom(_msgSender(), custodianWallet, landPrice);
+
+        // mint a pacha
+        uint256 uuid = nftProducerPachacuy.mintLandNft(
+            _msgSender(),
+            _location,
+            ""
+        );
+
+        // Emit event
+        emit PurchaseLand(
+            _msgSender(),
+            uuid,
+            landPrice,
+            _location,
+            custodianWallet
+        );
+    }
+
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
@@ -214,7 +247,8 @@ contract PurchaseAssetController is
         uint256 _randomNumber2
     ) internal {
         (
-            uint256 _guineaPigId,
+            uint256 _race,
+            uint256 _guineaPigId, // idForJsonFile 1 -> 8
             string memory _raceAndGender
         ) = _getRaceGenderGuineaPig(
                 _ix,
@@ -222,20 +256,27 @@ contract PurchaseAssetController is
                 _randomNumber2 % 2
             );
 
-        // Mint Guinea Pigs
+        // Mark ongoing transaction as finished
         ongoingTransaction[_account].ongoing = false;
+
         require(
             address(nftProducerPachacuy) != address(0),
             "PurchaseAC: Guinea Pig Token not set."
         );
-        nftProducerPachacuy.mint(_account, _guineaPigId, 1, "");
 
-        // Mark ongoing transaction as finished
+        // Mint Guinea Pigs
+        uint256 _uuid = nftProducerPachacuy.mintGuineaPigNft(
+            _account,
+            _race,
+            _guineaPigId,
+            ""
+        );
 
         emit GuineaPigPurchaseFinish(
             _account,
             likelihoodData[_ix].price,
             _guineaPigId,
+            _uuid,
             _raceAndGender
         );
     }
@@ -271,7 +312,15 @@ contract PurchaseAssetController is
         uint256 _ix,
         uint256 _raceRN, // [1, 100]
         uint256 _genderRN // [0, 1]
-    ) internal view returns (uint256, string memory) {
+    )
+        internal
+        view
+        returns (
+            uint256,
+            uint256,
+            string memory
+        )
+    {
         // race between 1 and 4
         uint256 i;
         for (i = 0; i < likelihoodData[_ix].likelihood.length; i++) {
@@ -284,14 +333,14 @@ contract PurchaseAssetController is
         uint256 id = i + _genderRN * 4;
         assert(id >= 1 && i <= 8);
 
-        if (id == 1) return (id, "PERU MALE");
-        else if (id == 2) return (id, "INTI MALE");
-        else if (id == 3) return (id, "ANDINO MALE");
-        else if (id == 4) return (id, "SINTETICO MALE");
-        else if (id == 5) return (id, "PERU FEMALE");
-        else if (id == 6) return (id, "INTI FEMALE");
-        else if (id == 7) return (id, "ANDINO FEMALE");
-        else return (id, "SINTETICO FEMALE");
+        if (id == 1) return (i, id, "PERU MALE");
+        else if (id == 2) return (i, id, "INTI MALE");
+        else if (id == 3) return (i, id, "ANDINO MALE");
+        else if (id == 4) return (i, id, "SINTETICO MALE");
+        else if (id == 5) return (i, id, "PERU FEMALE");
+        else if (id == 6) return (i, id, "INTI FEMALE");
+        else if (id == 7) return (i, id, "ANDINO FEMALE");
+        else return (i, id, "SINTETICO FEMALE");
     }
 
     function _compareStrings(string memory a, string memory b)
@@ -341,6 +390,10 @@ contract PurchaseAssetController is
         account = ongoingTransaction[_account].account;
         ongoing = ongoingTransaction[_account].ongoing;
         ix = ongoingTransaction[_account].ix;
+    }
+
+    function setLandPrice(uint256 _landPrice) external onlyRole(GAME_MANAGER) {
+        landPrice = _landPrice;
     }
 
     ///////////////////////////////////////////////////////////////

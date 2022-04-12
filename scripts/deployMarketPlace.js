@@ -24,12 +24,6 @@ async function main() {
   upgrades.silenceWarnings();
 
   /**
-   * RandomNumberGenerator Proxy: 0xF8DeC4a35Cf32f59D0E338458EA996EFF90Be483
-    RandomNumberGenerator Imp: 0xD1349732f128e21e9a8bD974a0fF1fA9b7d62a11
-    PurchaseAC Proxy: 0x1e7749812C53d150D179b3468f5963ABa98244a5
-    PurchaseAC Imp: 0x95F99e19f620b9597AeA5C0D461D4e905fC67b72
-    NftProducerPachacuy Proxy: 0xE70937A750B9155eea884b089918155Fd256752A
-    NftProducerPachacuy Imp: 0x346D115931De44615CE365D3f5ed9DA3C792999F
    * RANDOM NUMBER GENERATOR
    * 1. Set Random Number Generator address as consumer in VRF subscription
    * 2. Add PurchaseAssetController sc within the whitelist
@@ -47,8 +41,6 @@ RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
 
   /**
    * Purchase Asset Controller
-    PurchaseAC Proxy: 0x2d902d04CeC54997b83919b6F80Bf5f9fcF9eAB6
-PurchaseAC Imp: 0x3645fb3c5516C63B7715e12341BA50921D1ea7E2
    * 1. Pass within the initialize the ranmdom number generator address
    * 2. setNftProducerPachacuyAddress
    * 3. grant role rng_generator to the random number generator sc
@@ -69,12 +61,12 @@ PurchaseAC Imp: 0x3645fb3c5516C63B7715e12341BA50921D1ea7E2
 
   /**
    * NFT Producer
-   NftProducerPachacuy Proxy: 0x32368894EFca7fa3e3170Feb0EdA80F24c7b8983
-NftProducerPachacuy Imp: 0x15Fc24E01b9D64c6003395705772799AaCF09076
    * 1. Grant Mint roles to PurchaseAssetController
    */
+  var name = "In-game NFT Pachacuy";
+  var symbol = "NFTGAMEPCUY";
   const NftProducerPachacuy = await gcf("NftProducerPachacuy");
-  const nftProducerPachacuy = await dp(NftProducerPachacuy, [], {
+  const nftProducerPachacuy = await dp(NftProducerPachacuy, [name, symbol], {
     kind: "uups",
   });
   await nftProducerPachacuy.deployed();
@@ -147,11 +139,11 @@ async function upgrade() {
   // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
   // await upgrades.upgradeProxy(RNGAddress, RandomNumberGenerator);
 
-  var PACAddress = "0x1e7749812C53d150D179b3468f5963ABa98244a5";
-  const PurchaseAssetController = await gcf("PurchaseAssetController");
-  await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
+  // var PACAddress = "0x6E143c44f0d905951e057406DA032305BA1A8cFf";
+  // const PurchaseAssetController = await gcf("PurchaseAssetController");
+  // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
 
-  var NFTPAddress = "0xE70937A750B9155eea884b089918155Fd256752A";
+  var NFTPAddress = "0xc1a98940434609f6cBba6f271BbBab96c9f458Ab";
   const NftProducerPachacuy = await gcf("NftProducerPachacuy");
   await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
 }

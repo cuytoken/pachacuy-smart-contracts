@@ -32,6 +32,13 @@ contract RandomNumberV2Mock {
         address walletAddress
     );
 
+    event RandomNumberDelivered(
+        uint256 requestId,
+        address smartCAddress,
+        address walletAddress,
+        uint256[] randomWords
+    );
+
     address _smartc;
     address account;
 
@@ -60,14 +67,10 @@ contract RandomNumberV2Mock {
     function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords)
         external
     {
-        try CallbackInterface(_smartc).fulfillRandomness(account, randomWords) {
-            emit RandomNumberFulfilled(
-                requestId,
-                _smartc,
-                account,
-                randomWords
-            );
-        } catch Error(string memory reason) {
+        emit RandomNumberDelivered(requestId, _smartc, account, randomWords);
+        try
+            CallbackInterface(_smartc).fulfillRandomness(account, randomWords)
+        {} catch Error(string memory reason) {
             emit ErrorFromVrfCallback(reason, requestId, _smartc, account);
         } catch (bytes memory reason) {
             emit ErrorNotHandled(reason, requestId, _smartc, account);
