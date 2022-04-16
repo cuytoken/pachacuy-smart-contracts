@@ -1,6 +1,10 @@
 require("dotenv").config();
 
-const { ethers, providers } = require("ethers");
+const { ethers, providers, BigNumber } = require("ethers");
+var bn = (n, d) => {
+  var decimals = new Array(d).fill("0").join("");
+  return ethers.BigNumber.from(`${String(n)}${decimals}`);
+};
 
 async function safeAwait(f, msg) {
   try {
@@ -108,7 +112,7 @@ var LEGENDARIO = [1063, 108, 1080, 1182, 1284, 1578, 1586, 1626, 221, 26, 349];
 // 5
 var SUPREMO = [1403];
 
-function infoHelper(net) {
+function infoHelper(net = "") {
   // private sale
   var commonPrivateSale = {
     _maxPrivateSaleOne: ethers.BigNumber.from(15)
@@ -233,6 +237,29 @@ function infoHelper(net) {
     };
   }
 
+  var vestinStakeholders = {
+    names: [
+      "HOLDER_CUY_TOKEN",
+      "PRIVATE_SALE_1",
+      "PRIVATE_SALE_2",
+      "AIRDROP",
+      "PACHACUY_TEAM",
+      "PARTNER_ADVISOR",
+      "MARKETING",
+    ],
+    amounts: [
+      bn(1, 18), // HolderCT 1 M -> 25%
+      bn(15, 17), // PS 1 1.5 -> 25%
+      bn(6, 17), // PS 2 0.6 -> 25%
+      bn(12, 17), // Airdrop 1.2 -> 25%
+      bn(12, 18), // Pachacuy team 12 -> 10%
+      bn(10, 18), // Part&Adv 10 -> 10%
+      bn(10, 18), // Mkt 10 -> 10%
+    ],
+    percentages: [25, 25, 25, 25, 10, 10, 10],
+    cleafTime: [1, 2, 3, 4, 5, 6, 7],
+  };
+
   return {
     // private sale
     ...commonPrivateSale,
@@ -264,7 +291,8 @@ function infoHelper(net) {
     // NFT
     ...pachacuyNftCollection,
 
-    // roles
+    // Vesting
+    ...vestinStakeholders,
   };
 }
 
