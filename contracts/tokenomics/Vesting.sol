@@ -40,7 +40,7 @@ contract Vesting is
     UUPSUpgradeable
 {
     /**
-     * ROLES FOR VESTING       Q        %
+     * ROLES FOR VESTING       Q     Vest %
      * -----
      * HOLDER_CUY_TOKEN     -> 1    -> 25%
      * PRIVATE_SALE_1       -> 1.5  -> 25%
@@ -50,7 +50,7 @@ contract Vesting is
      * PARTNER_ADVISOR      -> 10   -> 10%
      * MARKETING            -> 10   -> 10%
      * ------------------------------------
-     * TOTAL                -> 36.3 -> 100%
+     * TOTAL                -> 36.3
      */
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -290,14 +290,12 @@ contract Vesting is
                     _currVestingPeriod
                 ];
                 uint256 _todayClaimTime = block.timestamp;
-                require(
-                    _todayClaimTime > _currentDateOfVesting,
-                    "Vesting: You already claimed tokens for the current vesting period."
-                );
-                require(
-                    _currVestingPeriod < _vestingPeriods,
-                    "Vesting: All tokens for vesting have been claimed."
-                );
+
+                // "Vesting: You already claimed tokens for the current vesting period."
+                if (_todayClaimTime > _currentDateOfVesting) continue;
+
+                // "Vesting: All tokens for vesting have been claimed."
+                if (_currVestingPeriod < _vestingPeriods) continue;
 
                 uint256 _deltaIndex = _todayClaimTime
                     .sub(_currentDateOfVesting)

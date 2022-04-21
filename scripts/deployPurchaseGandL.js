@@ -74,7 +74,36 @@ RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
   var nftProducerPachacuyImp = await getImplementation(nftProducerPachacuy);
   console.log("NftProducerPachacuy Imp:", nftProducerPachacuyImp);
 
-  // final setting
+  /**
+   * Pachacuy Token PCUY
+   * 1. Gather all operators and pass it to the initialize
+   */
+  const PachaCuyToken = await gcf("PachaCuyToken");
+  const pachaCuyToken = await dp(
+    PachaCuyToken,
+    [
+      owner.address,
+      owner.address,
+      owner.address,
+      owner.address,
+      owner.address,
+      [purchaseAssetController.address],
+    ],
+    {
+      kind: "uups",
+    }
+  );
+  await pachaCuyToken.deployed();
+  console.log("PachaCuyToken Proxy:", pachaCuyToken.address);
+  var pachacuyImp = await getImplementation(pachaCuyToken);
+  console.log("PachaCuyToken Imp:", pachacuyImp);
+
+  // FINAL SETTING
+  await safeAwait(
+    () => purchaseAssetController.setPacuyTokenAddress(pachaCuyToken.address),
+    "PachaCuyToken address"
+  );
+
   await safeAwait(
     () => randomNumberGenerator.addToWhiteList(purchaseAssetController.address),
     "Random Number"
@@ -131,6 +160,15 @@ RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
   } catch (e) {
     console.error("Error veryfing - Guinea Pig", e);
   }
+
+  try {
+    await hre.run("verify:verify", {
+      address: pachacuyImp,
+      constructorArguments: [],
+    });
+  } catch (e) {
+    console.error("Error veryfing - Guinea Pig", e);
+  }
 }
 
 async function upgrade() {
@@ -143,7 +181,7 @@ async function upgrade() {
   // const PurchaseAssetController = await gcf("PurchaseAssetController");
   // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
 
-  var NFTPAddress = "0xc1a98940434609f6cBba6f271BbBab96c9f458Ab";
+  var NFTPAddress = "0x1517184267098FE72EAfE06971606Bb311966175";
   const NftProducerPachacuy = await gcf("NftProducerPachacuy");
   await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
 }

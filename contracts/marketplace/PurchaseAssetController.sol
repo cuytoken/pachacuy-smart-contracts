@@ -21,6 +21,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+import "@openzeppelin/contracts-upgradeable/token/ERC777/IERC777Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
@@ -45,6 +46,14 @@ contract PurchaseAssetController is
     // BUSD token
     using SafeERC20Upgradeable for IERC20Upgradeable;
     IERC20Upgradeable public busdToken;
+
+    // PCUY token
+    IERC777Upgradeable pachaCuyToken;
+
+    // Exchange rate PCUY -> BUSD
+    // Means 1 BUSD = 25 PCUY
+    uint256 public rateBusdToPcuy;
+
     IRandomNumberGenerator public randomNumberGenerator;
 
     // GuineaPig ERC1155
@@ -105,6 +114,16 @@ contract PurchaseAssetController is
         address custodianWallet
     );
 
+    // Purhcase of PachaPass event
+    event PurchasePachaPass(
+        address _account,
+        uint256 uuid,
+        uint256 landUuid,
+        uint256 price,
+        address tokenAddress,
+        address custodianWallet
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -124,10 +143,11 @@ contract PurchaseAssetController is
         busdToken = IERC20Upgradeable(_busdAddress);
         custodianWallet = _custodianWallet;
 
-        landPrice = 200 * 1e18;
+        rateBusdToPcuy = 25;
+        landPrice = 200 * rateBusdToPcuy * 1e18;
 
         // Guniea pig purchase - likelihood
-        _setLikelihoodAndPrices();
+        _setLikelihoodAndPrices(rateBusdToPcuy);
 
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
@@ -153,11 +173,20 @@ contract PurchaseAssetController is
         }
     }
 
+    function purchaseGuineaPigWithBusd(uint256 _ix) external {
+        _purchaseGuineaPig(_ix, address(busdToken));
+    }
+
+    function purchaseGuineaPigWithPcuy(uint256 _ix) external {
+        _purchaseGuineaPig(_ix, address(pachaCuyToken));
+    }
+
     /**
      * @dev Buy a guinea pig by using an index (_ix represents a specific prive of three)
      * @param _ix Index of the price. There are three prices: 1, 2 and 3
+     * @param _tokenAddress Address of the token to use for the purchase (BUSD or PCUY)
      */
-    function purchaseGuineaPigWithBusd(uint256 _ix) external {
+    function _purchaseGuineaPig(uint256 _ix, address _tokenAddress) internal {
         // Valid index (1, 2 or 3)
         require(
             _ix == 1 || _ix == 2 || _ix == 3,
@@ -172,19 +201,8 @@ contract PurchaseAssetController is
 
         uint256 price = likelihoodData[_ix].price;
 
-        require(
-            busdToken.balanceOf(_msgSender()) >= price,
-            "PurchaseAC: Not enough BUSD balance."
-        );
-
-        // Verify id customer has given allowance to the PurchaseAC contract
-        require(
-            busdToken.allowance(_msgSender(), address(this)) >= price,
-            "PurchaseAC: Allowance has not been given."
-        );
-
-        // SC transfers BUSD from purchaser to custodian wallet
-        busdToken.safeTransferFrom(_msgSender(), custodianWallet, price);
+        // Make transfer with appropiate token address
+        _purchaseAtPriceInPcuyAndToken(price, _tokenAddress);
 
         // Mark as ongoing transaction for a customer
         ongoingTransaction[_msgSender()] = Transaction({
@@ -201,24 +219,21 @@ contract PurchaseAssetController is
         emit GuineaPigPurchaseInit(_msgSender(), price, _ix, custodianWallet);
     }
 
+    function purchaseLandWithBusd(uint256 _location) external {
+        _purchaseLand(_location, address(busdToken));
+    }
+
+    function purchaseLandWithPcuy(uint256 _location) external {
+        _purchaseLand(_location, address(pachaCuyToken));
+    }
+
     /**
      * @dev Buy a guinea pig by using an index (_ix represents a specific prive of three)
      * @param _location Location of the land from 1 to 697
      */
-    function purchaseLandWithBusd(uint256 _location) external {
-        require(
-            busdToken.balanceOf(_msgSender()) >= landPrice,
-            "PurchaseAC: Not enough BUSD balance."
-        );
-
-        // Verify id customer has given allowance to the PurchaseAC contract
-        require(
-            busdToken.allowance(_msgSender(), address(this)) >= landPrice,
-            "PurchaseAC: Allowance has not been given."
-        );
-
-        // SC transfers BUSD from purchaser to custodian wallet
-        busdToken.safeTransferFrom(_msgSender(), custodianWallet, landPrice);
+    function _purchaseLand(uint256 _location, address _tokenAddress) internal {
+        // Make transfer with appropiate token address
+        _purchaseAtPriceInPcuyAndToken(landPrice, _tokenAddress);
 
         // mint a pacha
         uint256 uuid = nftProducerPachacuy.mintLandNft(
@@ -237,9 +252,183 @@ contract PurchaseAssetController is
         );
     }
 
+    function _purchaseAtPriceInPcuyAndToken(
+        uint256 _priceInPcuy,
+        address _tokenAddress
+    ) internal {
+        if (_tokenAddress == address(pachaCuyToken)) {
+            require(
+                pachaCuyToken.balanceOf(_msgSender()) >= _priceInPcuy,
+                "PurchaseAC: Not enough PCUY balance."
+            );
+            pachaCuyToken.operatorSend(
+                _msgSender(),
+                custodianWallet,
+                _priceInPcuy,
+                "",
+                ""
+            );
+        } else if (_tokenAddress == address(busdToken)) {
+            _priceInPcuy = _fromPcuyToBusd(_priceInPcuy);
+            require(
+                busdToken.balanceOf(_msgSender()) >= _priceInPcuy,
+                "PurchaseAC: Not enough BUSD balance."
+            );
+
+            // Verify id customer has given allowance to the PurchaseAC contract
+            require(
+                busdToken.allowance(_msgSender(), address(this)) >=
+                    _priceInPcuy,
+                "PurchaseAC: Allowance has not been given."
+            );
+
+            // SC transfers BUSD from purchaser to custodian wallet
+            busdToken.safeTransferFrom(
+                _msgSender(),
+                custodianWallet,
+                _priceInPcuy
+            );
+        }
+    }
+
+    function purchasePachaPassWithPcuy(uint256 _landUuid)
+        external
+        returns (uint256)
+    {
+        return _purchasePachaPass(_landUuid, address(pachaCuyToken));
+    }
+
+    function purchasePachaPassWithBusd(uint256 _landUuid)
+        external
+        returns (uint256)
+    {
+        return _purchasePachaPass(_landUuid, address(busdToken));
+    }
+
+    /**
+     * @notice Buy a Pacha Pass for a land that exist. It's purchase with PCUY only
+     * @notice To sell a Pacha Pass, a land must have been converted to private first
+     * @notice Type of distribution must be 2 for the Land
+     * @param _landUuid an existant uuid for the land whose PachaPass will be minted
+     * @param _tokenAddress token address to use for the purchase
+     */
+    function _purchasePachaPass(uint256 _landUuid, address _tokenAddress)
+        internal
+        returns (uint256)
+    {
+        (
+            ,
+            bool isPublic,
+            ,
+            uint256 pachaPassUuid,
+            uint256 pachaPassPrice,
+            uint256 typeOfDistribution,
+            ,
+            ,
+            ,
+            address owner
+        ) = nftProducerPachacuy.getLandData(_landUuid);
+
+        require(!isPublic, "PurchaseAC: Land must be private");
+        require(pachaPassUuid > 0, "PurchaseAC: PachaPass uuid does not exist");
+        require(typeOfDistribution == 2, "PurchaseAC: Distribution non-public");
+        require(pachaPassPrice > 0, "PurchaseAC: Price must be greater than 0");
+
+        // Fee is calculated in PCUY only. 'pachaPassPrice' is in PCUY
+        uint256 _fee = (pachaPassPrice * 18) / 100;
+        uint256 _net = pachaPassPrice - _fee;
+
+        // Purchase with PCUY
+        if (_tokenAddress == address(pachaCuyToken)) {
+            require(
+                pachaCuyToken.balanceOf(_msgSender()) >= pachaPassPrice,
+                "PurchaseAC: Not enough PCUY balance"
+            );
+
+            // No need to verify allowance
+
+            // SC transfers PCUY from purchaser to custodian wallet
+            pachaCuyToken.operatorSend(
+                _msgSender(),
+                custodianWallet,
+                _fee,
+                "",
+                ""
+            );
+
+            // SC transfers PCUY from purchaser to pacha owner
+            pachaCuyToken.operatorSend(_msgSender(), owner, _net, "", "");
+        } else if (_tokenAddress == address(busdToken)) {
+            pachaPassPrice = _fromPcuyToBusd(pachaPassPrice);
+            _fee = _fromPcuyToBusd(_fee);
+            _net = _fromPcuyToBusd(_net);
+
+            require(
+                busdToken.balanceOf(_msgSender()) >= pachaPassPrice,
+                "PurchaseAC: Not enough BUSD balance"
+            );
+
+            // Verify that customer has given allowance to the PurchaseAC contract
+            require(
+                busdToken.allowance(_msgSender(), address(this)) >=
+                    pachaPassPrice,
+                "PurchaseAC: Allowance has not been given"
+            );
+
+            // SC transfers BUSD from purchaser to custodian wallet
+            busdToken.safeTransferFrom(_msgSender(), custodianWallet, _fee);
+
+            // SC transfers BUSD from purchaser to pacha owner
+            busdToken.safeTransferFrom(_msgSender(), owner, _net);
+        } else {
+            revert("PurchaseAC: Token address invalid");
+        }
+
+        // Mint a pachapass
+        nftProducerPachacuy.mintPachaPassNft(
+            _msgSender(),
+            _landUuid,
+            pachaPassUuid,
+            typeOfDistribution,
+            pachaPassPrice,
+            "purchased"
+        );
+
+        // Emit event
+        emit PurchasePachaPass(
+            _msgSender(),
+            pachaPassUuid,
+            _landUuid,
+            pachaPassPrice,
+            _tokenAddress,
+            custodianWallet
+        );
+
+        return pachaPassUuid;
+    }
+
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
+
+    function _fromPcuyToBusd(uint256 _amount) internal view returns (uint256) {
+        return _amount / rateBusdToPcuy;
+    }
+
+    function _fromBusdToPcuy(uint256 _amount) internal view returns (uint256) {
+        return _amount * rateBusdToPcuy;
+    }
+
+    function setRateBusdToPcuy(uint256 _newRate)
+        external
+        onlyRole(GAME_MANAGER)
+    {
+        require(_newRate > 0, "PurchaseAC: Must be greater than 0");
+
+        rateBusdToPcuy = _newRate;
+        _setLikelihoodAndPrices(_newRate);
+    }
+
     function _finishPurchaseGuineaPig(
         uint256 _ix,
         address _account,
@@ -247,6 +436,7 @@ contract PurchaseAssetController is
         uint256 _randomNumber2
     ) internal {
         (
+            uint256 _gender,
             uint256 _race,
             uint256 _guineaPigId, // idForJsonFile 1 -> 8
             string memory _raceAndGender
@@ -267,6 +457,7 @@ contract PurchaseAssetController is
         // Mint Guinea Pigs
         uint256 _uuid = nftProducerPachacuy.mintGuineaPigNft(
             _account,
+            _gender,
             _race,
             _guineaPigId,
             ""
@@ -281,14 +472,23 @@ contract PurchaseAssetController is
         );
     }
 
-    function _setLikelihoodAndPrices() internal {
-        likelihoodData[1] = LikelihoodData(5 * 1e18, new uint256[](4));
+    function _setLikelihoodAndPrices(uint256 _rateBusdToPcuy) internal {
+        likelihoodData[1] = LikelihoodData(
+            5 * _rateBusdToPcuy * 1e18,
+            new uint256[](4)
+        );
         likelihoodData[1].likelihood = [70, 85, 95, 100];
 
-        likelihoodData[2] = LikelihoodData(10 * 1e18, new uint256[](4));
+        likelihoodData[2] = LikelihoodData(
+            10 * _rateBusdToPcuy * 1e18,
+            new uint256[](4)
+        );
         likelihoodData[2].likelihood = [20, 50, 80, 100];
 
-        likelihoodData[3] = LikelihoodData(15 * 1e18, new uint256[](4));
+        likelihoodData[3] = LikelihoodData(
+            15 * _rateBusdToPcuy * 1e18,
+            new uint256[](4)
+        );
         likelihoodData[3].likelihood = [10, 30, 60, 100];
     }
 
@@ -318,6 +518,7 @@ contract PurchaseAssetController is
         returns (
             uint256,
             uint256,
+            uint256,
             string memory
         )
     {
@@ -330,17 +531,18 @@ contract PurchaseAssetController is
         i += 1;
         assert(i >= 1 && i <= 4);
 
+        // 0: male, 1: female
         uint256 id = i + _genderRN * 4;
         assert(id >= 1 && i <= 8);
 
-        if (id == 1) return (i, id, "PERU MALE");
-        else if (id == 2) return (i, id, "INTI MALE");
-        else if (id == 3) return (i, id, "ANDINO MALE");
-        else if (id == 4) return (i, id, "SINTETICO MALE");
-        else if (id == 5) return (i, id, "PERU FEMALE");
-        else if (id == 6) return (i, id, "INTI FEMALE");
-        else if (id == 7) return (i, id, "ANDINO FEMALE");
-        else return (i, id, "SINTETICO FEMALE");
+        if (id == 1) return (_genderRN, i, id, "PERU MALE");
+        else if (id == 2) return (_genderRN, i, id, "INTI MALE");
+        else if (id == 3) return (_genderRN, i, id, "ANDINO MALE");
+        else if (id == 4) return (_genderRN, i, id, "SINTETICO MALE");
+        else if (id == 5) return (_genderRN, i, id, "PERU FEMALE");
+        else if (id == 6) return (_genderRN, i, id, "INTI FEMALE");
+        else if (id == 7) return (_genderRN, i, id, "ANDINO FEMALE");
+        else return (_genderRN, i, id, "SINTETICO FEMALE");
     }
 
     function _compareStrings(string memory a, string memory b)
@@ -394,6 +596,13 @@ contract PurchaseAssetController is
 
     function setLandPrice(uint256 _landPrice) external onlyRole(GAME_MANAGER) {
         landPrice = _landPrice;
+    }
+
+    function setPacuyTokenAddress(address _pachaCuyTokenAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        pachaCuyToken = IERC777Upgradeable(_pachaCuyTokenAddress);
     }
 
     ///////////////////////////////////////////////////////////////

@@ -70,6 +70,7 @@ contract NftProducerPachacuy is
     struct GuineaPigData {
         bool isGuineaPig;
         string race;
+        string gender;
         uint256 speed;
         uint256 daysUntilHungry;
         uint256 daysUntilDeath;
@@ -84,11 +85,15 @@ contract NftProducerPachacuy is
     // uuid => GuineaPig
     mapping(uint256 => GuineaPigData) internal _uuidToGuineaPigData;
 
+    // typeOfDistribution:PachaPass 1 private with not price | 2 public with price
     // Land data
     struct LandData {
         bool isLand;
         bool isPublic;
         uint256 uuid;
+        uint256 pachaPassUuid;
+        uint256 pachaPassPrice;
+        uint256 typeOfDistribution;
         uint256 idForJsonFile;
         uint256 wasPurchased;
         uint256 location;
@@ -96,6 +101,21 @@ contract NftProducerPachacuy is
     }
     // uuid => Land
     mapping(uint256 => LandData) internal _uuidToLandData;
+
+    // transferMode: purchased | transferred
+    // Pacha data
+    struct PachaPassdata {
+        bool isPachaPass;
+        uint256 pachaUuid;
+        uint256 typeOfDistribution;
+        uint256 uuid;
+        uint256 cost;
+        string transferMode;
+    }
+    // uuid => Pacha Pass
+    mapping(uint256 => PachaPassdata) internal _uuidToPachaPassData;
+
+    // Mapds uuids to json files
     mapping(uint256 => bool) internal _idsForJsonFile;
 
     // Map uuid -> token id
@@ -124,7 +144,7 @@ contract NftProducerPachacuy is
         public
         initializer
     {
-        _prefix = "ipfs://QmWQrpftdoXDq7f1vmKwmg5aeuorcXa1JcvwyqnU7VgCBr/";
+        _prefix = "ipfs://QmbbGgo93M6yr5WSUMj53SWN2vC7L6aMS1GZSPNkVRY8e4/";
 
         __ERC1155_init(_prefix);
         __AccessControl_init();
@@ -152,6 +172,7 @@ contract NftProducerPachacuy is
 
     function mintGuineaPigNft(
         address account,
+        uint256 gender, // 0, 1
         uint256 race, // 1 -> 4
         uint256 idForJsonFile, // 1 -> 8
         bytes memory data
@@ -167,6 +188,7 @@ contract NftProducerPachacuy is
 
         // Map uuid -> Guinea Pig Struct
         _uuidToGuineaPigData[uuid] = _getGuinieaPigStruct(
+            gender,
             race,
             uuid,
             idForJsonFile,
@@ -208,6 +230,9 @@ contract NftProducerPachacuy is
         _uuidToLandData[uuid] = LandData({
             isLand: true,
             isPublic: true,
+            pachaPassUuid: 0,
+            pachaPassPrice: 0,
+            typeOfDistribution: 0,
             uuid: uuid,
             location: idForJsonFile,
             idForJsonFile: idForJsonFile,
@@ -222,6 +247,163 @@ contract NftProducerPachacuy is
         _tokenIdCounter.increment();
 
         return uuid;
+    }
+
+    function setPachaToPublic(uint256 _landUuid) public {
+        // Verify that land's uuid exists
+        require(exists(_landUuid), "Nft P.: land uuid does not exist");
+
+        // Verify that is land's owner
+        require(
+            _uuidToLandData[_landUuid].owner == _msgSender(),
+            "Nft P.: you are not the owner of this land"
+        );
+
+        // Verify that land is private
+        require(
+            !_uuidToLandData[_landUuid].isPublic,
+            "Nft P.: land must be private"
+        );
+
+        // make the land public
+        _uuidToLandData[_landUuid].isPublic = true;
+    }
+
+    /**
+     * @notice Set a Pacha to private and choose type of distribution (private with not price or public with price)
+     * @param _landUuid uuid of the land for which the pacha pass will be created
+     * @param _price cost of pachapass in PCUY. If '_typeOfDistribution' is 1, '_price' must be 0
+     * @param _typeOfDistribution (1, 2) - private distribution (no price) or public sale of pacha pass
+     * @param _accounts list of addresses to mint the pachapass. If empty array is passed there is no mint of pacha passes
+     */
+    function setPachaToPrivateAndDistribution(
+        uint256 _landUuid,
+        uint256 _price,
+        uint256 _typeOfDistribution,
+        address[] memory _accounts
+    ) public {
+        // Verify that land's uuid exists
+        require(exists(_landUuid), "Nft P.: land uuid does not exist");
+
+        // Verify that is land's owner
+        require(
+            _uuidToLandData[_landUuid].owner == _msgSender(),
+            "Nft P.: you are not the owner of this land"
+        );
+
+        // Verify that distribution is either 0 or 1
+        require(
+            _typeOfDistribution == 1 || _typeOfDistribution == 2,
+            "Nft P.: distribution is 0 or 1"
+        );
+
+        // Verify that land is public
+        require(
+            _uuidToLandData[_landUuid].isPublic,
+            "Nft P.: land must be public"
+        );
+
+        // make the land private
+        _uuidToLandData[_landUuid].isPublic = false;
+
+        // set type of distribution for land
+        _uuidToLandData[_landUuid].typeOfDistribution = _typeOfDistribution;
+
+        // Creates a UUID for each mint
+        uint256 _uuid = _tokenIdCounter.current();
+        // For a land, set its pacha pass uuid
+        _uuidToLandData[_landUuid].pachaPassUuid = _uuid;
+
+        // if type of distribution of pachapass is private (with no price)
+        if (_typeOfDistribution == 1) {
+            require(_price == 0, "Nft. P: price must be 0");
+        } else if (_typeOfDistribution == 2) {
+            // if type of distribution of pachapass is public (with price)
+            require(_price > 0, "Nft. P: price greater than 0");
+            // For a land, set its pacha pass price
+            _uuidToLandData[_landUuid].pachaPassPrice = _price;
+        }
+
+        // If there are accounts, mint the pacha pass to each address
+        if (_accounts.length > 0) {
+            for (uint256 i = 0; i < _accounts.length; i++) {
+                _mintPachaPassNft(
+                    _accounts[i],
+                    _landUuid,
+                    _uuid,
+                    _typeOfDistribution,
+                    _price,
+                    "transferred"
+                );
+            }
+        }
+
+        _tokenIdCounter.increment();
+    }
+
+    function _mintPachaPassNft(
+        address _account,
+        uint256 _landUuid,
+        uint256 _uuidPachaPass,
+        uint256 _typeOfDistribution,
+        uint256 _price,
+        string memory _transferMode
+    ) internal {
+        _mint(_account, _uuidPachaPass, 1, "");
+
+        // Map owner -> uuid[]
+        _ownerToUuids[_account].push(_uuidPachaPass);
+        _setApprovalForAll(_account, address(this), true);
+
+        // Map uuid -> Pacha Pass Struct
+        _uuidToPachaPassData[_uuidPachaPass] = PachaPassdata({
+            isPachaPass: true,
+            pachaUuid: _landUuid,
+            typeOfDistribution: _typeOfDistribution,
+            uuid: _uuidPachaPass,
+            cost: _price,
+            transferMode: _transferMode
+        });
+    }
+
+    function mintPachaPassNft(
+        address _account,
+        uint256 _landUuid,
+        uint256 _uuidPachaPass,
+        uint256 _typeOfDistribution,
+        uint256 _price,
+        string memory _transferMode
+    ) public onlyRole(MINTER_ROLE) {
+        _mintPachaPassNft(
+            _account,
+            _landUuid,
+            _uuidPachaPass,
+            _typeOfDistribution,
+            _price,
+            _transferMode
+        );
+    }
+
+    function mintPachaPassNftAsOwner(
+        address[] memory _accounts,
+        uint256 _landUuid
+    ) external {
+        LandData memory landData = _uuidToLandData[_landUuid];
+        require(landData.owner == _msgSender(), "Nft P: Not the owner");
+        require(landData.isLand, "Nft P: Not a land");
+        require(!landData.isPublic, "Nft P: Land must be private");
+        require(landData.pachaPassUuid > 0, "Nft P: PachaPass do not exist");
+
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            _mintPachaPassNft(
+                _accounts[i],
+                _landUuid,
+                landData.pachaPassUuid,
+                landData.typeOfDistribution,
+                landData.pachaPassPrice,
+                "transferred"
+            );
+        }
     }
 
     function safeTransferFrom(
@@ -280,7 +462,28 @@ contract NftProducerPachacuy is
     ///////////////////////////////////////////////////////////////
     ////                   HELPERS FUNCTIONS                   ////
     ///////////////////////////////////////////////////////////////
+    function isGuineaPigAllowedInPacha(address _account, uint256 _landUuid)
+        external
+        view
+        returns (bool)
+    {
+        LandData memory landData = _uuidToLandData[_landUuid];
+
+        if (!landData.isLand) return false;
+        if (landData.isPublic) return true;
+
+        // All private land must have a uuid for its pachapass
+        require(
+            landData.pachaPassUuid != 0,
+            "Nft P.: Uuid's pachapass missing"
+        );
+        if (balanceOf(_account, landData.pachaPassUuid) > 0) {
+            return true;
+        } else return false;
+    }
+
     function _getGuinieaPigStruct(
+        uint256 _gender,
         uint256 _race,
         uint256 _uuid,
         uint256 _tokenId,
@@ -289,6 +492,7 @@ contract NftProducerPachacuy is
         return
             GuineaPigData({
                 isGuineaPig: true,
+                gender: _gender == 0 ? "MALE" : "FEMALE",
                 race: _races[_race - 1],
                 speed: _speeds[_race - 1],
                 daysUntilHungry: _daysUntilHungry[_race - 1],
@@ -309,7 +513,11 @@ contract NftProducerPachacuy is
     function getListOfNftsPerAccount(address _account)
         external
         view
-        returns (uint256[] memory guineaPigs, uint256[] memory lands)
+        returns (
+            uint256[] memory guineaPigs,
+            uint256[] memory lands,
+            uint256[] memory pachaPasses
+        )
     {
         {
             uint256[] memory _uuidsList = _ownerToUuids[_account];
@@ -317,9 +525,11 @@ contract NftProducerPachacuy is
 
             guineaPigs = new uint256[](length);
             lands = new uint256[](length);
+            pachaPasses = new uint256[](length);
 
             uint256 g = 0;
             uint256 l = 0;
+            uint256 h = 0;
 
             for (uint256 i = 0; i < length; i++) {
                 if (_uuidToGuineaPigData[_uuidsList[i]].isGuineaPig) {
@@ -328,6 +538,9 @@ contract NftProducerPachacuy is
                 } else if (_uuidToLandData[_uuidsList[i]].isLand) {
                     lands[l] = _uuidsList[i];
                     ++l;
+                } else if (_uuidToPachaPassData[_uuidsList[i]].isPachaPass) {
+                    pachaPasses[h] = _uuidsList[i];
+                    ++h;
                 }
             }
         }
@@ -338,6 +551,7 @@ contract NftProducerPachacuy is
         view
         returns (
             bool isGuineaPig,
+            string memory gender,
             string memory race,
             uint256 speed,
             uint256 daysUntilHungry,
@@ -351,8 +565,8 @@ contract NftProducerPachacuy is
             address owner
         )
     {
-        require(exists(_uuid), "Nft P.: uuid does not exist");
         isGuineaPig = _uuidToGuineaPigData[_uuid].isGuineaPig;
+        gender = _uuidToGuineaPigData[_uuid].gender;
         race = _uuidToGuineaPigData[_uuid].race;
         speed = _uuidToGuineaPigData[_uuid].speed;
         daysUntilHungry = _uuidToGuineaPigData[_uuid].daysUntilHungry;
@@ -373,6 +587,9 @@ contract NftProducerPachacuy is
             bool isLand,
             bool isPublic,
             uint256 uuid,
+            uint256 pachaPassUuid,
+            uint256 pachaPassPrice,
+            uint256 typeOfDistribution,
             uint256 location,
             uint256 idForJsonFile,
             uint256 wasPurchased,
@@ -382,10 +599,33 @@ contract NftProducerPachacuy is
         isLand = _uuidToLandData[_uuid].isLand;
         isPublic = _uuidToLandData[_uuid].isPublic;
         uuid = _uuidToLandData[_uuid].uuid;
+        pachaPassUuid = _uuidToLandData[_uuid].pachaPassUuid;
+        pachaPassPrice = _uuidToLandData[_uuid].pachaPassPrice;
+        typeOfDistribution = _uuidToLandData[_uuid].typeOfDistribution;
         location = _uuidToLandData[_uuid].location;
         idForJsonFile = _uuidToLandData[_uuid].idForJsonFile;
         wasPurchased = _uuidToLandData[_uuid].wasPurchased;
         owner = _uuidToLandData[_uuid].owner;
+    }
+
+    function getPachaPassData(uint256 _uuid)
+        external
+        view
+        returns (
+            bool isPachaPass,
+            uint256 pachaUuid,
+            uint256 typeOfDistribution,
+            uint256 uuid,
+            uint256 cost,
+            string memory transferMode
+        )
+    {
+        isPachaPass = _uuidToPachaPassData[_uuid].isPachaPass;
+        pachaUuid = _uuidToPachaPassData[_uuid].pachaUuid;
+        typeOfDistribution = _uuidToPachaPassData[_uuid].typeOfDistribution;
+        uuid = _uuidToPachaPassData[_uuid].uuid;
+        cost = _uuidToPachaPassData[_uuid].cost;
+        transferMode = _uuidToPachaPassData[_uuid].transferMode;
     }
 
     function _compareStrings(string memory a, string memory b)
@@ -450,6 +690,8 @@ contract NftProducerPachacuy is
                     ".json"
                 )
             );
+        } else if (_uuidToPachaPassData[_uuid].isPachaPass) {
+            fileName = string(abi.encodePacked(_prefix, "PACHAPASS.json"));
         }
 
         return bytes(_prefix).length > 0 ? fileName : "";
