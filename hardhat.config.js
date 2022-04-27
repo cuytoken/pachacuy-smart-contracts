@@ -3,6 +3,7 @@ require("dotenv").config();
 require("@openzeppelin/hardhat-upgrades");
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-etherscan");
+require("hardhat-erc1820");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -35,6 +36,11 @@ module.exports = {
     ],
   },
   networks: {
+    hardhat: {
+      mnemonic:
+        "celery essay chest split panda exist shoot toward void dynamic program cup",
+      path: "m/44'/60'/0'/0/account_index",
+    },
     localhost: {
       url: "http://127.0.0.1:8545/",
       timeout: 800000,

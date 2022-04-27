@@ -56,6 +56,10 @@ const minter_role = ethers.utils.keccak256(
   ethers.utils.toUtf8Bytes("MINTER_ROLE")
 );
 
+const game_manager = ethers.utils.keccak256(
+  ethers.utils.toUtf8Bytes("GAME_MANAGER")
+);
+
 var roles = {
   updater_role,
   upgrader_role,
@@ -63,6 +67,7 @@ var roles = {
   uri_setter_role,
   minter_role,
   rng_generator,
+  game_manager,
 };
 
 // 2
@@ -111,6 +116,15 @@ var LEGENDARIO = [1063, 108, 1080, 1182, 1284, 1578, 1586, 1626, 221, 26, 349];
 
 // 5
 var SUPREMO = [1403];
+
+async function mintInBatch(signer, listOfAccounts, token, type = "") {
+  var promises = listOfAccounts.map((account) =>
+    token
+      .connect(signer)
+      .mint(account.address, ethers.utils.parseEther("10000"))
+  );
+  await Promise.all(promises);
+}
 
 function infoHelper(net = "") {
   // private sale
@@ -260,6 +274,15 @@ function infoHelper(net = "") {
     cleafTime: [1, 2, 3, 4, 5, 6, 7],
   };
 
+  // Marketplace
+  var marketPlace = {};
+  if (net == "BSCTESTNET") {
+    marketPlace = {
+      _pcuyAddress: "0x21CC1f25B4B42A2D77025316dD57eeC9EFc81728",
+    };
+  } else if (net == "BSCNET") {
+  }
+
   return {
     // private sale
     ...commonPrivateSale,
@@ -293,6 +316,9 @@ function infoHelper(net = "") {
 
     // Vesting
     ...vestinStakeholders,
+
+    // Marketplace
+    ...marketPlace,
   };
 }
 
@@ -304,4 +330,5 @@ module.exports = {
   MISTICO,
   LEGENDARIO,
   safeAwait,
+  mintInBatch,
 };

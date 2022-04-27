@@ -5,3 +5,4 @@ build
 cache/
 
 .env
+VRFConsumerBaseV2.sol

@@ -161,6 +161,7 @@ contract NftProducerPachacuy is
         _grantRole(PAUSER_ROLE, _msgSender());
         _grantRole(MINTER_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
+        _grantRole(GAME_MANAGER, _msgSender());
 
         // 4 Races of guinea pig
         _races = ["PERU", "INTI", "ANDINO", "SINTETICO"];
@@ -168,6 +169,9 @@ contract NftProducerPachacuy is
         _daysUntilHungry = [uint256(5), 6, 7, 8];
         _daysUntilDeath = [uint256(3), 4, 5, 6];
         _samiPoints = [uint256(9), 10, 11, 12];
+
+        // starts counter at one
+        _tokenIdCounter.increment();
     }
 
     function mintGuineaPigNft(
@@ -294,7 +298,7 @@ contract NftProducerPachacuy is
         // Verify that distribution is either 0 or 1
         require(
             _typeOfDistribution == 1 || _typeOfDistribution == 2,
-            "Nft P.: distribution is 0 or 1"
+            "Nft P.: distribution is 1 or 2"
         );
 
         // Verify that land is public

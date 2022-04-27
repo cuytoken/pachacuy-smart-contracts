@@ -95,21 +95,25 @@ contract MarketplacePachacuy is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
-    function initialize(address _custodianWallet, address _busdAddress)
-        public
-        initializer
-    {
+    function initialize(
+        address _custodianWallet,
+        address _busdAddress,
+        address _pachaCuyTokenAddress
+    ) public initializer {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
         busdToken = IERC20Upgradeable(_busdAddress);
+        pachaCuyToken = IERC777Upgradeable(_pachaCuyTokenAddress);
+
         custodianWallet = _custodianWallet;
         rateBusdToPcuy = 25;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(PAUSER_ROLE, msg.sender);
-        _grantRole(UPGRADER_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(PAUSER_ROLE, _msgSender());
+        _grantRole(UPGRADER_ROLE, _msgSender());
+        _grantRole(GAME_MANAGER, _msgSender());
     }
 
     function purchaseNftWithBusd(address _smartContractAddress, uint256 _uuid)
@@ -271,13 +275,12 @@ contract MarketplacePachacuy is
         _tokenIdCounter.increment();
     }
 
-    function isMarketPlaceAllowed(address _scToVerify, address _account)
-        public
-        view
-        returns (bool)
-    {
+    function isMarketPlaceAllowed(
+        address _smartContractAddress,
+        address _account
+    ) public view returns (bool) {
         return
-            IERC721ERC1155(_scToVerify).isApprovedForAll(
+            IERC721ERC1155(_smartContractAddress).isApprovedForAll(
                 _account,
                 address(this)
             );
