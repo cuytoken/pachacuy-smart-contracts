@@ -598,7 +598,7 @@ contract PurchaseAssetController is
         landPrice = _landPrice;
     }
 
-    function setPacuyTokenAddress(address _pachaCuyTokenAddress)
+    function setPachacuyTokenAddress(address _pachaCuyTokenAddress)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {

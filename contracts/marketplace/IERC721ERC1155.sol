@@ -38,11 +38,43 @@ interface IERC721ERC1155 {
         bytes calldata _data
     ) external;
 
-    /// @notice Enable or disable approval for a third party ("operator") to manage
-    ///  all of `msg.sender`'s assets
-    /// @dev Emits the ApprovalForAll event. The contract MUST allow
-    ///  multiple operators per owner.
+    /// ERC721 - ERC1155
+    /// @notice Enable or disable approval for a third party ("operator") to manage all of `msg.sender`'s assets
+    /// @dev Emits the ApprovalForAll event. The contract MUST allow multiple operators per owner.
     /// @param _operator Address to add to the set of authorized operators
     /// @param _approved True if the operator is approved, false to revoke approval
     function setApprovalForAll(address _operator, bool _approved) external;
+
+    /**
+     * ERC-721
+     * @dev Returns the owner of the `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
+     */
+    function ownerOf(uint256 tokenId) external view returns (address owner);
+
+    /**
+     * ERC1155
+     * @dev Returns the amount of tokens of token type `id` owned by `account`.
+     *
+     * Requirements:
+     *
+     * - `account` cannot be the zero address.
+     */
+    function balanceOf(address account, uint256 id)
+        external
+        view
+        returns (uint256);
+
+    /**
+     * @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
+     *
+     * See {setApprovalForAll}
+     */
+    function isApprovedForAll(address owner, address operator)
+        external
+        view
+        returns (bool);
 }
