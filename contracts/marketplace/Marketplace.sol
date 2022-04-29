@@ -65,16 +65,19 @@ contract MarketplacePachacuy is
     address public custodianWallet;
 
     // ERC721 MocheCollection
-    address erc721Address;
+    address public erc721Address;
 
     // ERC1155 NFT game elements
-    address erc1155Address;
+    address public erc1155Address;
 
     // PCUY token
     IERC777Upgradeable pachaCuyToken;
 
     // Generic contract for 721 and 1155
     IERC721ERC1155 nftContract;
+
+    // Fee applied when purchase
+    uint256 public purchaseFee;
 
     struct NftItem {
         address nftOwner;
@@ -95,20 +98,19 @@ contract MarketplacePachacuy is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
-    function initialize(
-        address _custodianWallet,
-        address _busdAddress,
-        address _pachaCuyTokenAddress
-    ) public initializer {
+    function initialize(address _custodianWallet, address _busdAddress)
+        public
+        initializer
+    {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
         busdToken = IERC20Upgradeable(_busdAddress);
-        pachaCuyToken = IERC777Upgradeable(_pachaCuyTokenAddress);
 
         custodianWallet = _custodianWallet;
         rateBusdToPcuy = 25;
+        purchaseFee = 5;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
@@ -139,7 +141,7 @@ contract MarketplacePachacuy is
             _uuid
         ];
         // verify that nft is listed
-        require(nftItem.listed, "Marketplace: NFT is already listed");
+        require(nftItem.listed, "Marketplace: NFT is not listed");
 
         // verify you have given permission
         require(
@@ -170,7 +172,11 @@ contract MarketplacePachacuy is
         delete mapAdressToNftListed[_smartContractAddress][_uuid];
 
         // Make the payment
-        _purchaseAtPriceInPcuyAndToken(nftItem.price, _tokenAddress);
+        _purchaseAtPriceInPcuyAndTokenWithFee(
+            nftItem.price,
+            _tokenAddress,
+            nftItem.nftOwner
+        );
 
         // Make the transfer
         if (_smartContractAddress == erc721Address) {
@@ -333,24 +339,35 @@ contract MarketplacePachacuy is
         rateBusdToPcuy = _newRate;
     }
 
-    function _purchaseAtPriceInPcuyAndToken(
+    function _purchaseAtPriceInPcuyAndTokenWithFee(
         uint256 _priceInPcuy,
-        address _tokenAddress
+        address _tokenAddress,
+        address nftOwner
     ) internal {
+        uint256 _fee = (_priceInPcuy * purchaseFee) / 100;
+        uint256 _net = _priceInPcuy - _fee;
+
         if (_tokenAddress == address(pachaCuyToken)) {
             require(
                 pachaCuyToken.balanceOf(_msgSender()) >= _priceInPcuy,
                 "Marketplace: Not enough PCUY balance."
             );
+
+            // Paying the fee
             pachaCuyToken.operatorSend(
                 _msgSender(),
                 custodianWallet,
-                _priceInPcuy,
+                _fee,
                 "",
                 ""
             );
+
+            // Net is transferred to NFT owner
+            pachaCuyToken.operatorSend(nftOwner, _msgSender(), _net, "", "");
         } else if (_tokenAddress == address(busdToken)) {
             _priceInPcuy = _fromPcuyToBusd(_priceInPcuy);
+            _fee = _fromPcuyToBusd(_fee);
+            _net = _fromPcuyToBusd(_net);
             require(
                 busdToken.balanceOf(_msgSender()) >= _priceInPcuy,
                 "Marketplace: Not enough BUSD balance."
@@ -363,17 +380,37 @@ contract MarketplacePachacuy is
                 "Marketplace: Allowance has not been given."
             );
 
-            // SC transfers BUSD from purchaser to custodian wallet
-            busdToken.safeTransferFrom(
-                _msgSender(),
-                custodianWallet,
-                _priceInPcuy
-            );
+            // Paying the fee
+            busdToken.safeTransferFrom(_msgSender(), custodianWallet, _fee);
+
+            // Owner is paid
+            busdToken.safeTransferFrom(_msgSender(), nftOwner, _net);
         }
     }
 
     function getListOfNftsForSale() external view returns (NftItem[] memory) {
         return listOfNftItemsToSell;
+    }
+
+    function setErc721Address(address _erc721Address)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        erc721Address = _erc721Address;
+    }
+
+    function setErc1155Address(address _erc1155Address)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        erc1155Address = _erc1155Address;
+    }
+
+    function setPurchaseFee(uint256 _purchaseFee)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        purchaseFee = _purchaseFee;
     }
 
     ///////////////////////////////////////////////////////////////

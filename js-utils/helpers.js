@@ -121,7 +121,10 @@ async function mintInBatch(signer, listOfAccounts, token, type = "") {
   var promises = listOfAccounts.map((account) =>
     token
       .connect(signer)
-      .mint(account.address, ethers.utils.parseEther("10000"))
+      .mint(
+        account.address,
+        ethers.utils.parseEther("1000000" + "000000000000000000")
+      )
   );
   await Promise.all(promises);
 }
