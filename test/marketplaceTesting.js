@@ -8,7 +8,7 @@ const {
   LEGENDARIO,
 } = require("../js-utils/helpers");
 
-var bUSD, pcuyNFTC, BUSD, MarketplacePachacuy, baseUri;
+var bUSD, BUSD, MarketplacePachacuy;
 
 describe("NFT Moche Collection", function () {
   var owner,
@@ -36,6 +36,11 @@ describe("NFT Moche Collection", function () {
 
   // Purchase fee
   var marketPlaceFee = 5;
+
+  // Moche mapping address => uuid
+  var mocheMapping = [];
+  // Nft Producer mapping address => uuid
+  var nftProducerMapping = [];
 
   before(async function () {
     signers = await ethers.getSigners();
@@ -202,23 +207,37 @@ describe("NFT Moche Collection", function () {
     it("Lists items in Marketplace", async () => {
       price = pe("1000");
 
-      // Pachacuy NFT
+      // Pachacuy NFT Producer
       await Promise.all(
-        users.map((user, ix) =>
-          marketplacePachacuy
+        users.map((user, ix) => {
+          var i = ix + 1;
+          nftProducerMapping[ix] = {
+            uuid: String(i),
+            scAddress: nftProducerPachacuy.address,
+            owner: user.address,
+          };
+          return marketplacePachacuy
             .connect(user)
-            .setPriceAndListAsset(nftProducerPachacuy.address, ix + 1, price)
-        )
+            .setPriceAndListAsset(nftProducerPachacuy.address, i, price);
+        })
       );
 
       // Moche NFT
       await Promise.all(
-        users.map((user, ix) =>
-          marketplacePachacuy
+        users.map((user, ix) => {
+          mocheMapping[ix] = {
+            uuid: String(ix),
+            scAddress: pachacuyNftCollection.address,
+            owner: user.address,
+          };
+          return marketplacePachacuy
             .connect(user)
-            .setPriceAndListAsset(pachacuyNftCollection.address, ix, price)
-        )
+            .setPriceAndListAsset(pachacuyNftCollection.address, ix, price);
+        })
       );
+
+      var _list = await marketplacePachacuy.getListOfNftsForSale();
+      expect(_list.length).to.equal(8);
     });
 
     it("An item cannot be listed twice", async function () {
@@ -296,12 +315,14 @@ describe("NFT Moche Collection", function () {
       );
     });
   });
+
   describe("Marketplace puchase NFT BUSD", () => {
     var _balancePcuyCWallet;
     var _balanceBusdCWallet;
     var _balancePcuyAlice;
     var _balanceBusdAlice;
     var uuid;
+    var listToCheckedAgainst;
 
     it("Executes purchase - Moche", async function () {
       _balanceBusdCWallet = await bUSD.balanceOf(custodianWallet.address);
@@ -316,6 +337,32 @@ describe("NFT Moche Collection", function () {
       await marketplacePachacuy
         .connect(gary)
         .purchaseNftWithBusd(pachacuyNftCollection.address, uuid);
+    });
+
+    it("Coorect Uuid - 0 was take out from list", async () => {
+      var uuidRemoved = String(0);
+      var _list = await marketplacePachacuy.getListOfNftsForSale();
+      expect(_list.length).to.equal(7);
+      listToCheckedAgainst = [...nftProducerMapping, ...mocheMapping].filter(
+        (el) =>
+          !(
+            String(el.uuid) === uuidRemoved &&
+            el.scAddress === pachacuyNftCollection.address
+          )
+      );
+
+      for (var i = 0; i < listToCheckedAgainst.length; i++) {
+        var { uuid, scAddress, owner } = listToCheckedAgainst[i];
+        var temp = _list.filter((el) => {
+          var [_owner, _scAddress, _uuid] = el;
+          return (
+            uuid === _uuid.toString() &&
+            _scAddress === scAddress &&
+            owner === _owner
+          );
+        });
+        expect(temp.length).to.be.greaterThan(0);
+      }
     });
 
     it("NFT ownership is transferred - Moche", async () => {
@@ -342,7 +389,18 @@ describe("NFT Moche Collection", function () {
       );
     });
 
-    it("Same NFT cannot be purchased twice - Moche", async () => {});
+    it("Same NFT cannot be purchased twice - Moche", async () => {
+      var amountToApprove = ratioPcuyToBusd(ethers.BigNumber.from(price));
+      await bUSD
+        .connect(gary)
+        .approve(marketplacePachacuy.address, amountToApprove);
+      uuid = 0;
+      await expect(
+        marketplacePachacuy
+          .connect(gary)
+          .purchaseNftWithBusd(pachacuyNftCollection.address, uuid)
+      ).to.revertedWith("Marketplace: NFT is not listed");
+    });
 
     it("Executes purchase - ERC1155", async function () {
       _balanceBusdCWallet = await bUSD.balanceOf(custodianWallet.address);
@@ -357,6 +415,33 @@ describe("NFT Moche Collection", function () {
       await marketplacePachacuy
         .connect(huidobro)
         .purchaseNftWithBusd(nftProducerPachacuy.address, uuid);
+    });
+
+    it("Coorect Uuid - 1 was take out from list - erc1155", async () => {
+      var uuidRemoved = String(1);
+      var _list = await marketplacePachacuy.getListOfNftsForSale();
+      expect(_list.length).to.equal(6);
+
+      listToCheckedAgainst = listToCheckedAgainst.filter(
+        (el) =>
+          !(
+            String(el.uuid) === uuidRemoved &&
+            el.scAddress === nftProducerPachacuy.address
+          )
+      );
+
+      for (var i = 0; i < listToCheckedAgainst.length; i++) {
+        var { uuid, scAddress, owner } = listToCheckedAgainst[i];
+        var temp = _list.filter((el) => {
+          var [_owner, _scAddress, _uuid] = el;
+          return (
+            uuid === _uuid.toString() &&
+            _scAddress === scAddress &&
+            owner === _owner
+          );
+        });
+        expect(temp.length).to.be.greaterThan(0);
+      }
     });
 
     it("NFT ownership is transferred - ERC1155", async () => {
@@ -389,6 +474,74 @@ describe("NFT Moche Collection", function () {
       );
     });
 
-    it("Same NFT cannot be purchased twice - ERC1155", async () => {});
+    it("Same NFT cannot be purchased twice - ERC1155", async () => {
+      var amountToApprove = ratioPcuyToBusd(ethers.BigNumber.from(price));
+      await bUSD
+        .connect(huidobro)
+        .approve(marketplacePachacuy.address, amountToApprove);
+      var uuid = 1;
+      await expect(
+        marketplacePachacuy
+          .connect(huidobro)
+          .purchaseNftWithBusd(nftProducerPachacuy.address, uuid)
+      ).to.revertedWith("Marketplace: NFT is not listed");
+    });
+
+    it("A user puchase all NFTs from nftP ERC1155", async function () {
+      var _nftProducerUuids = [2, 3, 4];
+
+      var amountToApprove = ratioPcuyToBusd(ethers.BigNumber.from(price)).mul(
+        bn(3)
+      );
+      await bUSD
+        .connect(gary)
+        .approve(marketplacePachacuy.address, amountToApprove);
+
+      await Promise.all(
+        _nftProducerUuids.map((uuid, ix) =>
+          marketplacePachacuy
+            .connect(gary)
+            .purchaseNftWithBusd(nftProducerPachacuy.address, uuid)
+        )
+      );
+    });
+
+    it("Verifies that NFTs are not in the list anymore", async function () {
+      var _list = await marketplacePachacuy.getListOfNftsForSale();
+      expect(_list.length).to.equal(3);
+      var _rest = _list.filter((el) => {
+        var [owner, scAddress, uuid] = el;
+        return scAddress === nftProducerPachacuy.address;
+      });
+      expect(_rest.length).to.equal(0);
+    });
+
+    it("A user puchase all Moche NFTs ERC721", async function () {
+      var _mocheNftsUuids = [1, 2];
+      var amountToApprove = ratioPcuyToBusd(ethers.BigNumber.from(price)).mul(
+        bn(3)
+      );
+      await bUSD
+        .connect(huidobro)
+        .approve(marketplacePachacuy.address, amountToApprove);
+
+      await Promise.all(
+        _mocheNftsUuids.map((uuid, ix) =>
+          marketplacePachacuy
+            .connect(huidobro)
+            .purchaseNftWithBusd(pachacuyNftCollection.address, uuid)
+        )
+      );
+      var _list = await marketplacePachacuy.getListOfNftsForSale();
+      var [, , _uuid] = _list[0];
+      expect(_uuid.toString()).to.equal(String(3));
+
+      await marketplacePachacuy
+        .connect(huidobro)
+        .purchaseNftWithBusd(pachacuyNftCollection.address, 3);
+
+      var _list = await marketplacePachacuy.getListOfNftsForSale();
+      expect(_list.length).to.equal(0);
+    });
   });
 });

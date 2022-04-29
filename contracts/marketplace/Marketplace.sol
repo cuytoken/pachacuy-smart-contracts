@@ -93,7 +93,7 @@ contract MarketplacePachacuy is
     // Array of all NftItem listed
     NftItem[] listOfNftItemsToSell;
     // smart contract address => uuid => array index
-    mapping(address => mapping(uint256 => uint256)) _nftIx;
+    mapping(address => mapping(uint256 => uint256)) internal _nftIx;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -196,7 +196,9 @@ contract MarketplacePachacuy is
         }
 
         if (listOfNftItemsToSell.length == 1) {
-            delete listOfNftItemsToSell[0];
+            listOfNftItemsToSell.pop();
+
+            delete _nftIx[_smartContractAddress][_uuid];
 
             // decrease counter since array decreased in one
             _tokenIdCounter.decrement();
@@ -388,7 +390,7 @@ contract MarketplacePachacuy is
         }
     }
 
-    function getListOfNftsForSale() external view returns (NftItem[] memory) {
+    function getListOfNftsForSale() public view returns (NftItem[] memory) {
         return listOfNftItemsToSell;
     }
 
