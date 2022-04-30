@@ -28,6 +28,8 @@ describe("NFT Moche Collection", function () {
   var signers;
   var pe = ethers.utils.parseEther;
   var bn = ethers.BigNumber.from;
+  var PCUY;
+  var pCUY;
 
   // 1 BUSD = 25 PCUY
   var ratio = 25;
@@ -118,15 +120,17 @@ describe("NFT Moche Collection", function () {
       await marketplacePachacuy.setErc1155Address(nftProducerPachacuy.address);
 
       // PCUY
-      var PCUY = await gcf("ERC777Mock");
-      var pCUY = await dp(PCUY, [[marketplacePachacuy.address]], {
+      PCUY = await gcf("ERC777Mock");
+      pCUY = await dp(PCUY, [[marketplacePachacuy.address]], {
         kind: "uups",
       });
       await pCUY.deployed();
 
       // Marketplace set PCUY address
       await marketplacePachacuy.setPachacuyTokenAddress(pCUY.address);
+    });
 
+    it("Mints tokens for all users", async () => {
       // minting
       await mintInBatch(owner, signers, bUSD);
       await mintInBatch(owner, signers, pCUY);

@@ -65,10 +65,10 @@ contract MarketplacePachacuy is
     address public custodianWallet;
 
     // ERC721 MocheCollection
-    address public erc721Address;
+    address public MocheCollectionERC721;
 
     // ERC1155 NFT game elements
-    address public erc1155Address;
+    address public NftGamesERC1155;
 
     // PCUY token
     IERC777Upgradeable pachaCuyToken;
@@ -150,13 +150,13 @@ contract MarketplacePachacuy is
         );
 
         // Verify if owner of NFT is still the same who listed it
-        if (_smartContractAddress == erc721Address) {
+        if (_smartContractAddress == MocheCollectionERC721) {
             require(
                 nftItem.nftOwner ==
                     IERC721ERC1155(_smartContractAddress).ownerOf(_uuid),
                 "Marketplace: (721) the NFT's UUID points to a different owner"
             );
-        } else if (_smartContractAddress == erc1155Address) {
+        } else if (_smartContractAddress == NftGamesERC1155) {
             require(
                 IERC721ERC1155(_smartContractAddress).balanceOf(
                     nftItem.nftOwner,
@@ -179,13 +179,13 @@ contract MarketplacePachacuy is
         );
 
         // Make the transfer
-        if (_smartContractAddress == erc721Address) {
+        if (_smartContractAddress == MocheCollectionERC721) {
             IERC721ERC1155(_smartContractAddress).safeTransferFrom(
                 nftItem.nftOwner,
                 _msgSender(),
                 _uuid
             );
-        } else if (_smartContractAddress == erc1155Address) {
+        } else if (_smartContractAddress == NftGamesERC1155) {
             IERC721ERC1155(_smartContractAddress).safeTransferFrom(
                 nftItem.nftOwner,
                 _msgSender(),
@@ -248,13 +248,13 @@ contract MarketplacePachacuy is
         );
 
         // verify caller is owner of that NFT
-        if (_smartContractAddress == erc721Address) {
+        if (_smartContractAddress == MocheCollectionERC721) {
             require(
                 _msgSender() ==
                     IERC721ERC1155(_smartContractAddress).ownerOf(_uuid),
                 "Marketplace: (721) Caller is not the owner of this UUID"
             );
-        } else if (_smartContractAddress == erc1155Address) {
+        } else if (_smartContractAddress == NftGamesERC1155) {
             require(
                 IERC721ERC1155(_smartContractAddress).balanceOf(
                     _msgSender(),
@@ -394,18 +394,18 @@ contract MarketplacePachacuy is
         return listOfNftItemsToSell;
     }
 
-    function setErc721Address(address _erc721Address)
+    function setErc721Address(address _MocheCollectionERC721)
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        erc721Address = _erc721Address;
+        MocheCollectionERC721 = _MocheCollectionERC721;
     }
 
-    function setErc1155Address(address _erc1155Address)
+    function setErc1155Address(address _NftGamesERC1155)
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        erc1155Address = _erc1155Address;
+        NftGamesERC1155 = _NftGamesERC1155;
     }
 
     function setPurchaseFee(uint256 _purchaseFee)
