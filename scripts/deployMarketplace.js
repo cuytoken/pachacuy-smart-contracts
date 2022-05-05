@@ -59,7 +59,14 @@ async function main() {
   }
 }
 
-main()
+async function upgrade() {
+  var MktplcAddress = "0x6a354eC3975e748fc863A77DFb0409e68384AA73";
+  const MarketplacePachacuy = await gcf("MarketplacePachacuy");
+  await upgrades.upgradeProxy(MktplcAddress, MarketplacePachacuy);
+}
+
+// main()
+upgrade()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

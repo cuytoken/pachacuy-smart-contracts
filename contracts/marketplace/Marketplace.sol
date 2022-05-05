@@ -168,9 +168,6 @@ contract MarketplacePachacuy is
             revert("Marketplace: SC address passed incorrect");
         }
 
-        // delete mapping
-        delete mapAdressToNftListed[_smartContractAddress][_uuid];
-
         // Make the payment
         _purchaseAtPriceInPcuyAndTokenWithFee(
             nftItem.price,
@@ -195,39 +192,7 @@ contract MarketplacePachacuy is
             );
         }
 
-        if (listOfNftItemsToSell.length == 1) {
-            listOfNftItemsToSell.pop();
-
-            delete _nftIx[_smartContractAddress][_uuid];
-
-            // decrease counter since array decreased in one
-            _tokenIdCounter.decrement();
-            return;
-        }
-
-        // get _ix of element to remove
-        uint256 _ix = _nftIx[_smartContractAddress][_uuid];
-
-        // last index element at last ix of array
-        uint256 _lastEl = listOfNftItemsToSell.length - 1;
-
-        // smart contract and uuid do not point anywhere
-        delete _nftIx[_smartContractAddress][_uuid];
-
-        // temp of El at last position of array to be removed
-        NftItem memory tempNftItem = listOfNftItemsToSell[_lastEl];
-
-        // point last El to index to be replaced
-        _nftIx[tempNftItem.smartContract][tempNftItem.uuid] = _ix;
-
-        // swap last El from last position to index to be replaced
-        listOfNftItemsToSell[_ix] = listOfNftItemsToSell[_lastEl];
-
-        // remove last element
-        listOfNftItemsToSell.pop();
-
-        // decrease counter since array decreased in one
-        _tokenIdCounter.decrement();
+        _removeElementFromMarketplace(_smartContractAddress, _uuid);
     }
 
     function setPriceAndListAsset(
@@ -294,6 +259,24 @@ contract MarketplacePachacuy is
             );
     }
 
+    function removeItemFromMarketplace(
+        address _smartContractAddress,
+        uint256 _uuid
+    ) external {
+        NftItem memory nftItem = mapAdressToNftListed[_smartContractAddress][
+            _uuid
+        ];
+
+        require(nftItem.listed, "Marketplace: NFT is not listed");
+
+        require(
+            nftItem.nftOwner == _msgSender(),
+            "Marketplace: callable only by owner"
+        );
+
+        _removeElementFromMarketplace(_smartContractAddress, _uuid);
+    }
+
     function changePriceOfNft(
         address _smartContractAddress,
         uint256 _uuid,
@@ -310,7 +293,12 @@ contract MarketplacePachacuy is
 
         require(nftItem.listed, "Marketplace: Nft is not listed");
 
-        mapAdressToNftListed[_smartContractAddress][_uuid].price = _newPrice;
+        nftItem.price = _newPrice;
+
+        uint256 _ix = _nftIx[_smartContractAddress][_uuid];
+
+        mapAdressToNftListed[_smartContractAddress][_uuid] = nftItem;
+        listOfNftItemsToSell[_ix] = nftItem;
     }
 
     ///////////////////////////////////////////////////////////////
@@ -388,6 +376,48 @@ contract MarketplacePachacuy is
             // Owner is paid
             busdToken.safeTransferFrom(_msgSender(), nftOwner, _net);
         }
+    }
+
+    function _removeElementFromMarketplace(
+        address _smartContractAddress,
+        uint256 _uuid
+    ) internal {
+        // delete mapping
+        delete mapAdressToNftListed[_smartContractAddress][_uuid];
+
+        if (listOfNftItemsToSell.length == 1) {
+            listOfNftItemsToSell.pop();
+
+            delete _nftIx[_smartContractAddress][_uuid];
+
+            // decrease counter since array decreased in one
+            _tokenIdCounter.decrement();
+            return;
+        }
+
+        // get _ix of element to remove
+        uint256 _ix = _nftIx[_smartContractAddress][_uuid];
+
+        // last index element at last ix of array
+        uint256 _lastEl = listOfNftItemsToSell.length - 1;
+
+        // smart contract and uuid do not point anywhere
+        delete _nftIx[_smartContractAddress][_uuid];
+
+        // temp of El at last position of array to be removed
+        NftItem memory tempNftItem = listOfNftItemsToSell[_lastEl];
+
+        // point last El to index to be replaced
+        _nftIx[tempNftItem.smartContract][tempNftItem.uuid] = _ix;
+
+        // swap last El from last position to index to be replaced
+        listOfNftItemsToSell[_ix] = listOfNftItemsToSell[_lastEl];
+
+        // remove last element
+        listOfNftItemsToSell.pop();
+
+        // decrease counter since array decreased in one
+        _tokenIdCounter.decrement();
     }
 
     function getListOfNftsForSale() public view returns (NftItem[] memory) {
