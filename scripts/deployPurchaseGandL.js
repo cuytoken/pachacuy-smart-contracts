@@ -177,13 +177,13 @@ async function upgrade() {
   // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
   // await upgrades.upgradeProxy(RNGAddress, RandomNumberGenerator);
 
-  // var PACAddress = "0x6E143c44f0d905951e057406DA032305BA1A8cFf";
-  // const PurchaseAssetController = await gcf("PurchaseAssetController");
-  // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
+  var PACAddress = "0x1509A051E5B91aAa3dE22Ae22D119C8f1Cd3DA80";
+  const PurchaseAssetController = await gcf("PurchaseAssetController");
+  await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
 
-  var NFTPAddress = "0x1517184267098FE72EAfE06971606Bb311966175";
-  const NftProducerPachacuy = await gcf("NftProducerPachacuy");
-  await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
+  // var NFTPAddress = "0x1517184267098FE72EAfE06971606Bb311966175";
+  // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
+  // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
 }
 
 async function resetOngoingTransaction() {

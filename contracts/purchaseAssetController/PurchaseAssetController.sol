@@ -42,6 +42,7 @@ contract PurchaseAssetController is
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant GAME_MANAGER = keccak256("GAME_MANAGER");
     bytes32 public constant RNG_GENERATOR = keccak256("RNG_GENERATOR");
+    bytes32 public constant MONEY_TRANSFER = keccak256("MONEY_TRANSFER");
 
     // BUSD token
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -59,8 +60,8 @@ contract PurchaseAssetController is
     // GuineaPig ERC1155
     INftProducerPachacuy public nftProducerPachacuy;
 
-    // custodian wallet for busd
-    address public custodianWallet;
+    // pool rewards for busd
+    address public poolRewardsAddress;
 
     // price of each pacha
     uint256 public landPrice;
@@ -102,7 +103,7 @@ contract PurchaseAssetController is
         address _account,
         uint256 price,
         uint256 _ix,
-        address custodianWallet
+        address poolRewardsAddress
     );
 
     // Purchase of Land event
@@ -111,7 +112,7 @@ contract PurchaseAssetController is
         uint256 uuid,
         uint256 landPrice,
         uint256 _location,
-        address custodianWallet
+        address poolRewardsAddress
     );
 
     // Purhcase of PachaPass event
@@ -121,7 +122,7 @@ contract PurchaseAssetController is
         uint256 landUuid,
         uint256 price,
         address tokenAddress,
-        address custodianWallet
+        address poolRewardsAddress
     );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -129,7 +130,7 @@ contract PurchaseAssetController is
 
     function initialize(
         address _randomNumberGeneratorAddress,
-        address _custodianWallet,
+        address _poolRewardsAddress,
         address _busdAddress
     ) public initializer {
         __Pausable_init();
@@ -141,7 +142,7 @@ contract PurchaseAssetController is
         );
 
         busdToken = IERC20Upgradeable(_busdAddress);
-        custodianWallet = _custodianWallet;
+        poolRewardsAddress = _poolRewardsAddress;
 
         rateBusdToPcuy = 25;
         landPrice = 200 * rateBusdToPcuy * 1e18;
@@ -216,7 +217,12 @@ contract PurchaseAssetController is
         randomNumberGenerator.requestRandomNumber(_msgSender(), 2);
 
         // Emit event
-        emit GuineaPigPurchaseInit(_msgSender(), price, _ix, custodianWallet);
+        emit GuineaPigPurchaseInit(
+            _msgSender(),
+            price,
+            _ix,
+            poolRewardsAddress
+        );
     }
 
     function purchaseLandWithBusd(uint256 _location) external {
@@ -248,7 +254,7 @@ contract PurchaseAssetController is
             uuid,
             landPrice,
             _location,
-            custodianWallet
+            poolRewardsAddress
         );
     }
 
@@ -263,7 +269,7 @@ contract PurchaseAssetController is
             );
             pachaCuyToken.operatorSend(
                 _msgSender(),
-                custodianWallet,
+                poolRewardsAddress,
                 _priceInPcuy,
                 "",
                 ""
@@ -282,10 +288,10 @@ contract PurchaseAssetController is
                 "PurchaseAC: Allowance has not been given."
             );
 
-            // SC transfers BUSD from purchaser to custodian wallet
+            // SC transfers BUSD from purchaser to pool rewards
             busdToken.safeTransferFrom(
                 _msgSender(),
-                custodianWallet,
+                poolRewardsAddress,
                 _priceInPcuy
             );
         }
@@ -347,10 +353,10 @@ contract PurchaseAssetController is
 
             // No need to verify allowance
 
-            // SC transfers PCUY from purchaser to custodian wallet
+            // SC transfers PCUY from purchaser to pool rewards
             pachaCuyToken.operatorSend(
                 _msgSender(),
-                custodianWallet,
+                poolRewardsAddress,
                 _fee,
                 "",
                 ""
@@ -375,8 +381,8 @@ contract PurchaseAssetController is
                 "PurchaseAC: Allowance has not been given"
             );
 
-            // SC transfers BUSD from purchaser to custodian wallet
-            busdToken.safeTransferFrom(_msgSender(), custodianWallet, _fee);
+            // SC transfers BUSD from purchaser to pool rewards
+            busdToken.safeTransferFrom(_msgSender(), poolRewardsAddress, _fee);
 
             // SC transfers BUSD from purchaser to pacha owner
             busdToken.safeTransferFrom(_msgSender(), owner, _net);
@@ -401,10 +407,28 @@ contract PurchaseAssetController is
             _landUuid,
             pachaPassPrice,
             _tokenAddress,
-            custodianWallet
+            poolRewardsAddress
         );
 
         return pachaPassUuid;
+    }
+
+    function transferPcuyFromUserToPoolReward(
+        address _account,
+        uint256 _pcuyAmount
+    ) external onlyRole(MONEY_TRANSFER) {
+        require(
+            pachaCuyToken.balanceOf(_account) >= _pcuyAmount,
+            "PurchaseAC: Not enough PCUY balance."
+        );
+
+        pachaCuyToken.operatorSend(
+            _account,
+            poolRewardsAddress,
+            _pcuyAmount,
+            "",
+            ""
+        );
     }
 
     ///////////////////////////////////////////////////////////////

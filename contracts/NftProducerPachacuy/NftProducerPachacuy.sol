@@ -31,6 +31,9 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
+// Interfaces
+import "../tatacuy/ITatacuy.sol";
+
 /// @custom:security-contact lee@cuytoken.com
 contract NftProducerPachacuy is
     Initializable,
@@ -42,29 +45,21 @@ contract NftProducerPachacuy is
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
-    using CountersUpgradeable for CountersUpgradeable.Counter;
-    CountersUpgradeable.Counter private _tokenIdCounter;
-
-    using StringsUpgradeable for uint256;
-
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant GAME_MANAGER = keccak256("GAME_MANAGER");
 
-    // Guinea pig: token IDs
-    uint256 public constant PERU_MALE = 1;
-    uint256 public constant INTI_MALE = 2;
-    uint256 public constant ANDINO_MALE = 3;
-    uint256 public constant SINTETICO_MALE = 4;
-    uint256 public constant PERU_FEMALE = 5;
-    uint256 public constant INTI_FEMALE = 6;
-    uint256 public constant ANDINO_FEMALE = 7;
-    uint256 public constant SINTETICO_FEMALE = 8;
+    ITatacuy tatacuy;
 
-    // Pacha: token ID
-    uint256 public constant PACHA = 9;
+    using CountersUpgradeable for CountersUpgradeable.Counter;
+    CountersUpgradeable.Counter private _tokenIdCounter;
+
+    using StringsUpgradeable for uint256;
+
+    // NFT types
+    bytes32 public constant TATACUY = keccak256("TATACUY");
 
     // Guinea pig data
     struct GuineaPigData {
@@ -115,11 +110,13 @@ contract NftProducerPachacuy is
     // uuid => Pacha Pass
     mapping(uint256 => PachaPassdata) internal _uuidToPachaPassData;
 
-    // Mapds uuids to json files
-    mapping(uint256 => bool) internal _idsForJsonFile;
+    // Marks as true when a land has been purchased
+    mapping(uint256 => bool) internal isLandAlreadyTaken;
 
-    // Map uuid -> token id
-    mapping(uint256 => uint256) internal _uuidToTokenId;
+    // Map uuid -> token id or jsonForFile
+    // Used to get the id for the json file metadata
+    mapping(uint256 => uint256) internal _uuidToJsonFile;
+
     // Map owner -> uuid[]
     mapping(address => uint256[]) internal _ownerToUuids;
 
@@ -136,6 +133,9 @@ contract NftProducerPachacuy is
     uint256[4] private _daysUntilHungry;
     uint256[4] private _daysUntilDeath;
     uint256[4] private _samiPoints;
+
+    // Map uuid with NFT type
+    mapping(uint256 => bytes32) internal _nftTypes;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -185,7 +185,7 @@ contract NftProducerPachacuy is
         uint256 uuid = _tokenIdCounter.current();
 
         // Map uuid -> idForJsonFile
-        _uuidToTokenId[uuid] = idForJsonFile;
+        _uuidToJsonFile[uuid] = idForJsonFile;
 
         // Map owner -> uuid[]
         _ownerToUuids[account].push(uuid);
@@ -214,7 +214,7 @@ contract NftProducerPachacuy is
     ) public onlyRole(MINTER_ROLE) returns (uint256) {
         // Veryfies that location is not taken already
         require(
-            !_idsForJsonFile[idForJsonFile],
+            !isLandAlreadyTaken[idForJsonFile],
             "Nft P.: location already taken"
         );
 
@@ -222,10 +222,10 @@ contract NftProducerPachacuy is
         uint256 uuid = _tokenIdCounter.current();
 
         // Map uuid -> idForJsonFile
-        _uuidToTokenId[uuid] = idForJsonFile;
+        _uuidToJsonFile[uuid] = idForJsonFile;
 
         // Mark that space of land as purchased
-        _idsForJsonFile[idForJsonFile] = true;
+        isLandAlreadyTaken[idForJsonFile] = true;
 
         // Map owner -> uuid[]
         _ownerToUuids[account].push(uuid);
@@ -368,6 +368,45 @@ contract NftProducerPachacuy is
             cost: _price,
             transferMode: _transferMode
         });
+    }
+
+    function mintTatacuy(
+        address _account,
+        uint256 _pachaUuid,
+        bytes memory data
+    ) public onlyRole(MINTER_ROLE) returns (uint256) {
+        // validate that _account is an owner of that pacha
+        require(
+            balanceOf(_account, _pachaUuid) > 0,
+            "Nft P.: Wrong pacha owner"
+        );
+
+        // validate that there is not a Tatacuy at this pacha uuid
+        require(
+            tatacuy.getTatacuyInfoForAccount(_account, _pachaUuid).hasTatacuy,
+            "Nft P.: Pacha has a Tatacuy already"
+        );
+
+        uint256 uuid = _tokenIdCounter.current();
+        _mint(_account, uuid, 1, data);
+
+        // save in list of uuids for owner
+        _ownerToUuids[_account].push(uuid);
+
+        // save type of uuid minted
+        _nftTypes[uuid] = TATACUY;
+
+        // Save info in Tatacuy SC
+        tatacuy.registerTatacuy(
+            _account,
+            _pachaUuid,
+            uuid, // tatacuyUuid
+            data
+        );
+
+        _tokenIdCounter.increment();
+
+        return uuid;
     }
 
     function mintPachaPassNft(
@@ -667,6 +706,13 @@ contract NftProducerPachacuy is
         _ownerToUuids[_account].pop();
     }
 
+    function setTatacuyAddress(address _tatacuyAddress)
+        public
+        onlyRole(GAME_MANAGER)
+    {
+        tatacuy = ITatacuy(_tatacuyAddress);
+    }
+
     ///////////////////////////////////////////////////////////////
     ////               ERC1155 STANDARD FUNCTIONS              ////
     ///////////////////////////////////////////////////////////////
@@ -678,7 +724,7 @@ contract NftProducerPachacuy is
     function tokenURI(uint256 _uuid) public view returns (string memory) {
         require(exists(_uuid), "Nft P.: Token has not been minted.");
 
-        uint256 idForJsonFile = _uuidToTokenId[_uuid];
+        uint256 idForJsonFile = _uuidToJsonFile[_uuid];
 
         string memory fileName;
         if (_uuidToGuineaPigData[_uuid].isGuineaPig) {
