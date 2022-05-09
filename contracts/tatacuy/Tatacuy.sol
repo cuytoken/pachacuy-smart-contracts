@@ -150,7 +150,6 @@ contract Tatacuy is
     /**
      * @dev Starts a Tatacuy Campaign for a particular account and saves its info
      * @dev A user can create as many campaigns as Tatacuys he has
-     * @notice Only callable by Game Controller Smart Contract
      * @param _pachaUuid: Uuid of the Pacha that will received a Tatacuy
      * @param _tatacuyUuid: Uuid assigned when a Tatacuy was minted
      * @param _totalFundsPcuyDeposited: Total funds (in Sami Points) to be distributed in a Tatacuy campaign

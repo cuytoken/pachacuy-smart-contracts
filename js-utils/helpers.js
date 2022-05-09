@@ -60,6 +60,10 @@ const game_manager = ethers.utils.keccak256(
   ethers.utils.toUtf8Bytes("GAME_MANAGER")
 );
 
+const money_transfer = ethers.utils.keccak256(
+  ethers.utils.toUtf8Bytes("MONEY_TRANSFER")
+);
+
 var roles = {
   updater_role,
   upgrader_role,
@@ -68,6 +72,7 @@ var roles = {
   minter_role,
   rng_generator,
   game_manager,
+  money_transfer,
 };
 
 // 2

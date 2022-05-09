@@ -11,24 +11,24 @@ const {
   uri_setter_role,
   minter_role,
   rng_generator,
+  money_transfer,
+  game_manager,
 } = require("../js-utils/helpers");
 
 // const NETWORK = "BSCNET";
 const NETWORK = "BSCTESTNET";
 var gcf = hre.ethers.getContractFactory;
 var dp = upgrades.deployProxy;
-var id = ethers.BigNumber.from(420);
 
 async function main() {
   var [owner] = await ethers.getSigners();
-  upgrades.silenceWarnings();
+  if (!process.env.HARDHAT_NETWORK) upgrades.silenceWarnings();
 
   /**
    * RANDOM NUMBER GENERATOR
-   * 1. Set Random Number Generator address as consumer in VRF subscription
-   * 2. Add PurchaseAssetController sc within the whitelist
-   RandomNumberGenerator Proxy: 0x1ce83650ccb7705CEd8fDfe1d872B2021d5D3E98
-RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
+   * 1.  Set Random Number Generator address as consumer in VRF subscription
+   * 2. 001 Add PurchaseAssetController sc within the whitelist of Random Number Generator
+   * 2. 002 Add Tatacuy sc within the whitelist of Random Number Generator
    */
   const RandomNumberGenerator = await gcf("RandomNumberGenerator");
   const randomNumberGenerator = await dp(RandomNumberGenerator, [], {
@@ -42,8 +42,10 @@ RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
   /**
    * Purchase Asset Controller
    * 1. Pass within the initialize the ranmdom number generator address
-   * 2. setNftProducerPachacuyAddress
-   * 3. grant role rng_generator to the random number generator sc
+   * 2. 003 setNftProducerPachacuyAddress
+   * 2. 004 set Pcuy token address
+   * 3. 005 grant role rng_generator to the random number generator sc
+   * 4. 006 grant role money_transfer to Tatacuy
    */
   var { _busdToken } = infoHelper(NETWORK);
   const PurchaseAssetController = await gcf("PurchaseAssetController");
@@ -61,7 +63,7 @@ RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
 
   /**
    * NFT Producer
-   * 1. Grant Mint roles to PurchaseAssetController
+   * 1. 007 Grant Mint roles to PurchaseAssetController
    */
   var name = "In-game NFT Pachacuy";
   var symbol = "NFTGAMEPCUY";
@@ -73,6 +75,23 @@ RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
   console.log("NftProducerPachacuy Proxy:", nftProducerPachacuy.address);
   var nftProducerPachacuyImp = await getImplementation(nftProducerPachacuy);
   console.log("NftProducerPachacuy Imp:", nftProducerPachacuyImp);
+
+  /**
+   * Tatacuy
+   * 1, 008 Tatacuy must grant game_manager role to relayer bsc testnet
+   * 2, 009 Tatacuy must grant game_manager role to Nft producer
+   * 3. 010 Grant role rng_generator to the random number generator sc
+   *
+   */
+  var relayerBSCTestnetAddress = process.env.RELAYER_ADDRESS_BSC_TESTNET;
+  var Tatacuy = await gcf("Tatacuy");
+  var tatacuy = await dp(Tatacuy, [randomNumberGenerator.address], {
+    kind: "uups",
+  });
+  await tatacuy.deployed();
+  console.log("Tatacuy Proxy:", tatacuy.address);
+  var tatacuyImp = await getImplementation(tatacuy);
+  console.log("Tatacuy Imp:", tatacuyImp);
 
   /**
    * Pachacuy Token PCUY
@@ -95,33 +114,28 @@ RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
   );
   await pachaCuyToken.deployed();
   console.log("PachaCuyToken Proxy:", pachaCuyToken.address);
-  var pachacuyImp = await getImplementation(pachaCuyToken);
-  console.log("PachaCuyToken Imp:", pachacuyImp);
+  var pachacuyTokenImp = await getImplementation(pachaCuyToken);
+  console.log("PachaCuyToken Imp:", pachacuyTokenImp);
 
   // FINAL SETTING
   await safeAwait(
-    () => purchaseAssetController.setPacuyTokenAddress(pachaCuyToken.address),
-    "PachaCuyToken address"
-  );
-
-  await safeAwait(
     () => randomNumberGenerator.addToWhiteList(purchaseAssetController.address),
-    "Random Number"
+    "Random Number 001"
   );
   await safeAwait(
-    () =>
-      nftProducerPachacuy.grantRole(
-        minter_role,
-        purchaseAssetController.address
-      ),
-    "Granting Mint role"
+    () => randomNumberGenerator.addToWhiteList(tatacuy.address),
+    "Random Number 002"
   );
   await safeAwait(
     () =>
       purchaseAssetController.setNftProducerPachacuyAddress(
         nftProducerPachacuy.address
       ),
-    "Setting NftProducerPachacuy Address"
+    "Setting NftProducerPachacuy Address 003"
+  );
+  await safeAwait(
+    () => purchaseAssetController.setPcuyTokenAddress(pachaCuyToken.address),
+    "PachaCuyToken address 004"
   );
   await safeAwait(
     () =>
@@ -129,18 +143,43 @@ RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
         rng_generator,
         randomNumberGenerator.address
       ),
-    "Granting RNG role"
+    "Granting RNG role 005"
+  );
+  await safeAwait(
+    () => purchaseAssetController.grantRole(money_transfer, tatacuy.address),
+    "Granting RNG role 006"
+  );
+  await safeAwait(
+    () =>
+      nftProducerPachacuy.grantRole(
+        minter_role,
+        purchaseAssetController.address
+      ),
+    "Granting Mint role 007"
+  );
+  await safeAwait(
+    () => tatacuy.grantRole(game_manager, relayerBSCTestnetAddress),
+    "Granting Mint role 008"
+  );
+  await safeAwait(
+    () => tatacuy.grantRole(game_manager, nftProducerPachacuy.address),
+    "Granting Mint role 009"
+  );
+  await safeAwait(
+    () => tatacuy.grantRole(rng_generator, randomNumberGenerator.address),
+    "Granting Mint role 010"
   );
   console.log("Final setting finished!");
 
   // Verify smart contracts
+  if (!process.env.HARDHAT_NETWORK) return;
   try {
     await hre.run("verify:verify", {
       address: randomGeneratorImp,
       constructorArguments: [],
     });
   } catch (e) {
-    console.error("Error veryfing - VRF2", e);
+    console.error("Error veryfing - Random Number G.", e);
   }
 
   try {
@@ -149,7 +188,7 @@ RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
       constructorArguments: [],
     });
   } catch (e) {
-    console.error("Error veryfing - Market place", e);
+    console.error("Error veryfing - Purhcase Asset Controller", e);
   }
 
   try {
@@ -158,17 +197,28 @@ RandomNumberGenerator Imp: 0x18EE2236C7B92f1141AA56d0A1052E01B93Eb65E
       constructorArguments: [],
     });
   } catch (e) {
-    console.error("Error veryfing - Guinea Pig", e);
+    console.error("Error veryfing - Nft Producer", e);
   }
 
   try {
     await hre.run("verify:verify", {
-      address: pachacuyImp,
+      address: tatacuyImp,
       constructorArguments: [],
     });
   } catch (e) {
-    console.error("Error veryfing - Guinea Pig", e);
+    console.error("Error veryfing - Tatacuy", e);
   }
+
+  try {
+    await hre.run("verify:verify", {
+      address: pachacuyTokenImp,
+      constructorArguments: [],
+    });
+  } catch (e) {
+    console.error("Error veryfing - Token", e);
+  }
+
+  console.log("Verification of smart contracts finished");
 }
 
 async function upgrade() {
@@ -208,8 +258,8 @@ async function resetOngoingTransaction() {
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-// main()
-upgrade()
+main()
+  // upgrade()
   // resetOngoingTransaction()
   .then(() => process.exit(0))
   .catch((error) => {
