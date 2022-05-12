@@ -81,6 +81,7 @@ async function main() {
    * 1, 008 Tatacuy must grant game_manager role to relayer bsc testnet
    * 2, 009 Tatacuy must grant game_manager role to Nft producer
    * 3. 010 Grant role rng_generator to the random number generator sc
+   * 4. 011 set address of purchase asset controller in Tatacuy
    *
    */
   var relayerBSCTestnetAddress = process.env.RELAYER_ADDRESS_BSC_TESTNET;
@@ -168,6 +169,13 @@ async function main() {
   await safeAwait(
     () => tatacuy.grantRole(rng_generator, randomNumberGenerator.address),
     "Granting Mint role 010"
+  );
+  await safeAwait(
+    () =>
+      tatacuy.setAddressPurchaseAssetController(
+        purchaseAssetController.address
+      ),
+    "Add address of purchase Asset Controller 011"
   );
   console.log("Final setting finished!");
 

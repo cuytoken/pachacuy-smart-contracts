@@ -57,6 +57,22 @@ contract Tatacuy is
     }
     mapping(address => RandomTx) internal _randomTxs;
 
+    /**
+     * @dev Details the information of a Tatacuy. Additional properties attached for its campaign
+     * @param owner: Wallet address of the current owner of the Tatacuy
+     * @param tatacuyUuid: Uuid of the Tatacuy when it was minted
+     * @param pachaUuid: Uuid of the pacha where this Tatacuy is located
+     * @param creationDate: Timestamp of the Tatacuy when it was minted
+     * @param totalFundsPcuyDeposited: Amount of PCUYs deposited when a Tatacuy campaign was created
+     * @param ratePcuyToSamiPoints: Exchange rate from PCUY token to Sami Points when Tatacuy campaign was created
+     * @param totalFundsSamiPoints: Amount of Sami Points (converted from PCUY tokens) assignated for the campaign
+     * @param prizePerWinnerSamiPoints: Amount of Sami Points each winner will receive
+     * @param totalSamiPointsClaimed: Accumulates Sami Points after a player wins at a Tatacuy Game
+     * @param campaignStartDate: Timestamp when the campaign started
+     * @param campaignEndDate: Timestamp when the campaign ended
+     * @param hasTatacuy: Whether a Tatacuy exists or not
+     * @param isCampaignActive: Indicates if there is an active Tatacuy campaign
+     */
     struct TatacuyInfo {
         address owner;
         uint256 tatacuyUuid;
@@ -72,7 +88,7 @@ contract Tatacuy is
         bool hasTatacuy;
         bool isCampaignActive;
     }
-    // Owner Tatacuy -> Pacha UUID -> Tatacuy UUID  -> Struct of Campaign Info
+    // Owner Tatacuy -> Pacha UUID -> Tatacuy UUID  -> Struct of Tatacuy Info
     mapping(address => mapping(uint256 => TatacuyInfo)) ownerToTatacuy;
 
     // List of all active campaigns at any given time
@@ -256,18 +272,17 @@ contract Tatacuy is
 
     /**
      * @notice A guineapig could win Sami Points after trying luck at a Tatacuy
+     * @notice It's executed by a relayer in the cloud upon signature from the user
      * @dev It uses a Random Number Generator by Chainlink and the `_likelihood`
      * @param _account: The address for which random number request has been made
      * @param _pachaOwner: Wallet address of the pacha at which this Tatacuy is placed
      * @param _pachaUuid: Uuid of the pacha received when it was minted
-     * @param _tatacuyUuid: Uuid of the Tatacuy received when it was minted
      * @param _likelihood: A number between 1 and 10 in inclusive that represents tha chances of winning
      */
     function tryMyLuckTatacuy(
         address _account,
         address _pachaOwner,
         uint256 _pachaUuid,
-        uint256 _tatacuyUuid,
         uint256 _likelihood
     ) external onlyRole(GAME_MANAGER) {
         TatacuyInfo storage tatacuyInfo = ownerToTatacuy[_pachaOwner][
@@ -294,7 +309,7 @@ contract Tatacuy is
         _randomTxs[_account] = RandomTx({
             pachaOwner: _pachaOwner,
             pachaUuid: _pachaUuid,
-            tatacuyUuid: _tatacuyUuid,
+            tatacuyUuid: tatacuyInfo.tatacuyUuid,
             account: _account,
             likelihood: _likelihood
         });
@@ -330,6 +345,13 @@ contract Tatacuy is
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
 
+    /**
+     * @dev Retrives the list of all active Tatacuy campaigns
+     * @notice A campaign is when a Tatacuy is giving away prizes to Guinea Pigs
+     * @param _account: Wallet address of the user who owns a Tatacuy (hence a Pacha)
+     * @param _pachaUuid: Uuid of the pacha when it was minted
+     * @return Gives back an object with the structure of 'TatacuyInfo'
+     */
     function getTatacuyInfoForAccount(address _account, uint256 _pachaUuid)
         external
         view
@@ -338,6 +360,11 @@ contract Tatacuy is
         return ownerToTatacuy[_account][_pachaUuid];
     }
 
+    /**
+     * @dev Retrives the list of all active Tatacuy campaigns
+     * @notice A campaign is when a Tatacuy is giving away prizes to Guinea Pigs
+     * @return Gives back an array of objectes with the structure of 'TatacuyInfo'
+     */
     function getListOfTatacuyCampaigns()
         external
         view
