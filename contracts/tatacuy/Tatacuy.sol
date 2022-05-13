@@ -135,6 +135,12 @@ contract Tatacuy is
         _grantRole(UPGRADER_ROLE, _msgSender());
     }
 
+    /**
+     * @dev Trigger when it is minted
+     * @param _account: Wallet address of the current owner of the Pacha
+     * @param _pachaUuid: Uuid of the pacha when it was minted
+     * @param _tatacuyUuid: Uuid of the Tatacuy when it was minted
+     */
     function registerTatacuy(
         address _account,
         uint256 _pachaUuid,

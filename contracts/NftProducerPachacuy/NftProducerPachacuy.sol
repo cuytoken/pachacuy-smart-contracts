@@ -33,6 +33,7 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
 // Interfaces
 import "../tatacuy/ITatacuy.sol";
+import "../wiracocha/IWiracocha.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract NftProducerPachacuy is
@@ -52,6 +53,7 @@ contract NftProducerPachacuy is
     bytes32 public constant GAME_MANAGER = keccak256("GAME_MANAGER");
 
     ITatacuy tatacuy;
+    IWiracocha wiracocha;
 
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _tokenIdCounter;
@@ -60,6 +62,7 @@ contract NftProducerPachacuy is
 
     // NFT types
     bytes32 public constant TATACUY = keccak256("TATACUY");
+    bytes32 public constant WIRACOCHA = keccak256("WIRACOCHA");
 
     // Guinea pig data
     struct GuineaPigData {
@@ -370,11 +373,44 @@ contract NftProducerPachacuy is
         });
     }
 
+    function mintWiracocha(uint256 _pachaUuid) external returns (uint256) {
+        // validate that _account is an owner of that pacha
+        require(
+            balanceOf(_msgSender(), _pachaUuid) > 0,
+            "Nft P.: Wrong pacha owner/Account without pacha"
+        );
+
+        // validate that there is not a Wiracocha at this pacha uuid
+        require(
+            wiracocha
+                .getWiracochaInfoForAccount(_msgSender(), _pachaUuid)
+                .hasWiracocha,
+            "Nft P.: Pacha has a Wiracocha already"
+        );
+
+        uint256 uuid = _tokenIdCounter.current();
+        _mint(_msgSender(), uuid, 1, "");
+
+        // save in list of uuids for owner
+        _ownerToUuids[_msgSender()].push(uuid);
+
+        // save type of uuid minted
+        _nftTypes[uuid] = WIRACOCHA;
+
+        // Save info in Tatacuy SC
+        // uuid =>  wiracochaUuid
+        wiracocha.registerWiracocha(_msgSender(), _pachaUuid, uuid, "");
+
+        _tokenIdCounter.increment();
+
+        return uuid;
+    }
+
     function mintTatacuy(uint256 _pachaUuid) external returns (uint256) {
         // validate that _account is an owner of that pacha
         require(
             balanceOf(_msgSender(), _pachaUuid) > 0,
-            "Nft P.: Wrong pacha owner"
+            "Nft P.: Wrong pacha owner/Account without pacha"
         );
 
         // validate that there is not a Tatacuy at this pacha uuid
@@ -705,6 +741,13 @@ contract NftProducerPachacuy is
         onlyRole(GAME_MANAGER)
     {
         tatacuy = ITatacuy(_tatacuyAddress);
+    }
+
+    function setWiracochaAddress(address _wiracochaAddress)
+        public
+        onlyRole(GAME_MANAGER)
+    {
+        wiracocha = IWiracocha(_wiracochaAddress);
     }
 
     ///////////////////////////////////////////////////////////////

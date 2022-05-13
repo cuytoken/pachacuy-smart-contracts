@@ -43,9 +43,10 @@ async function main() {
    * Purchase Asset Controller
    * 1. Pass within the initialize the ranmdom number generator address
    * 2. 003 setNftProducerPachacuyAddress
-   * 2. 004 set Pcuy token address
-   * 3. 005 grant role rng_generator to the random number generator sc
-   * 4. 006 grant role money_transfer to Tatacuy
+   * 3. 004 set Pcuy token address
+   * 4. 005 grant role rng_generator to the random number generator sc
+   * 5. 006 grant role money_transfer to Tatacuy
+   *    006.1 grant role money_transfer to Wiracocha
    */
   var { _busdToken } = infoHelper(NETWORK);
   const PurchaseAssetController = await gcf("PurchaseAssetController");
@@ -64,6 +65,9 @@ async function main() {
   /**
    * NFT Producer
    * 1. 007 Grant Mint roles to PurchaseAssetController
+   *    007.1 set Tatacuy Address
+   *    007.2 set Wiracocha Address
+   *
    */
   var name = "In-game NFT Pachacuy";
   var symbol = "NFTGAMEPCUY";
@@ -95,6 +99,22 @@ async function main() {
   console.log("Tatacuy Imp:", tatacuyImp);
 
   /**
+   * Wiracocha
+   * 1. 011.1 Gave game_manager to relayer
+   * 2. 011.2 Gave game_manager to Nft Producer
+   * 2. 011.3 set address of purchase asset controller in Wiracocha
+   */
+  var relayerBSCTestnetAddress = process.env.RELAYER_ADDRESS_BSC_TESTNET;
+  var Wiracocha = await gcf("Wiracocha");
+  var wiracocha = await dp(Wiracocha, [], {
+    kind: "uups",
+  });
+  await wiracocha.deployed();
+  console.log("Wiracocha Proxy:", wiracocha.address);
+  var wiracochaImp = await getImplementation(wiracocha);
+  console.log("Wiracocha Imp:", wiracochaImp);
+
+  /**
    * Pachacuy Token PCUY
    * 1. Gather all operators and pass it to the initialize
    */
@@ -118,6 +138,10 @@ async function main() {
   var pachacuyTokenImp = await getImplementation(pachaCuyToken);
   console.log("PachaCuyToken Imp:", pachacuyTokenImp);
 
+  console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
+  console.log("Finish Setting up Smart Contracts");
+  console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
+
   // FINAL SETTING
   await safeAwait(
     () => randomNumberGenerator.addToWhiteList(purchaseAssetController.address),
@@ -127,6 +151,8 @@ async function main() {
     () => randomNumberGenerator.addToWhiteList(tatacuy.address),
     "Random Number 002"
   );
+
+  // Purhcase Asset Controller
   await safeAwait(
     () =>
       purchaseAssetController.setNftProducerPachacuyAddress(
@@ -151,6 +177,12 @@ async function main() {
     "Granting RNG role 006"
   );
   await safeAwait(
+    () => purchaseAssetController.grantRole(money_transfer, wiracocha.address),
+    "Granting RNG role 006.1"
+  );
+
+  // Nft Producer
+  await safeAwait(
     () =>
       nftProducerPachacuy.grantRole(
         minter_role,
@@ -158,6 +190,16 @@ async function main() {
       ),
     "Granting Mint role 007"
   );
+  await safeAwait(
+    () => nftProducerPachacuy.setTatacuyAddress(tatacuy.address),
+    "Granting Mint role 007.1"
+  );
+  await safeAwait(
+    () => nftProducerPachacuy.setWiracochaAddress(wiracocha.address),
+    "Granting Mint role 007.2"
+  );
+
+  // Tatacuy
   await safeAwait(
     () => tatacuy.grantRole(game_manager, relayerBSCTestnetAddress),
     "Granting Mint role 008"
@@ -176,6 +218,23 @@ async function main() {
         purchaseAssetController.address
       ),
     "Add address of purchase Asset Controller 011"
+  );
+
+  // Wiracocha
+  await safeAwait(
+    () => wiracocha.grantRole(game_manager, relayerBSCTestnetAddress),
+    "Granting Mint role 011.1"
+  );
+  await safeAwait(
+    () => wiracocha.grantRole(game_manager, nftProducerPachacuy.address),
+    "Granting Mint role 011.2"
+  );
+  await safeAwait(
+    () =>
+      wiracocha.setAddressPurchaseAssetController(
+        purchaseAssetController.address
+      ),
+    "Granting Mint role 011.3"
   );
   console.log("Final setting finished!");
 
@@ -215,6 +274,15 @@ async function main() {
     });
   } catch (e) {
     console.error("Error veryfing - Tatacuy", e);
+  }
+
+  try {
+    await hre.run("verify:verify", {
+      address: wiracochaImp,
+      constructorArguments: [],
+    });
+  } catch (e) {
+    console.error("Error veryfing - Wiracocha", e);
   }
 
   try {

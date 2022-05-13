@@ -38,7 +38,7 @@ contract PachacuyInformation is
     uint256 public amountOfBoxesPerPachaPerDay;
     uint256 public amountOfMinimumSamiPoints;
     uint256 public amountOfMaximumSamiPoints;
-    uint256 public exchangeRateBusdToPcuy;
+    uint256 public exchangeRatePcuyToSami;
 
     struct InformationBasedOnRank {
         uint256 maxSamiPoints;
@@ -57,7 +57,7 @@ contract PachacuyInformation is
         uint256 boxes,
         uint256 affectation
     );
-    event ExchangeRateBusdToPcuyDx(uint256 previousAmount, uint256 amount);
+    event ExchangeRatePcuyToSamiDx(uint256 previousAmount, uint256 amount);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -75,8 +75,8 @@ contract PachacuyInformation is
         amountOfMinimumSamiPoints = 1;
         amountOfMaximumSamiPoints = 15;
 
-        // 1 BUSD = 25 PCUY
-        exchangeRateBusdToPcuy = 25;
+        // 1 PCUY = 25 sami points
+        exchangeRatePcuyToSami = 25;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
@@ -113,18 +113,18 @@ contract PachacuyInformation is
             uint256 _amountOfBoxesPerPachaPerDay,
             uint256 _amountOfMinimumSamiPoints,
             uint256 _amountOfMaximumSamiPoints,
-            uint256 _exchangeRateBusdToPcuy
+            uint256 _exchangeRatePcuyToSami
         )
     {
         _infoArrayBasedOnRank = infoArrayBasedOnRank;
         _amountOfBoxesPerPachaPerDay = amountOfBoxesPerPachaPerDay;
         _amountOfMinimumSamiPoints = amountOfMinimumSamiPoints;
         _amountOfMaximumSamiPoints = amountOfMaximumSamiPoints;
-        _exchangeRateBusdToPcuy = exchangeRateBusdToPcuy;
+        _exchangeRatePcuyToSami = exchangeRatePcuyToSami;
     }
 
-    function getExchangeRateBusdToPcuy() external view returns (uint256) {
-        return exchangeRateBusdToPcuy;
+    function getExchangeRatePcuyToSami() external view returns (uint256) {
+        return exchangeRatePcuyToSami;
     }
 
     function getInformationByRank(uint256 _rank)
@@ -174,12 +174,12 @@ contract PachacuyInformation is
         amountOfMaximumSamiPoints = _amount;
     }
 
-    function setExchangeRateBusdToPcuy(uint256 _amount)
+    function setExchangeRatePcuyToSami(uint256 _amount)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        emit ExchangeRateBusdToPcuyDx(exchangeRateBusdToPcuy, _amount);
-        exchangeRateBusdToPcuy = _amount;
+        emit ExchangeRatePcuyToSamiDx(exchangeRatePcuyToSami, _amount);
+        exchangeRatePcuyToSami = _amount;
     }
 
     ///////////////////////////////////////////////////////////////

@@ -431,6 +431,19 @@ contract PurchaseAssetController is
         );
     }
 
+    function transferPcuyFromPoolRewardToUser(
+        address _account,
+        uint256 _pcuyAmount
+    ) external onlyRole(MONEY_TRANSFER) {
+        pachaCuyToken.operatorSend(
+            poolRewardsAddress,
+            _account,
+            _pcuyAmount,
+            "",
+            ""
+        );
+    }
+
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
