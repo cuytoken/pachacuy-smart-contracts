@@ -60,6 +60,16 @@ const game_manager = ethers.utils.keccak256(
   ethers.utils.toUtf8Bytes("GAME_MANAGER")
 );
 
+const money_transfer = ethers.utils.keccak256(
+  ethers.utils.toUtf8Bytes("MONEY_TRANSFER")
+);
+
+var pachacuyInfo = {
+  maxSamiPoints: [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000],
+  boxes: [100, 120, 140, 160, 180, 200, 220, 240, 260, 280],
+  affectation: [20, 28, 36, 44, 52, 60, 68, 76, 84, 92],
+};
+
 var roles = {
   updater_role,
   upgrader_role,
@@ -68,6 +78,7 @@ var roles = {
   minter_role,
   rng_generator,
   game_manager,
+  money_transfer,
 };
 
 // 2
@@ -327,6 +338,7 @@ function infoHelper(net = "") {
 
 module.exports = {
   ...roles,
+  pachacuyInfo,
   getImplementation,
   infoHelper,
   FENOMENO,

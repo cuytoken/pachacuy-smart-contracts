@@ -36,11 +36,7 @@ module.exports = {
     ],
   },
   networks: {
-    hardhat: {
-      mnemonic:
-        "celery essay chest split panda exist shoot toward void dynamic program cup",
-      path: "m/44'/60'/0'/0/account_index",
-    },
+    hardhat: {},
     localhost: {
       url: "http://127.0.0.1:8545/",
       timeout: 800000,
