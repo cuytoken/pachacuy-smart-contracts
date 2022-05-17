@@ -26,7 +26,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @custom:security-contact lee@cuytoken.com
-contract PachacuyInformation is
+contract PachacuyInfo is
     Initializable,
     PausableUpgradeable,
     AccessControlUpgradeable,
@@ -35,6 +35,15 @@ contract PachacuyInformation is
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
+    // Contract addresses
+    address public chakraAddress;
+    address public poolRewardAddress;
+    address public hatunWasiAddress;
+
+    // Asset Management
+    uint256 public purchaseTax;
+
+    // Magical Boxes
     uint256 public amountOfBoxesPerPachaPerDay;
     uint256 public amountOfMinimumSamiPoints;
     uint256 public amountOfMaximumSamiPoints;
@@ -59,6 +68,11 @@ contract PachacuyInformation is
     );
     event ExchangeRatePcuyToSamiDx(uint256 previousAmount, uint256 amount);
 
+    ///////////////////////////////////////////////////////////////
+    ////                        CHAKRA                         ////
+    ///////////////////////////////////////////////////////////////
+    uint256 public totalFood;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -71,18 +85,12 @@ contract PachacuyInformation is
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
-        amountOfBoxesPerPachaPerDay = 300;
-        amountOfMinimumSamiPoints = 1;
-        amountOfMaximumSamiPoints = 15;
-
-        // 1 PCUY = 25 sami points
-        exchangeRatePcuyToSami = 25;
-
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
 
         _setInformationBasedOnRank(_maxSamiPoints, _boxes, _affectation);
+        _setGameVariables();
     }
 
     function _setInformationBasedOnRank(
@@ -99,6 +107,20 @@ contract PachacuyInformation is
                 })
             );
         }
+    }
+
+    function _setGameVariables() internal {
+        amountOfBoxesPerPachaPerDay = 300;
+        amountOfMinimumSamiPoints = 1;
+        amountOfMaximumSamiPoints = 15;
+
+        // 1 PCUY = 25 sami points
+        exchangeRatePcuyToSami = 25;
+
+        // 18%
+        purchaseTax = 18;
+
+        totalFood = 12;
     }
 
     ///////////////////////////////////////////////////////////////
@@ -180,6 +202,34 @@ contract PachacuyInformation is
     {
         emit ExchangeRatePcuyToSamiDx(exchangeRatePcuyToSami, _amount);
         exchangeRatePcuyToSami = _amount;
+    }
+
+    function setChakraAddress(address _chakraAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        chakraAddress = _chakraAddress;
+    }
+
+    function setPoolRewardAddress(address _poolRewardAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        poolRewardAddress = _poolRewardAddress;
+    }
+
+    function setHatunWasiAddressAddress(address _hatunWasiAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        hatunWasiAddress = _hatunWasiAddress;
+    }
+
+    function setPurchaseTax(uint256 _purchaseTax)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        purchaseTax = _purchaseTax;
     }
 
     ///////////////////////////////////////////////////////////////

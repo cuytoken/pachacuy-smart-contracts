@@ -30,6 +30,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "../vrf/IRandomNumberGenerator.sol";
 import "../NftProducerPachacuy/INftProducerPachacuy.sol";
+import "../chakra/IChakra.sol";
+import "../info/IPachacuyInfo.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract PurchaseAssetController is
@@ -51,6 +53,12 @@ contract PurchaseAssetController is
     // PCUY token
     IERC777Upgradeable pachaCuyToken;
 
+    // chakra
+    IChakra chakra;
+
+    // Pachacuy Information
+    IPachacuyInfo pachacuyInfo;
+
     // Exchange rate PCUY -> BUSD
     // Means 1 BUSD = 25 PCUY
     uint256 public rateBusdToPcuy;
@@ -65,6 +73,9 @@ contract PurchaseAssetController is
 
     // price of each pacha
     uint256 public landPrice;
+
+    // price of each chakra
+    uint256 public chakraPrice;
 
     // Verifies that customer has one transaction at a time
     /**
@@ -146,6 +157,8 @@ contract PurchaseAssetController is
 
         rateBusdToPcuy = 25;
         landPrice = 200 * rateBusdToPcuy * 1e18;
+
+        chakraPrice = 8 * 10e18;
 
         // Guniea pig purchase - likelihood
         _setLikelihoodAndPrices(rateBusdToPcuy);
@@ -413,6 +426,35 @@ contract PurchaseAssetController is
         return pachaPassUuid;
     }
 
+    function purchaseChakra(uint256 _pachaUuid)
+        external
+        returns (uint256 chakraUuid)
+    {
+        _purchaseAtPriceInPcuyAndToken(chakraPrice, address(pachaCuyToken));
+
+        // mint a chakra
+        chakraUuid = nftProducerPachacuy.mintChakra(
+            _msgSender(),
+            _pachaUuid,
+            chakraPrice
+        );
+    }
+
+    function purchaseFoodFromChakra(uint256 _chakraUuid)
+        external
+        returns (uint256 availableFood)
+    {
+        (uint256 _price, address _owner) = IChakra(pachacuyInfo.chakraAddress())
+            .getFoodPriceNOwner(_chakraUuid);
+
+        _transferPcuyWithTax(_msgSender(), _owner, _price);
+
+        availableFood = nftProducerPachacuy.purchaseFood(
+            _msgSender(),
+            _chakraUuid
+        );
+    }
+
     function transferPcuyFromUserToPoolReward(
         address _account,
         uint256 _pcuyAmount
@@ -439,6 +481,29 @@ contract PurchaseAssetController is
             poolRewardsAddress,
             _account,
             _pcuyAmount,
+            "",
+            ""
+        );
+    }
+
+    function _transferPcuyWithTax(
+        address _from,
+        address _to,
+        uint256 _pcuyAmount
+    ) internal {
+        require(
+            pachaCuyToken.balanceOf(_from) >= _pcuyAmount,
+            "PurchaseAC: Not enough PCUY balance."
+        );
+
+        uint256 _fee = (_pcuyAmount * pachacuyInfo.purchaseTax()) / 100;
+        uint256 _net = _pcuyAmount - _fee;
+
+        pachaCuyToken.operatorSend(_from, _to, _net, "", "");
+        pachaCuyToken.operatorSend(
+            _from,
+            pachacuyInfo.poolRewardAddress(),
+            _fee,
             "",
             ""
         );
@@ -599,7 +664,7 @@ contract PurchaseAssetController is
         );
     }
 
-    function setNftProducerPachacuyAddress(address _NftProducerPachacuy)
+    function setNftPAddress(address _NftProducerPachacuy)
         public
         onlyRole(GAME_MANAGER)
     {
@@ -640,6 +705,13 @@ contract PurchaseAssetController is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         pachaCuyToken = IERC777Upgradeable(_pachaCuyTokenAddress);
+    }
+
+    function setPachacuyInfoAddress(address _infoAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        pachacuyInfo = IPachacuyInfo(_infoAddress);
     }
 
     ///////////////////////////////////////////////////////////////

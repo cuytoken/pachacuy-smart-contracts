@@ -92,9 +92,7 @@ describe("Purchase Testing", function () {
         minter_role,
         purchaseAssetController.address
       );
-      await purchaseAssetController.setNftProducerPachacuyAddress(
-        nftProducerPachacuy.address
-      );
+      await purchaseAssetController.setNftPAddress(nftProducerPachacuy.address);
       await purchaseAssetController.grantRole(
         rng_generator,
         randomNumberV2Mock.address

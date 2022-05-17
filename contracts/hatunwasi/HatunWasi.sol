@@ -14,7 +14,7 @@
 ////     \__\/       \__\/         \__\/         \__\/         \__\/         \__\/         \__\/                 ////
 ////                                                                                                             ////
 ////                                                 LAND OF CUYS                                                ////
-////                                                  Wiracocha                                                  ////
+////                                                   HatunWasi                                                 ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // SPDX-License-Identifier: MIT
@@ -24,10 +24,10 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "../purchaseAssetController/IPurchaseAssetController.sol";
+import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
 /// @custom:security-contact lee@cuytoken.com
-contract Wiracocha is
+contract HatunWasi is
     Initializable,
     PausableUpgradeable,
     AccessControlUpgradeable,
@@ -37,26 +37,31 @@ contract Wiracocha is
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant GAME_MANAGER = keccak256("GAME_MANAGER");
 
-    IPurchaseAssetController public purchaseAssetController;
+    using CountersUpgradeable for CountersUpgradeable.Counter;
+    CountersUpgradeable.Counter private _tokenIdCounter;
 
     /**
-     * @dev Details the information of a Tatacuy. Additional properties attached for its campaign
-     * @param owner: Wallet address of the current owner of Wiracocha
-     * @param wiracochaUuid: Uuid of the Tatacuy when it was minted
-     * @param pachaUuid: Uuid of the pacha where this Tatacuy is located
-     * @param creationDate: Timestamp of the Tatacuy when it was minted
-     * @param hasWiracocha: Whether a Wiracocha exists or not
+     * @dev Details the information of a Hatun Wasi. Additional properties attached for its campaign
+     * @param owner: Wallet address of the current owner of the Hatun Wasi
+     * @param hatunWasiUuid: Uuid of the Hatun Wasi when it was minted
+     * @param pachaUuid: Uuid of the pacha where the Hatun Wasi belongs to
+     * @param creationDate: Date when the Hatun Wasi was minted
+     * @param hasHatunWasi: Indicates wheter a Hatun Wasi exists exists or not
      */
-    struct WiracochaInfo {
+    struct HatunWasiInfo {
         address owner;
-        uint256 wiracochaUuid;
+        uint256 hatunWasiUuid;
         uint256 pachaUuid;
         uint256 creationDate;
-        uint256 amountPcuyExchanged;
-        bool hasWiracocha;
+        bool hasHatunWasi;
     }
-    // Owner Tatacuy -> Pacha UUID -> Wiracocha UUID  -> Struct of Wiracocha Info
-    mapping(address => mapping(uint256 => WiracochaInfo)) ownerToWiracocha;
+    // Owner Hatun Wasi -> Pacha UUID -> Struct of HatunWasi Info
+    mapping(address => mapping(uint256 => HatunWasiInfo)) uuidToHatunWasiInfo;
+
+    // List of Available Hatun Wasis
+    HatunWasiInfo[] listOfHatunWasis;
+    // Hatun Wasi uuid => array index
+    mapping(uint256 => uint256) internal _hatunWasiIx;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -69,77 +74,103 @@ contract Wiracocha is
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
+        _grantRole(GAME_MANAGER, _msgSender());
     }
 
     /**
      * @dev Trigger when it is minted
      * @param _account: Wallet address of the current owner of the Pacha
      * @param _pachaUuid: Uuid of the pacha when it was minted
-     * @param _wiracochaUuid: Uuid of the Wiracocha when it was minted
+     * @param _hatunWasiUuid: Uuid of the Hatun Wasi when it was minted
      */
-    function registerWiracocha(
+    function registerHatunWasi(
         address _account,
         uint256 _pachaUuid,
-        uint256 _wiracochaUuid,
-        bytes memory
+        uint256 _hatunWasiUuid
     ) external onlyRole(GAME_MANAGER) {
         require(
-            !ownerToWiracocha[_account][_pachaUuid].hasWiracocha,
-            "Tatacuy: Already exists one for this pacha"
+            !uuidToHatunWasiInfo[_account][_pachaUuid].hasHatunWasi,
+            "Hatun Wasi: It has one Hatun Wasi already"
         );
 
-        ownerToWiracocha[_account][_pachaUuid] = WiracochaInfo({
+        HatunWasiInfo memory hatunWasi = HatunWasiInfo({
             owner: _account,
-            wiracochaUuid: _wiracochaUuid,
+            hatunWasiUuid: _hatunWasiUuid,
             pachaUuid: _pachaUuid,
             creationDate: block.timestamp,
-            amountPcuyExchanged: 0,
-            hasWiracocha: true
+            hasHatunWasi: true
         });
+        uuidToHatunWasiInfo[_account][_pachaUuid] = hatunWasi;
+
+        uint256 current = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+
+        _hatunWasiIx[_hatunWasiUuid] = current;
+        listOfHatunWasis.push(hatunWasi);
     }
 
-    function exchangeSamiToPcuy(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _samiPoints,
-        uint256 _amountPcuy,
-        uint256 _rateSamiPointsToPcuy
-    ) external onlyRole(GAME_MANAGER) {
-        purchaseAssetController.transferPcuyFromPoolRewardToUser(
-            _account,
-            _amountPcuy
-        );
-        ownerToWiracocha[_account][_pachaUuid]
-            .amountPcuyExchanged += _amountPcuy;
-
-        // crear evento wiracocha
+    function burnHatunWasi(address _account, uint256 _pachaUuid)
+        external
+        onlyRole(GAME_MANAGER)
+    {
+        uint256 _hatunWasiUuid = uuidToHatunWasiInfo[_account][_pachaUuid]
+            .hatunWasiUuid;
+        delete uuidToHatunWasiInfo[_account][_pachaUuid];
+        _removeHatunWasiWithUuid(_hatunWasiUuid);
     }
 
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
 
-    /**
-     * @dev Retrives information about a Wiracocha
-     * @param _account: Wallet address of the user who owns a Wiracocha (hence a Pacha)
-     * @param _pachaUuid: Uuid of the pacha when it was minted
-     * @return Gives back an object with the structure of 'WiracochaInfo'
-     */
-    function getWiracochaInfoForAccount(address _account, uint256 _pachaUuid)
-        external
-        view
-        returns (WiracochaInfo memory)
-    {
-        return ownerToWiracocha[_account][_pachaUuid];
+    function _removeHatunWasiWithUuid(uint256 _hatuWasiUuid) internal {
+        uint256 _length = listOfHatunWasis.length;
+        if (_length == 1) {
+            listOfHatunWasis.pop();
+            delete _hatunWasiIx[_hatuWasiUuid];
+            _tokenIdCounter.decrement();
+        }
+
+        // get _ix of element to remove
+        uint256 _ix = _hatunWasiIx[_hatuWasiUuid];
+        delete _hatunWasiIx[_hatuWasiUuid];
+
+        // temp of El at last position of array to be removed
+        HatunWasiInfo memory _hatunWasi = listOfHatunWasis[_length - 1];
+
+        // point last El to index to be replaced
+        _hatunWasiIx[_hatunWasi.hatunWasiUuid] = _ix;
+
+        // swap last El from last position to index to be replaced
+        listOfHatunWasis[_ix] = _hatunWasi;
+
+        // remove last element
+        listOfHatunWasis.pop();
+
+        // decrease counter since array decreased in one
+        _tokenIdCounter.decrement();
     }
 
-    function setAddPAController(address _purchaseAssetController)
+    function tokenUri(uint256 _hatuWasiUuid)
+        public
+        view
+        returns (string memory)
+    {}
+
+    function getListOfHatunWasis()
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        view
+        returns (HatunWasiInfo[] memory)
     {
-        purchaseAssetController = IPurchaseAssetController(
-            _purchaseAssetController
-        );
+        return listOfHatunWasis;
+    }
+
+    function getAHatunWasi(address _account, uint256 _pachaUuid)
+        external
+        view
+        returns (HatunWasiInfo memory)
+    {
+        return uuidToHatunWasiInfo[_account][_pachaUuid];
     }
 
     ///////////////////////////////////////////////////////////////

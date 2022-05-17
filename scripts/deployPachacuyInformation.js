@@ -16,9 +16,9 @@ var id = ethers.BigNumber.from(420);
 async function main() {
   var [owner] = await ethers.getSigners();
 
-  var PachacuyInformation = await gcf("PachacuyInformation");
+  var PachacuyInfo = await gcf("PachacuyInfo");
   var pachacuyInformation = await dp(
-    PachacuyInformation,
+    PachacuyInfo,
     [pachacuyInfo.maxSamiPoints, pachacuyInfo.boxes, pachacuyInfo.affectation],
     {
       kind: "uups",
@@ -26,9 +26,9 @@ async function main() {
   );
 
   await pachacuyInformation.deployed();
-  console.log("PachacuyInformation Proxy:", pachacuyInformation.address);
+  console.log("PachacuyInfo Proxy:", pachacuyInformation.address);
   var pachacuyInformationImp = await getImplementation(pachacuyInformation);
-  console.log("PachacuyInformation Imp:", pachacuyInformationImp);
+  console.log("PachacuyInfo Imp:", pachacuyInformationImp);
 
   if (!process.env.HARDHAT_NETWORK) return;
   try {
@@ -43,8 +43,8 @@ async function main() {
 
 async function upgrade() {
   var PachacuyInformationAddress = "0xB9ca45D3d4288745636d8a904a42E92741C5aBB8";
-  const PachacuyInformation = await gcf("PachacuyInformation");
-  await upgrades.upgradeProxy(PachacuyInformationAddress, PachacuyInformation);
+  const PachacuyInfo = await gcf("PachacuyInfo");
+  await upgrades.upgradeProxy(PachacuyInformationAddress, PachacuyInfo);
 }
 
 // upgrade();

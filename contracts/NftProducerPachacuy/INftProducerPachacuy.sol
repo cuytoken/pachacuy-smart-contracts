@@ -39,4 +39,14 @@ interface INftProducerPachacuy {
             uint256 wasPurchased,
             address owner
         );
+
+    function mintChakra(
+        address _account,
+        uint256 _pachaUuid,
+        uint256 _chakraPrice
+    ) external returns (uint256);
+
+    function purchaseFood(address _account, uint256 _chakraUuid)
+        external
+        returns (uint256 availableFood);
 }

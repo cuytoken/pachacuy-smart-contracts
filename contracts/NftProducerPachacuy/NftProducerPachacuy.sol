@@ -28,12 +28,14 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
 // Interfaces
 import "../tatacuy/ITatacuy.sol";
 import "../wiracocha/IWiracocha.sol";
+import "../chakra/IChakra.sol";
+import "../hatunwasi/IHatunWasi.sol";
+import "../info/IPachacuyInfo.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract NftProducerPachacuy is
@@ -43,7 +45,6 @@ contract NftProducerPachacuy is
     ERC1155SupplyUpgradeable,
     PausableUpgradeable,
     ERC1155BurnableUpgradeable,
-    ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
@@ -54,6 +55,9 @@ contract NftProducerPachacuy is
 
     ITatacuy tatacuy;
     IWiracocha wiracocha;
+    IChakra chakra;
+    IHatunWasi hatunWasi;
+    IPachacuyInfo pachacuyInfo;
 
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _tokenIdCounter;
@@ -63,6 +67,8 @@ contract NftProducerPachacuy is
     // NFT types
     bytes32 public constant TATACUY = keccak256("TATACUY");
     bytes32 public constant WIRACOCHA = keccak256("WIRACOCHA");
+    bytes32 public constant CHAKRA = keccak256("CHAKRA");
+    bytes32 public constant HATUNWASI = keccak256("HATUNWASI");
 
     // Guinea pig data
     struct GuineaPigData {
@@ -218,7 +224,7 @@ contract NftProducerPachacuy is
         // Veryfies that location is not taken already
         require(
             !isLandAlreadyTaken[idForJsonFile],
-            "Nft P.: location already taken"
+            "NFP: location already taken"
         );
 
         // Creates a UUID for each mint
@@ -256,25 +262,25 @@ contract NftProducerPachacuy is
         return uuid;
     }
 
-    function setPachaToPublic(uint256 _landUuid) public {
-        // Verify that land's uuid exists
-        require(exists(_landUuid), "Nft P.: land uuid does not exist");
+    // function setPachaToPublic(uint256 _landUuid) public {
+    //     // Verify that land's uuid exists
+    //     require(exists(_landUuid), "NFP: land uuid does not exist");
 
-        // Verify that is land's owner
-        require(
-            _uuidToLandData[_landUuid].owner == _msgSender(),
-            "Nft P.: you are not the owner of this land"
-        );
+    //     // Verify that is land's owner
+    //     require(
+    //         _uuidToLandData[_landUuid].owner == _msgSender(),
+    //         "NFP: you are not the owner of this land"
+    //     );
 
-        // Verify that land is private
-        require(
-            !_uuidToLandData[_landUuid].isPublic,
-            "Nft P.: land must be private"
-        );
+    //     // Verify that land is private
+    //     require(
+    //         !_uuidToLandData[_landUuid].isPublic,
+    //         "NFP: land must be private"
+    //     );
 
-        // make the land public
-        _uuidToLandData[_landUuid].isPublic = true;
-    }
+    //     // make the land public
+    //     _uuidToLandData[_landUuid].isPublic = true;
+    // }
 
     // /**
     //  * @notice Set a Pacha to private and choose type of distribution (private with not price or public with price)
@@ -290,24 +296,24 @@ contract NftProducerPachacuy is
     //     address[] memory _accounts
     // ) public {
     //     // Verify that land's uuid exists
-    //     require(exists(_landUuid), "Nft P.: land uuid does not exist");
+    //     require(exists(_landUuid), "NFP: land uuid does not exist");
 
     //     // Verify that is land's owner
     //     require(
     //         _uuidToLandData[_landUuid].owner == _msgSender(),
-    //         "Nft P.: you are not the owner of this land"
+    //         "NFP: you are not the owner of this land"
     //     );
 
     //     // Verify that distribution is either 0 or 1
     //     require(
     //         _typeOfDistribution == 1 || _typeOfDistribution == 2,
-    //         "Nft P.: distribution is 1 or 2"
+    //         "NFP: distribution is 1 or 2"
     //     );
 
     //     // Verify that land is public
     //     require(
     //         _uuidToLandData[_landUuid].isPublic,
-    //         "Nft P.: land must be public"
+    //         "NFP: land must be public"
     //     );
 
     //     // make the land private
@@ -375,17 +381,14 @@ contract NftProducerPachacuy is
 
     function mintWiracocha(uint256 _pachaUuid) external returns (uint256) {
         // validate that _account is an owner of that pacha
-        require(
-            balanceOf(_msgSender(), _pachaUuid) > 0,
-            "Nft P.: Wrong pacha owner/Account without pacha"
-        );
+        require(balanceOf(_msgSender(), _pachaUuid) > 0, "NFP: No pacha found");
 
         // validate that there is not a Wiracocha at this pacha uuid
         require(
             wiracocha
                 .getWiracochaInfoForAccount(_msgSender(), _pachaUuid)
                 .hasWiracocha,
-            "Nft P.: Pacha has a Wiracocha already"
+            "NFP: Pacha has a Wiracocha already"
         );
 
         uint256 uuid = _tokenIdCounter.current();
@@ -408,17 +411,14 @@ contract NftProducerPachacuy is
 
     function mintTatacuy(uint256 _pachaUuid) external returns (uint256) {
         // validate that _account is an owner of that pacha
-        require(
-            balanceOf(_msgSender(), _pachaUuid) > 0,
-            "Nft P.: Wrong pacha owner/Account without pacha"
-        );
+        require(balanceOf(_msgSender(), _pachaUuid) > 0, "NFP: No pacha found");
 
         // validate that there is not a Tatacuy at this pacha uuid
         require(
             tatacuy
                 .getTatacuyInfoForAccount(_msgSender(), _pachaUuid)
                 .hasTatacuy,
-            "Nft P.: Pacha has a Tatacuy already"
+            "NFP: Pacha has a Tatacuy already"
         );
 
         uint256 uuid = _tokenIdCounter.current();
@@ -439,45 +439,123 @@ contract NftProducerPachacuy is
         return uuid;
     }
 
-    function mintPachaPassNft(
+    function mintChakra(
         address _account,
-        uint256 _landUuid,
-        uint256 _uuidPachaPass,
-        uint256 _typeOfDistribution,
-        uint256 _price,
-        string memory _transferMode
-    ) public onlyRole(MINTER_ROLE) {
-        _mintPachaPassNft(
-            _account,
-            _landUuid,
-            _uuidPachaPass,
-            _typeOfDistribution,
-            _price,
-            _transferMode
+        uint256 _pachaUuid,
+        uint256 _chakraPrice,
+        uint256 _prizePerFood
+    ) external onlyRole(MINTER_ROLE) returns (uint256) {
+        // validate that _account is an owner of that pacha
+        require(balanceOf(_account, _pachaUuid) > 0, "NFP: No pacha found");
+
+        uint256 uuid = _tokenIdCounter.current();
+        _mint(_account, uuid, 1, "");
+
+        // save in list of uuids for owner
+        _ownerToUuids[_account].push(uuid);
+
+        // save type of uuid minted
+        _nftTypes[uuid] = CHAKRA;
+
+        // Save info in Chakra SC
+        // uuid =>  chakraUuid
+        chakra.registerChakra(
+            _msgSender(),
+            _pachaUuid,
+            uuid,
+            _chakraPrice,
+            _prizePerFood
         );
+
+        _tokenIdCounter.increment();
+
+        return uuid;
     }
 
-    function mintPachaPassNftAsOwner(
-        address[] memory _accounts,
-        uint256 _landUuid
-    ) external {
-        LandData memory landData = _uuidToLandData[_landUuid];
-        require(landData.owner == _msgSender(), "Nft P: Not the owner");
-        require(landData.isLand, "Nft P: Not a land");
-        require(!landData.isPublic, "Nft P: Land must be private");
-        require(landData.pachaPassUuid > 0, "Nft P: PachaPass do not exist");
+    function purchaseFood(address _account, uint256 _chakraUuid)
+        external
+        onlyRole(GAME_MANAGER)
+        returns (uint256 availableFood)
+    {
+        // update Guinea Pig life span
 
-        for (uint256 i = 0; i < _accounts.length; i++) {
-            _mintPachaPassNft(
-                _accounts[i],
-                _landUuid,
-                landData.pachaPassUuid,
-                landData.typeOfDistribution,
-                landData.pachaPassPrice,
-                "transferred"
-            );
-        }
+        availableFood = chakra.consumeFoodFromChakra(_chakraUuid);
     }
+
+    function burnChakra(uint256 _chakraUuid) external {
+        _burn(_msgSender(), _chakraUuid, 1);
+
+        chakra.burnChakra(_chakraUuid);
+    }
+
+    function mintHatunWasi(uint256 _pachaUuid) external returns (uint256) {
+        // validate that _account is an owner of that pacha
+        require(balanceOf(_msgSender(), _pachaUuid) > 0, "NFP: No pacha found");
+
+        // validate that there is not a Wiracocha at this pacha uuid
+        IHatunWasi hw = IHatunWasi(pachacuyInfo.hatunWasiAddress());
+        require(
+            hw.getAHatunWasi(_msgSender(), _pachaUuid).hasHatunWasi,
+            "NFP: Hatun Wasi exists"
+        );
+
+        uint256 uuid = _tokenIdCounter.current();
+        _mint(_msgSender(), uuid, 1, "");
+
+        // save in list of uuids for owner
+        _ownerToUuids[_msgSender()].push(uuid);
+
+        // save type of uuid minted
+        _nftTypes[uuid] = HATUNWASI;
+
+        // Save info in Hatun Wasi SC
+        // uuid =>  hatunWasiUuid
+        hw.registerHatunWasi(_msgSender(), _pachaUuid, uuid);
+
+        _tokenIdCounter.increment();
+
+        return uuid;
+    }
+
+    // function mintPachaPassNft(
+    //     address _account,
+    //     uint256 _landUuid,
+    //     uint256 _uuidPachaPass,
+    //     uint256 _typeOfDistribution,
+    //     uint256 _price,
+    //     string memory _transferMode
+    // ) public onlyRole(MINTER_ROLE) {
+    //     _mintPachaPassNft(
+    //         _account,
+    //         _landUuid,
+    //         _uuidPachaPass,
+    //         _typeOfDistribution,
+    //         _price,
+    //         _transferMode
+    //     );
+    // }
+
+    // function mintPachaPassNftAsOwner(
+    //     address[] memory _accounts,
+    //     uint256 _landUuid
+    // ) external {
+    //     LandData memory landData = _uuidToLandData[_landUuid];
+    //     require(landData.owner == _msgSender(), "Nft P: Not the owner");
+    //     require(landData.isLand, "Nft P: Not a land");
+    //     require(!landData.isPublic, "Nft P: Land must be private");
+    //     require(landData.pachaPassUuid > 0, "Nft P: PachaPass do not exist");
+
+    //     for (uint256 i = 0; i < _accounts.length; i++) {
+    //         _mintPachaPassNft(
+    //             _accounts[i],
+    //             _landUuid,
+    //             landData.pachaPassUuid,
+    //             landData.typeOfDistribution,
+    //             landData.pachaPassPrice,
+    //             "transferred"
+    //         );
+    //     }
+    // }
 
     function safeTransferFrom(
         address from,
@@ -546,10 +624,7 @@ contract NftProducerPachacuy is
         if (landData.isPublic) return true;
 
         // All private land must have a uuid for its pachapass
-        require(
-            landData.pachaPassUuid != 0,
-            "Nft P.: Uuid's pachapass missing"
-        );
+        require(landData.pachaPassUuid != 0, "NFP: Uuid's pachapass missing");
         if (balanceOf(_account, landData.pachaPassUuid) > 0) {
             return true;
         } else return false;
@@ -681,25 +756,25 @@ contract NftProducerPachacuy is
         owner = _uuidToLandData[_uuid].owner;
     }
 
-    function getPachaPassData(uint256 _uuid)
-        external
-        view
-        returns (
-            bool isPachaPass,
-            uint256 pachaUuid,
-            uint256 typeOfDistribution,
-            uint256 uuid,
-            uint256 cost,
-            string memory transferMode
-        )
-    {
-        isPachaPass = _uuidToPachaPassData[_uuid].isPachaPass;
-        pachaUuid = _uuidToPachaPassData[_uuid].pachaUuid;
-        typeOfDistribution = _uuidToPachaPassData[_uuid].typeOfDistribution;
-        uuid = _uuidToPachaPassData[_uuid].uuid;
-        cost = _uuidToPachaPassData[_uuid].cost;
-        transferMode = _uuidToPachaPassData[_uuid].transferMode;
-    }
+    // function getPachaPassData(uint256 _uuid)
+    //     external
+    //     view
+    //     returns (
+    //         bool isPachaPass,
+    //         uint256 pachaUuid,
+    //         uint256 typeOfDistribution,
+    //         uint256 uuid,
+    //         uint256 cost,
+    //         string memory transferMode
+    //     )
+    // {
+    //     isPachaPass = _uuidToPachaPassData[_uuid].isPachaPass;
+    //     pachaUuid = _uuidToPachaPassData[_uuid].pachaUuid;
+    //     typeOfDistribution = _uuidToPachaPassData[_uuid].typeOfDistribution;
+    //     uuid = _uuidToPachaPassData[_uuid].uuid;
+    //     cost = _uuidToPachaPassData[_uuid].cost;
+    //     transferMode = _uuidToPachaPassData[_uuid].transferMode;
+    // }
 
     function _compareStrings(string memory a, string memory b)
         internal
@@ -711,14 +786,14 @@ contract NftProducerPachacuy is
     }
 
     function _rmvElFromOwnerToUuids(address _account, uint256 _uuid) internal {
-        require(_ownerToUuids[_account].length > 0, "Nft P.: Array is empty");
+        require(_ownerToUuids[_account].length > 0, "NFP: Array is empty");
 
         if (_ownerToUuids[_account].length == 1) {
             if (_ownerToUuids[_account][0] == _uuid) {
                 _ownerToUuids[_account].pop();
                 return;
             } else {
-                revert("Nft P.: Not found");
+                revert("NFP: Not found");
             }
         }
 
@@ -727,7 +802,7 @@ contract NftProducerPachacuy is
         for (i = 0; i < _ownerToUuids[_account].length; i++) {
             if (_ownerToUuids[_account][i] == _uuid) break;
         }
-        require(i != _ownerToUuids[_account].length, "Nft P.: Not found");
+        require(i != _ownerToUuids[_account].length, "NFP: Not found");
 
         // remove the element
         _ownerToUuids[_account][i] = _ownerToUuids[_account][
@@ -750,6 +825,13 @@ contract NftProducerPachacuy is
         wiracocha = IWiracocha(_wiracochaAddress);
     }
 
+    function setPachacuyInfoaddress(address _pachacuyInfo)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        pachacuyInfo = IPachacuyInfo(_pachacuyInfo);
+    }
+
     ///////////////////////////////////////////////////////////////
     ////               ERC1155 STANDARD FUNCTIONS              ////
     ///////////////////////////////////////////////////////////////
@@ -759,7 +841,7 @@ contract NftProducerPachacuy is
     }
 
     function tokenURI(uint256 _uuid) public view returns (string memory) {
-        require(exists(_uuid), "Nft P.: Token has not been minted.");
+        require(exists(_uuid), "NFP: Token has not been minted.");
 
         uint256 idForJsonFile = _uuidToJsonFile[_uuid];
 

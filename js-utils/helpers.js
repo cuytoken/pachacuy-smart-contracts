@@ -1,4 +1,24 @@
 require("dotenv").config();
+const hre = require("hardhat");
+
+async function executeSet(contract, command, args, messageWhenFailed) {
+  try {
+    return await contract[command](...args);
+  } catch (e) {
+    console.error(messageWhenFailed, e);
+  }
+}
+
+async function verify(_implementation, _contractName) {
+  try {
+    await hre.run("verify:verify", {
+      address: _implementation,
+      constructorArguments: [],
+    });
+  } catch (e) {
+    console.error(`Error veryfing - ${_contractName}`, e);
+  }
+}
 
 const { ethers, providers, BigNumber } = require("ethers");
 var bn = (n, d) => {
@@ -64,7 +84,7 @@ const money_transfer = ethers.utils.keccak256(
   ethers.utils.toUtf8Bytes("MONEY_TRANSFER")
 );
 
-var pachacuyInfo = {
+var pachacuyInfoForGame = {
   maxSamiPoints: [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000],
   boxes: [100, 120, 140, 160, 180, 200, 220, 240, 260, 280],
   affectation: [20, 28, 36, 44, 52, 60, 68, 76, 84, 92],
@@ -338,7 +358,7 @@ function infoHelper(net = "") {
 
 module.exports = {
   ...roles,
-  pachacuyInfo,
+  pachacuyInfoForGame,
   getImplementation,
   infoHelper,
   FENOMENO,
@@ -346,4 +366,6 @@ module.exports = {
   LEGENDARIO,
   safeAwait,
   mintInBatch,
+  verify,
+  executeSet,
 };

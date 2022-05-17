@@ -379,7 +379,7 @@ contract Tatacuy is
         return listActiveCampaigns;
     }
 
-    function setAddressPurchaseAssetController(address _purchaseAssetController)
+    function setAddPAController(address _purchaseAssetController)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
