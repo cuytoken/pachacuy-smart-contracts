@@ -42,6 +42,11 @@ contract RandomNumberV2Mock {
     address _smartc;
     address account;
 
+    /**
+     * @dev A mapping from the account to the latest random number obtained for this account
+     */
+    mapping(address => bool) internal whiteListSmartContract;
+
     function requestRandomNumber(address _account) external {
         _smartc = msg.sender;
         account = _account;
@@ -75,5 +80,9 @@ contract RandomNumberV2Mock {
         } catch (bytes memory reason) {
             emit ErrorNotHandled(reason, requestId, _smartc, account);
         }
+    }
+
+    function addToWhiteList(address _smartContractAddress) public {
+        whiteListSmartContract[_smartContractAddress] = true;
     }
 }

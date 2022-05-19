@@ -436,7 +436,8 @@ contract PurchaseAssetController is
         chakraUuid = nftProducerPachacuy.mintChakra(
             _msgSender(),
             _pachaUuid,
-            chakraPrice
+            chakraPrice,
+            0
         );
     }
 

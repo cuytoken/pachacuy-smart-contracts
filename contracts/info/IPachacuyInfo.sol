@@ -6,6 +6,10 @@ interface IPachacuyInfo {
 
     function chakraAddress() external returns (address);
 
+    function wiracochaAddress() external returns (address);
+
+    function tatacuyAddress() external returns (address);
+
     function poolRewardAddress() external returns (address);
 
     function hatunWasiAddress() external returns (address);

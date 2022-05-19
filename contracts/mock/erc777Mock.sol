@@ -63,13 +63,35 @@ contract ERC777Mock is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
-    function initialize(address[] memory defaultOperators_) public initializer {
+    function initialize(
+        address _vesting,
+        address _publicSale,
+        address _gameRewards,
+        address _proofOfHold,
+        address _pachacuyEvolution,
+        address[] memory defaultOperators_
+    ) public initializer {
         __ERC777_init("PachacuyMOCK", "PCUYMOCK", defaultOperators_);
         __AccessControl_init();
         __UUPSUpgradeable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
         _grantRole(MINTER_ROLE, _msgSender());
+
+        //_vesting
+        _mint(_vesting, 363 * 1e5 * 1e18, "", "");
+
+        //_publicSale
+        _mint(_publicSale, 17 * 1e5 * 1e18, "", "");
+
+        //_gameRewards
+        _mint(_gameRewards, 36 * 1e6 * 1e18, "", "");
+
+        //_proofOfHold
+        _mint(_proofOfHold, 6 * 1e6 * 1e18, "", "");
+
+        //_pachacuyEvolution
+        _mint(_pachacuyEvolution, 20 * 1e6 * 1e18, "", "");
     }
 
     function mint(address _account, uint256 _amount)

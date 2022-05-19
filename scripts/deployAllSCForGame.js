@@ -25,7 +25,7 @@ var dp = upgrades.deployProxy;
 
 async function main() {
   var [owner] = await ethers.getSigners();
-  if (!process.env.HARDHAT_NETWORK) upgrades.silenceWarnings();
+  if (process.env.HARDHAT_NETWORK) upgrades.silenceWarnings();
 
   /**
    * PACHACUY INFORMATION
@@ -98,9 +98,8 @@ async function main() {
   /**
    * NFT Producer
    * nftP 001 - Grant Mint roles to PurchaseAssetController
-   * nftP 002 - set Tatacuy Address
-   * nftP 003 - set Wiracocha Address
-   * nftP 004 - set setPachacuyInfoaddress
+   * nftP 002 - set setPachacuyInfoaddress
+   * nftP 003 - grant game_role to PurchaseAssetController
    */
   var name = "In-game NFT Pachacuy";
   var symbol = "NFTGAMEPCUY";
@@ -121,7 +120,6 @@ async function main() {
    * 4. tt 004 - set address of purchase asset controller in Tatacuy
    *
    */
-  var relayerBSCTestAdd = process.env.RELAYER_ADDRESS_BSC_TESTNET;
   var Tatacuy = await gcf("Tatacuy");
   var tatacuy = await dp(Tatacuy, [randomNumberGenerator.address], {
     kind: "uups",
@@ -137,7 +135,6 @@ async function main() {
    * 2. wi 002 - Gave game_manager to Nft Producer
    * 2. wi 003 - set address of purchase asset controller in Wiracocha
    */
-  var relayerBSCTestAdd = process.env.RELAYER_ADDRESS_BSC_TESTNET;
   var Wiracocha = await gcf("Wiracocha");
   var wiracocha = await dp(Wiracocha, [], {
     kind: "uups",
@@ -233,13 +230,12 @@ async function main() {
   var wAd = wiracocha.address;
   var pIAdd = pachacuyInfo.address;
   await executeSet(nftP, "grantRole", [minter_role, pacAdd], "nftP 001");
-  await executeSet(nftP, "setTatacuyAddress", [ttAdd], "nftP 002");
-  await executeSet(nftP, "setWiracochaAddress", [wAd], "nftP 003");
-  await executeSet(nftP, "setPachacuyInfoaddress", [pIAdd], "nftP 004");
+  await executeSet(nftP, "setPachacuyInfoaddress", [pIAdd], "nftP 002");
+  await executeSet(nftP, "grantRole", [game_manager, pacAdd], "nftP 003");
 
   // Tatacuy
   var tt = tatacuy;
-  var rel = relayerBSCTestAdd;
+  var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
   var nftAdd = nftProducerPachacuy.address;
   var pacAdd = purchaseAssetController.address;
   var rngAdd = randomNumberGenerator.address;
@@ -250,7 +246,7 @@ async function main() {
 
   // Wiracocha
   var wi = wiracocha;
-  var rel = relayerBSCTestAdd;
+  var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
   var nftAdd = nftProducerPachacuy.address;
   var pacAdd = purchaseAssetController.address;
   await executeSet(wi, "grantRole", [game_manager, rel], "wi 001");
@@ -266,9 +262,13 @@ async function main() {
   var pI = pachacuyInfo;
   var wallet = process.env.WALLET_FOR_FUNDS;
   var hwAdd = hatunWasi.address;
+  var wir = wiracocha.address;
+  var ttc = tatacuy.address;
   await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
   await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
   await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
+  await executeSet(pI, "setTatacuyAddress", [ttc], "pI 009");
+  await executeSet(pI, "setWiracochaAddress", [wir], "pI 010");
 
   // HATUN WASI
   var hw = hatunWasi;
@@ -290,6 +290,7 @@ async function main() {
   await verify(pachacuyTokenImp, "Pachacuy token");
   await verify(chakraImp, "Chakra");
   await verify(pachacuyInfoImp, "Pachacuy Info");
+  await verify(hatunWasiImp, "Hatun Wasi");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Verification of smart contracts finished");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
@@ -301,20 +302,24 @@ async function upgrade() {
   // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
   // await upgrades.upgradeProxy(RNGAddress, RandomNumberGenerator);
 
-  var PACAddress = "0x1509A051E5B91aAa3dE22Ae22D119C8f1Cd3DA80";
-  const PurchaseAssetController = await gcf("PurchaseAssetController");
-  await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
+  // var PACAddress = "0x1509A051E5B91aAa3dE22Ae22D119C8f1Cd3DA80";
+  // const PurchaseAssetController = await gcf("PurchaseAssetController");
+  // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
 
-  // var NFTPAddress = "0x1517184267098FE72EAfE06971606Bb311966175";
-  // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
-  // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
+  var NFTPAddress = "0x39386594B85Ca664326D325aABcfD225cA8dDBc2";
+  const NftProducerPachacuy = await gcf("NftProducerPachacuy");
+  await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
+
+  // var WiracochaAddress = "0xa106BFC5387939DeA7d1EEf4d7bE008543174B1d";
+  // const WiracochaContract = await gcf("Wiracocha");
+  // await upgrades.upgradeProxy(WiracochaAddress, WiracochaContract);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
+// upgrade()
+// resetOngoingTransaction()
 main()
-  // upgrade()
-  // resetOngoingTransaction()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

@@ -39,6 +39,8 @@ contract PachacuyInfo is
     address public chakraAddress;
     address public poolRewardAddress;
     address public hatunWasiAddress;
+    address public wiracochaAddress;
+    address public tatacuyAddress;
 
     // Asset Management
     uint256 public purchaseTax;
@@ -223,6 +225,20 @@ contract PachacuyInfo is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         hatunWasiAddress = _hatunWasiAddress;
+    }
+
+    function setTatacuyAddress(address _tatacuyAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        tatacuyAddress = _tatacuyAddress;
+    }
+
+    function setWiracochaAddress(address _wiracochaAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        wiracochaAddress = _wiracochaAddress;
     }
 
     function setPurchaseTax(uint256 _purchaseTax)

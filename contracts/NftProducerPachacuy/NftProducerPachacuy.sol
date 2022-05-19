@@ -108,16 +108,16 @@ contract NftProducerPachacuy is
 
     // transferMode: purchased | transferred
     // Pacha data
-    struct PachaPassdata {
-        bool isPachaPass;
-        uint256 pachaUuid;
-        uint256 typeOfDistribution;
-        uint256 uuid;
-        uint256 cost;
-        string transferMode;
-    }
-    // uuid => Pacha Pass
-    mapping(uint256 => PachaPassdata) internal _uuidToPachaPassData;
+    // struct PachaPassdata {
+    //     bool isPachaPass;
+    //     uint256 pachaUuid;
+    //     uint256 typeOfDistribution;
+    //     uint256 uuid;
+    //     uint256 cost;
+    //     string transferMode;
+    // }
+    // // uuid => Pacha Pass
+    // mapping(uint256 => PachaPassdata) internal _uuidToPachaPassData;
 
     // Marks as true when a land has been purchased
     mapping(uint256 => bool) internal isLandAlreadyTaken;
@@ -354,30 +354,30 @@ contract NftProducerPachacuy is
     //     _tokenIdCounter.increment();
     // }
 
-    function _mintPachaPassNft(
-        address _account,
-        uint256 _landUuid,
-        uint256 _uuidPachaPass,
-        uint256 _typeOfDistribution,
-        uint256 _price,
-        string memory _transferMode
-    ) internal {
-        _mint(_account, _uuidPachaPass, 1, "");
+    // function _mintPachaPassNft(
+    //     address _account,
+    //     uint256 _landUuid,
+    //     uint256 _uuidPachaPass,
+    //     uint256 _typeOfDistribution,
+    //     uint256 _price,
+    //     string memory _transferMode
+    // ) internal {
+    //     _mint(_account, _uuidPachaPass, 1, "");
 
-        // Map owner -> uuid[]
-        _ownerToUuids[_account].push(_uuidPachaPass);
-        _setApprovalForAll(_account, address(this), true);
+    //     // Map owner -> uuid[]
+    //     _ownerToUuids[_account].push(_uuidPachaPass);
+    //     _setApprovalForAll(_account, address(this), true);
 
-        // Map uuid -> Pacha Pass Struct
-        _uuidToPachaPassData[_uuidPachaPass] = PachaPassdata({
-            isPachaPass: true,
-            pachaUuid: _landUuid,
-            typeOfDistribution: _typeOfDistribution,
-            uuid: _uuidPachaPass,
-            cost: _price,
-            transferMode: _transferMode
-        });
-    }
+    //     // Map uuid -> Pacha Pass Struct
+    //     _uuidToPachaPassData[_uuidPachaPass] = PachaPassdata({
+    //         isPachaPass: true,
+    //         pachaUuid: _landUuid,
+    //         typeOfDistribution: _typeOfDistribution,
+    //         uuid: _uuidPachaPass,
+    //         cost: _price,
+    //         transferMode: _transferMode
+    //     });
+    // }
 
     function mintWiracocha(uint256 _pachaUuid) external returns (uint256) {
         // validate that _account is an owner of that pacha
@@ -385,7 +385,7 @@ contract NftProducerPachacuy is
 
         // validate that there is not a Wiracocha at this pacha uuid
         require(
-            wiracocha
+            !IWiracocha(pachacuyInfo.wiracochaAddress())
                 .getWiracochaInfoForAccount(_msgSender(), _pachaUuid)
                 .hasWiracocha,
             "NFP: Pacha has a Wiracocha already"
@@ -402,7 +402,12 @@ contract NftProducerPachacuy is
 
         // Save info in Tatacuy SC
         // uuid =>  wiracochaUuid
-        wiracocha.registerWiracocha(_msgSender(), _pachaUuid, uuid, "");
+        IWiracocha(pachacuyInfo.wiracochaAddress()).registerWiracocha(
+            _msgSender(),
+            _pachaUuid,
+            uuid,
+            ""
+        );
 
         _tokenIdCounter.increment();
 
@@ -415,7 +420,7 @@ contract NftProducerPachacuy is
 
         // validate that there is not a Tatacuy at this pacha uuid
         require(
-            tatacuy
+            !ITatacuy(pachacuyInfo.tatacuyAddress())
                 .getTatacuyInfoForAccount(_msgSender(), _pachaUuid)
                 .hasTatacuy,
             "NFP: Pacha has a Tatacuy already"
@@ -432,7 +437,12 @@ contract NftProducerPachacuy is
 
         // Save info in Tatacuy SC
         // uuid =>  tatacuyUuid
-        tatacuy.registerTatacuy(_msgSender(), _pachaUuid, uuid, "");
+        ITatacuy(pachacuyInfo.tatacuyAddress()).registerTatacuy(
+            _msgSender(),
+            _pachaUuid,
+            uuid,
+            ""
+        );
 
         _tokenIdCounter.increment();
 
@@ -459,8 +469,8 @@ contract NftProducerPachacuy is
 
         // Save info in Chakra SC
         // uuid =>  chakraUuid
-        chakra.registerChakra(
-            _msgSender(),
+        IChakra(pachacuyInfo.chakraAddress()).registerChakra(
+            _account,
             _pachaUuid,
             uuid,
             _chakraPrice,
@@ -479,13 +489,14 @@ contract NftProducerPachacuy is
     {
         // update Guinea Pig life span
 
-        availableFood = chakra.consumeFoodFromChakra(_chakraUuid);
+        availableFood = IChakra(pachacuyInfo.chakraAddress())
+            .consumeFoodFromChakra(_chakraUuid);
     }
 
     function burnChakra(uint256 _chakraUuid) external {
         _burn(_msgSender(), _chakraUuid, 1);
 
-        chakra.burnChakra(_chakraUuid);
+        IChakra(pachacuyInfo.chakraAddress()).burnChakra(_chakraUuid);
     }
 
     function mintHatunWasi(uint256 _pachaUuid) external returns (uint256) {
@@ -495,7 +506,7 @@ contract NftProducerPachacuy is
         // validate that there is not a Wiracocha at this pacha uuid
         IHatunWasi hw = IHatunWasi(pachacuyInfo.hatunWasiAddress());
         require(
-            hw.getAHatunWasi(_msgSender(), _pachaUuid).hasHatunWasi,
+            !hw.getAHatunWasi(_msgSender(), _pachaUuid).hasHatunWasi,
             "NFP: Hatun Wasi exists"
         );
 
@@ -557,78 +568,78 @@ contract NftProducerPachacuy is
     //     }
     // }
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 uuid,
-        uint256 amount,
-        bytes memory data
-    ) public override {
-        require(
-            from == _msgSender() || isApprovedForAll(from, _msgSender()),
-            "ERC1155: caller is not owner nor approved"
-        );
+    // function safeTransferFrom(
+    //     address from,
+    //     address to,
+    //     uint256 uuid,
+    //     uint256 amount,
+    //     bytes memory data
+    // ) public override {
+    //     require(
+    //         from == _msgSender() || isApprovedForAll(from, _msgSender()),
+    //         "ERC1155: caller is not owner nor approved"
+    //     );
 
-        if (_uuidToGuineaPigData[uuid].isGuineaPig) {
-            _uuidToGuineaPigData[uuid].owner = to;
-        } else if (_uuidToLandData[uuid].isLand) {
-            _uuidToLandData[uuid].owner = to;
-            // Transfer all elements within a Land
-            // IMPLEMENT
-        }
+    //     if (_uuidToGuineaPigData[uuid].isGuineaPig) {
+    //         _uuidToGuineaPigData[uuid].owner = to;
+    //     } else if (_uuidToLandData[uuid].isLand) {
+    //         _uuidToLandData[uuid].owner = to;
+    //         // Transfer all elements within a Land
+    //         // IMPLEMENT
+    //     }
 
-        // remove uuid from _ownerToUuids => uuid[]
-        _rmvElFromOwnerToUuids(from, uuid);
+    //     // remove uuid from _ownerToUuids => uuid[]
+    //     _rmvElFromOwnerToUuids(from, uuid);
 
-        // add that uuid to new owner's array
-        _ownerToUuids[to].push(uuid);
+    //     // add that uuid to new owner's array
+    //     _ownerToUuids[to].push(uuid);
 
-        _safeTransferFrom(from, to, uuid, amount, data);
-    }
+    //     _safeTransferFrom(from, to, uuid, amount, data);
+    // }
 
-    function burn(
-        address account,
-        uint256 uuid,
-        uint256 value
-    ) public virtual override {
-        require(
-            account == _msgSender() || isApprovedForAll(account, _msgSender()),
-            "ERC1155: caller is not owner nor approved"
-        );
+    // function burn(
+    //     address account,
+    //     uint256 uuid,
+    //     uint256 value
+    // ) public virtual override {
+    //     require(
+    //         account == _msgSender() || isApprovedForAll(account, _msgSender()),
+    //         "ERC1155: caller is not owner nor approved"
+    //     );
 
-        if (_uuidToGuineaPigData[uuid].isGuineaPig) {
-            value = 1;
-            delete _uuidToGuineaPigData[uuid];
-        } else if (_uuidToLandData[uuid].isLand) {
-            value = 1;
-            delete _uuidToLandData[uuid];
-        }
+    //     if (_uuidToGuineaPigData[uuid].isGuineaPig) {
+    //         value = 1;
+    //         delete _uuidToGuineaPigData[uuid];
+    //     } else if (_uuidToLandData[uuid].isLand) {
+    //         value = 1;
+    //         delete _uuidToLandData[uuid];
+    //     }
 
-        // remove uuid from _ownerToUuids => uuid[]
-        _rmvElFromOwnerToUuids(account, uuid);
+    //     // remove uuid from _ownerToUuids => uuid[]
+    //     _rmvElFromOwnerToUuids(account, uuid);
 
-        _burn(account, uuid, value);
-    }
+    //     _burn(account, uuid, value);
+    // }
 
     ///////////////////////////////////////////////////////////////
     ////                   HELPERS FUNCTIONS                   ////
     ///////////////////////////////////////////////////////////////
-    function isGuineaPigAllowedInPacha(address _account, uint256 _landUuid)
-        external
-        view
-        returns (bool)
-    {
-        LandData memory landData = _uuidToLandData[_landUuid];
+    // function isGuineaPigAllowedInPacha(address _account, uint256 _landUuid)
+    //     external
+    //     view
+    //     returns (bool)
+    // {
+    //     LandData memory landData = _uuidToLandData[_landUuid];
 
-        if (!landData.isLand) return false;
-        if (landData.isPublic) return true;
+    //     if (!landData.isLand) return false;
+    //     if (landData.isPublic) return true;
 
-        // All private land must have a uuid for its pachapass
-        require(landData.pachaPassUuid != 0, "NFP: Uuid's pachapass missing");
-        if (balanceOf(_account, landData.pachaPassUuid) > 0) {
-            return true;
-        } else return false;
-    }
+    //     // All private land must have a uuid for its pachapass
+    //     require(landData.pachaPassUuid != 0, "NFP: Uuid's pachapass missing");
+    //     if (balanceOf(_account, landData.pachaPassUuid) > 0) {
+    //         return true;
+    //     } else return false;
+    // }
 
     function _getGuinieaPigStruct(
         uint256 _gender,
@@ -686,10 +697,11 @@ contract NftProducerPachacuy is
                 } else if (_uuidToLandData[_uuidsList[i]].isLand) {
                     lands[l] = _uuidsList[i];
                     ++l;
-                } else if (_uuidToPachaPassData[_uuidsList[i]].isPachaPass) {
-                    pachaPasses[h] = _uuidsList[i];
-                    ++h;
                 }
+                // else if (_uuidToPachaPassData[_uuidsList[i]].isPachaPass) {
+                //     pachaPasses[h] = _uuidsList[i];
+                //     ++h;
+                // }
             }
         }
     }
@@ -811,18 +823,16 @@ contract NftProducerPachacuy is
         _ownerToUuids[_account].pop();
     }
 
-    function setTatacuyAddress(address _tatacuyAddress)
-        public
-        onlyRole(GAME_MANAGER)
+    function getListOfUuidsPerAccount(address _account)
+        external
+        view
+        returns (uint256[] memory _listOfUuids, bytes32[] memory _listOfTypes)
     {
-        tatacuy = ITatacuy(_tatacuyAddress);
-    }
-
-    function setWiracochaAddress(address _wiracochaAddress)
-        public
-        onlyRole(GAME_MANAGER)
-    {
-        wiracocha = IWiracocha(_wiracochaAddress);
+        _listOfUuids = _ownerToUuids[_account];
+        _listOfTypes = new bytes32[](_listOfUuids.length);
+        for (uint256 ix = 0; ix < _listOfUuids.length; ix++) {
+            _listOfTypes[ix] = _nftTypes[_listOfUuids[ix]];
+        }
     }
 
     function setPachacuyInfoaddress(address _pachacuyInfo)
@@ -859,9 +869,10 @@ contract NftProducerPachacuy is
                     ".json"
                 )
             );
-        } else if (_uuidToPachaPassData[_uuid].isPachaPass) {
-            fileName = string(abi.encodePacked(_prefix, "PACHAPASS.json"));
         }
+        //  else if (_uuidToPachaPassData[_uuid].isPachaPass) {
+        //     fileName = string(abi.encodePacked(_prefix, "PACHAPASS.json"));
+        // }
 
         return bytes(_prefix).length > 0 ? fileName : "";
     }

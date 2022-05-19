@@ -58,6 +58,15 @@ contract Wiracocha is
     // Owner Tatacuy -> Pacha UUID -> Wiracocha UUID  -> Struct of Wiracocha Info
     mapping(address => mapping(uint256 => WiracochaInfo)) ownerToWiracocha;
 
+    event WiracochaExchange(
+        address exchanger,
+        address pachaOwner,
+        uint256 pachaUuid,
+        uint256 amountPcuy,
+        uint256 samiPoints,
+        uint256 rateSamiPointsToPcuy
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -98,21 +107,37 @@ contract Wiracocha is
         });
     }
 
+    /**
+     * @param _exchanger: Wallet address of the user who's exchanging Sami Points to PCUYs
+     * @param _pachaOwner: Wallet address of the pacha owner
+     * @param _pachaUuid: Uuid of the pacha when it was minted
+     * @param _samiPoints: Amount of Sami Points to exchange
+     * @param _amountPcuy: Amount of PCUYs to receive as a result of the exchange
+     * @param _rateSamiPointsToPcuy: Exchange rate from Sami Points to PCUYs
+     */
     function exchangeSamiToPcuy(
-        address _account,
+        address _exchanger,
+        address _pachaOwner,
         uint256 _pachaUuid,
         uint256 _samiPoints,
         uint256 _amountPcuy,
         uint256 _rateSamiPointsToPcuy
     ) external onlyRole(GAME_MANAGER) {
         purchaseAssetController.transferPcuyFromPoolRewardToUser(
-            _account,
+            _exchanger,
             _amountPcuy
         );
-        ownerToWiracocha[_account][_pachaUuid]
+        ownerToWiracocha[_pachaOwner][_pachaUuid]
             .amountPcuyExchanged += _amountPcuy;
 
-        // crear evento wiracocha
+        emit WiracochaExchange(
+            _exchanger,
+            _pachaOwner,
+            _pachaUuid,
+            _amountPcuy,
+            _samiPoints,
+            _rateSamiPointsToPcuy
+        );
     }
 
     ///////////////////////////////////////////////////////////////
