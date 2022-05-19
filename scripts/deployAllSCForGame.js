@@ -133,7 +133,8 @@ async function main() {
    * Wiracocha
    * 1. wi 001 - Gave game_manager to relayer
    * 2. wi 002 - Gave game_manager to Nft Producer
-   * 2. wi 003 - set address of purchase asset controller in Wiracocha
+   * 2. wi 003 - Gave game_manager to Purchase asset contoller
+   * 2. wi 004 - set address of purchase asset controller in Wiracocha
    */
   var Wiracocha = await gcf("Wiracocha");
   var wiracocha = await dp(Wiracocha, [], {
@@ -252,6 +253,7 @@ async function main() {
   await executeSet(wi, "grantRole", [game_manager, rel], "wi 001");
   await executeSet(wi, "grantRole", [game_manager, nftAdd], "wi 002");
   await executeSet(wi, "grantRole", [game_manager, pacAdd], "wi 003");
+  await executeSet(wi, "setAddPAController", [pacAdd], "wi 004");
 
   // CHAKRA
   var ck = chakra;
@@ -306,9 +308,13 @@ async function upgrade() {
   // const PurchaseAssetController = await gcf("PurchaseAssetController");
   // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
 
-  var NFTPAddress = "0x39386594B85Ca664326D325aABcfD225cA8dDBc2";
-  const NftProducerPachacuy = await gcf("NftProducerPachacuy");
-  await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
+  // var NFTPAddress = "0xd991d1c6e5c669b8aec320816726a32e69b3db42";
+  // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
+  // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
+
+  var TatacuyAddress = "0xd09Eb12047905B6C4Ec9f445D6871346645c1e8c";
+  const Tatacuy = await gcf("Tatacuy");
+  await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
 
   // var WiracochaAddress = "0xa106BFC5387939DeA7d1EEf4d7bE008543174B1d";
   // const WiracochaContract = await gcf("Wiracocha");
@@ -317,9 +323,9 @@ async function upgrade() {
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-// upgrade()
-// resetOngoingTransaction()
-main()
+upgrade()
+  // resetOngoingTransaction()
+  // main()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

@@ -70,6 +70,8 @@ contract NftProducerPachacuy is
     bytes32 public constant CHAKRA = keccak256("CHAKRA");
     bytes32 public constant HATUNWASI = keccak256("HATUNWASI");
 
+    event Uuid(uint256 uuid);
+
     // Guinea pig data
     struct GuineaPigData {
         bool isGuineaPig;
@@ -259,6 +261,8 @@ contract NftProducerPachacuy is
 
         _tokenIdCounter.increment();
 
+        emit Uuid(uuid);
+
         return uuid;
     }
 
@@ -411,6 +415,7 @@ contract NftProducerPachacuy is
 
         _tokenIdCounter.increment();
 
+        emit Uuid(uuid);
         return uuid;
     }
 
@@ -446,6 +451,7 @@ contract NftProducerPachacuy is
 
         _tokenIdCounter.increment();
 
+        emit Uuid(uuid);
         return uuid;
     }
 
@@ -478,7 +484,7 @@ contract NftProducerPachacuy is
         );
 
         _tokenIdCounter.increment();
-
+        emit Uuid(uuid);
         return uuid;
     }
 
@@ -525,6 +531,7 @@ contract NftProducerPachacuy is
 
         _tokenIdCounter.increment();
 
+        emit Uuid(uuid);
         return uuid;
     }
 

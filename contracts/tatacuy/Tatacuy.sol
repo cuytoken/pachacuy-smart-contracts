@@ -52,6 +52,7 @@ contract Tatacuy is
         address pachaOwner;
         uint256 pachaUuid;
         uint256 tatacuyUuid;
+        uint256 prizeWinner;
         address account;
         uint256 likelihood;
     }
@@ -109,6 +110,7 @@ contract Tatacuy is
     event TatacuyTryMyLuckResult(
         address account,
         bool hasWon,
+        uint256 prizeWinner,
         uint256 likelihood,
         uint256 pachaUuid,
         uint256 tatacuyUuid,
@@ -210,7 +212,7 @@ contract Tatacuy is
         uint256 current = _tokenIdCounter.current();
         _tokenIdCounter.increment();
 
-        listActiveCampaigns[current] = tatacuyInfo;
+        listActiveCampaigns.push(tatacuyInfo);
         _campaignIx[_msgSender()][_tatacuyUuid] = current;
 
         emit TatacuyCampaignStarted(
@@ -316,6 +318,7 @@ contract Tatacuy is
             pachaOwner: _pachaOwner,
             pachaUuid: _pachaUuid,
             tatacuyUuid: tatacuyInfo.tatacuyUuid,
+            prizeWinner: tatacuyInfo.prizePerWinnerSamiPoints,
             account: _account,
             likelihood: _likelihood
         });
@@ -333,15 +336,16 @@ contract Tatacuy is
         uint256[] memory _randomNumbers
     ) external onlyRole(RNG_GENERATOR) {
         uint256 randomNumber = (_randomNumbers[0] % 10) + 1;
-        uint256 _likelihood = _randomTxs[_account].likelihood;
+        RandomTx memory randomTx = _randomTxs[_account];
 
         emit TatacuyTryMyLuckResult(
             _account,
-            randomNumber <= _likelihood,
-            _likelihood,
-            _randomTxs[_account].pachaUuid,
-            _randomTxs[_account].tatacuyUuid,
-            _randomTxs[_account].pachaOwner
+            randomNumber <= randomTx.likelihood,
+            randomTx.likelihood,
+            randomTx.prizeWinner,
+            randomTx.pachaUuid,
+            randomTx.tatacuyUuid,
+            randomTx.pachaOwner
         );
 
         delete _randomTxs[_account];
