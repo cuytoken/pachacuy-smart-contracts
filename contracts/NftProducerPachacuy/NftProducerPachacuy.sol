@@ -458,8 +458,7 @@ contract NftProducerPachacuy is
     function mintChakra(
         address _account,
         uint256 _pachaUuid,
-        uint256 _chakraPrice,
-        uint256 _prizePerFood
+        uint256 _chakraPrice
     ) external onlyRole(MINTER_ROLE) returns (uint256) {
         // validate that _account is an owner of that pacha
         require(balanceOf(_account, _pachaUuid) > 0, "NFP: No pacha found");
@@ -479,8 +478,7 @@ contract NftProducerPachacuy is
             _account,
             _pachaUuid,
             uuid,
-            _chakraPrice,
-            _prizePerFood
+            _chakraPrice
         );
 
         _tokenIdCounter.increment();
@@ -488,15 +486,15 @@ contract NftProducerPachacuy is
         return uuid;
     }
 
-    function purchaseFood(address _account, uint256 _chakraUuid)
-        external
-        onlyRole(GAME_MANAGER)
-        returns (uint256 availableFood)
-    {
+    function purchaseFood(
+        address _account,
+        uint256 _chakraUuid,
+        uint256 _amountFood
+    ) external onlyRole(GAME_MANAGER) returns (uint256 availableFood) {
         // update Guinea Pig life span
 
         availableFood = IChakra(pachacuyInfo.chakraAddress())
-            .consumeFoodFromChakra(_chakraUuid);
+            .consumeFoodFromChakra(_chakraUuid, _amountFood);
     }
 
     function burnChakra(uint256 _chakraUuid) external {

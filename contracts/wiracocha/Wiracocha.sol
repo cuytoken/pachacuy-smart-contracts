@@ -25,6 +25,8 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../purchaseAssetController/IPurchaseAssetController.sol";
+import "../info/IPachacuyInfo.sol";
+import "../token/IPachaCuy.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract Wiracocha is
@@ -37,7 +39,8 @@ contract Wiracocha is
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant GAME_MANAGER = keccak256("GAME_MANAGER");
 
-    IPurchaseAssetController public purchaseAssetController;
+    // Pachacuy Information
+    IPachacuyInfo pachacuyInfo;
 
     /**
      * @dev Details the information of a Tatacuy. Additional properties attached for its campaign
@@ -58,13 +61,24 @@ contract Wiracocha is
     // Owner Tatacuy -> Pacha UUID -> Wiracocha UUID  -> Struct of Wiracocha Info
     mapping(address => mapping(uint256 => WiracochaInfo)) ownerToWiracocha;
 
+    /**
+     * @notice Event emitted when a exchange from sami points to PCUY tokens happens
+     * @param exchanger: wallet address of the person making the exchange
+     * @param pachaOwner: wallet addres of the pacha owner
+     * @param pachaUuid: uuid od the pacha when it was minted
+     * @param amountPcuy: amount of PCUY tokens as a result of the exchange
+     * @param totalPcuyBalance: total amount of PCUY tokens after the exchange
+     * @param samiPoints: amount sami points to be exchange gor PCUY tokens
+     * @param ratePcuyToSami: exchange rate between PCUY to sami points
+     */
     event WiracochaExchange(
         address exchanger,
         address pachaOwner,
         uint256 pachaUuid,
         uint256 amountPcuy,
+        uint256 totalPcuyBalance,
         uint256 samiPoints,
-        uint256 rateSamiPointsToPcuy
+        uint256 ratePcuyToSami
     );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -112,21 +126,17 @@ contract Wiracocha is
      * @param _pachaOwner: Wallet address of the pacha owner
      * @param _pachaUuid: Uuid of the pacha when it was minted
      * @param _samiPoints: Amount of Sami Points to exchange
-     * @param _amountPcuy: Amount of PCUYs to receive as a result of the exchange
-     * @param _rateSamiPointsToPcuy: Exchange rate from Sami Points to PCUYs
      */
     function exchangeSamiToPcuy(
         address _exchanger,
         address _pachaOwner,
         uint256 _pachaUuid,
-        uint256 _samiPoints,
-        uint256 _amountPcuy,
-        uint256 _rateSamiPointsToPcuy
+        uint256 _samiPoints
     ) external onlyRole(GAME_MANAGER) {
-        purchaseAssetController.transferPcuyFromPoolRewardToUser(
-            _exchanger,
-            _amountPcuy
-        );
+        uint256 _amountPcuy = pachacuyInfo.convertSamiToPcuy(_samiPoints);
+
+        IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
+            .transferPcuyFromPoolRewardToUser(_exchanger, _amountPcuy);
         ownerToWiracocha[_pachaOwner][_pachaUuid]
             .amountPcuyExchanged += _amountPcuy;
 
@@ -135,8 +145,11 @@ contract Wiracocha is
             _pachaOwner,
             _pachaUuid,
             _amountPcuy,
+            IPachaCuy(pachacuyInfo.pachaCuyTokenAddress()).balanceOf(
+                _exchanger
+            ),
             _samiPoints,
-            _rateSamiPointsToPcuy
+            pachacuyInfo.exchangeRatePcuyToSami()
         );
     }
 
@@ -158,13 +171,11 @@ contract Wiracocha is
         return ownerToWiracocha[_account][_pachaUuid];
     }
 
-    function setAddPAController(address _purchaseAssetController)
+    function setPachacuyInfoAddress(address _infoAddress)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        purchaseAssetController = IPurchaseAssetController(
-            _purchaseAssetController
-        );
+        pachacuyInfo = IPachacuyInfo(_infoAddress);
     }
 
     ///////////////////////////////////////////////////////////////

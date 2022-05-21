@@ -2,20 +2,30 @@
 pragma solidity ^0.8.4;
 
 interface IChakra {
+    struct ChakraInfo {
+        address owner;
+        uint256 chakraUuid;
+        uint256 pachaUuid;
+        uint256 creationDate;
+        uint256 priceOfChakra;
+        uint256 pricePerFood;
+        uint256 totalFood;
+        uint256 availableFood;
+        bool hasChakra;
+    }
+
     function registerChakra(
         address _account,
         uint256 _pachaUuid,
         uint256 _chackraUuid,
-        uint256 _chakraPrice,
-        uint256 _prizePerFood
+        uint256 _chakraPrice
     ) external;
 
-    function getFoodPriceNOwner(uint256 _chakraUuid)
+    function getChakraWithUuid(uint256 _chakraUuid)
         external
-        view
-        returns (uint256 foodPrice, address owner);
+        returns (ChakraInfo memory);
 
-    function consumeFoodFromChakra(uint256 _chakraUuid)
+    function consumeFoodFromChakra(uint256 _chakraUuid, uint256 _amountFood)
         external
         returns (uint256);
 

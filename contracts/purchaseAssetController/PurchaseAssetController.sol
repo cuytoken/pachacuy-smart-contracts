@@ -74,9 +74,6 @@ contract PurchaseAssetController is
     // price of each pacha
     uint256 public landPrice;
 
-    // price of each chakra
-    uint256 public chakraPrice;
-
     // Verifies that customer has one transaction at a time
     /**
      * @dev Transaction objects that indicates type of the current transaction
@@ -136,6 +133,16 @@ contract PurchaseAssetController is
         address poolRewardsAddress
     );
 
+    event PurchaseFoodChakra(
+        uint256 chakraUuid,
+        uint256 amountOfFood,
+        uint256 availableFood,
+        address chakraOwner,
+        uint256 pcuyReceived,
+        uint256 pcuyTaxed,
+        uint256 tax
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -157,8 +164,6 @@ contract PurchaseAssetController is
 
         rateBusdToPcuy = 25;
         landPrice = 200 * rateBusdToPcuy * 1e18;
-
-        chakraPrice = 8 * 10e18;
 
         // Guniea pig purchase - likelihood
         _setLikelihoodAndPrices(rateBusdToPcuy);
@@ -430,29 +435,58 @@ contract PurchaseAssetController is
         external
         returns (uint256 chakraUuid)
     {
-        _purchaseAtPriceInPcuyAndToken(chakraPrice, address(pachaCuyToken));
+        // in BUSD
+        uint256 _chakraPrice = pachacuyInfo.chakraPrice();
+        _purchaseAtPriceInPcuyAndToken(
+            pachacuyInfo.convertBusdToPcuy(_chakraPrice),
+            address(pachaCuyToken)
+        );
 
         // mint a chakra
         chakraUuid = nftProducerPachacuy.mintChakra(
             _msgSender(),
             _pachaUuid,
-            chakraPrice,
-            0
+            _chakraPrice
         );
     }
 
-    function purchaseFoodFromChakra(uint256 _chakraUuid)
+    /**
+     * @notice Purchase a specific amount of food at a chakra by using its uuid
+     * @param _chakraUuid: uuid of the chakra from where food is being purchased
+     * @param _amountFood: amount of food to be purchased from chakra
+     */
+    function purchaseFoodFromChakra(uint256 _chakraUuid, uint256 _amountFood)
         external
-        returns (uint256 availableFood)
     {
-        (uint256 _price, address _owner) = IChakra(pachacuyInfo.chakraAddress())
-            .getFoodPriceNOwner(_chakraUuid);
+        IChakra.ChakraInfo memory chakraInfo = IChakra(
+            pachacuyInfo.chakraAddress()
+        ).getChakraWithUuid(_chakraUuid);
 
-        _transferPcuyWithTax(_msgSender(), _owner, _price);
+        require(
+            _amountFood <= chakraInfo.availableFood,
+            "PurchaseAC: Not enough food at chakra"
+        );
 
-        availableFood = nftProducerPachacuy.purchaseFood(
+        (uint256 _net, uint256 _fee) = _transferPcuyWithTax(
             _msgSender(),
-            _chakraUuid
+            chakraInfo.owner,
+            chakraInfo.pricePerFood * _amountFood
+        );
+
+        uint256 availableFood = nftProducerPachacuy.purchaseFood(
+            _msgSender(),
+            _chakraUuid,
+            _amountFood
+        );
+
+        emit PurchaseFoodChakra(
+            _chakraUuid,
+            _amountFood,
+            availableFood,
+            chakraInfo.owner,
+            _net,
+            _fee,
+            pachacuyInfo.purchaseTax()
         );
     }
 
@@ -491,14 +525,14 @@ contract PurchaseAssetController is
         address _from,
         address _to,
         uint256 _pcuyAmount
-    ) internal {
+    ) internal returns (uint256 _net, uint256 _fee) {
         require(
             pachaCuyToken.balanceOf(_from) >= _pcuyAmount,
             "PurchaseAC: Not enough PCUY balance."
         );
 
-        uint256 _fee = (_pcuyAmount * pachacuyInfo.purchaseTax()) / 100;
-        uint256 _net = _pcuyAmount - _fee;
+        _fee = (_pcuyAmount * pachacuyInfo.purchaseTax()) / 100;
+        _net = _pcuyAmount - _fee;
 
         pachaCuyToken.operatorSend(_from, _to, _net, "", "");
         pachaCuyToken.operatorSend(

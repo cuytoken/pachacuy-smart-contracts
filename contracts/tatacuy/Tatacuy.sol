@@ -28,6 +28,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../vrf/IRandomNumberGenerator.sol";
 import "../purchaseAssetController/IPurchaseAssetController.sol";
+import "../info/IPachacuyInfo.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract Tatacuy is
@@ -45,7 +46,9 @@ contract Tatacuy is
     CountersUpgradeable.Counter private _tokenIdCounter;
 
     IRandomNumberGenerator public randomNumberGenerator;
-    IPurchaseAssetController public purchaseAssetController;
+
+    // Pachacuy Information
+    IPachacuyInfo pachacuyInfo;
 
     // RandomTranasction
     struct RandomTx {
@@ -55,6 +58,7 @@ contract Tatacuy is
         uint256 prizeWinner;
         address account;
         uint256 likelihood;
+        uint256 idFromFront;
     }
     mapping(address => RandomTx) internal _randomTxs;
 
@@ -101,12 +105,20 @@ contract Tatacuy is
     event TatacuyCampaignStarted(
         address account,
         uint256 totalFundsPcuyDeposited,
-        uint256 ratePcuyToSamiPoints,
-        uint256 totalFundsSamiPoints,
-        uint256 prizePerWinnerSamiPoints,
-        uint256 dateOfCreation
+        uint256 _prizePerWinnerPcuy
     );
 
+    /**
+     * @notice Event emitted when there is a result from playing at Tatacuy
+     * @param account: wallet address of the player at tatacuy
+     * @param hasWon: indicates (boolean) whether the player has won or loose
+     * @param prizeWinner: amount of sami points to be given to the winner
+     * @param likelihood: chances of winning at Tatacuy (1 to 10)
+     * @param pachaUuid: uuid of the pacha when it was minted
+     * @param tatacuyUuid: uuid of the tatacuy when it was minted
+     * @param pachaOwner: wallet address of the pacha owner
+     * @param idFromFront: An ID coming from front to keep track of the winner at Tatacuy
+     */
     event TatacuyTryMyLuckResult(
         address account,
         bool hasWon,
@@ -114,7 +126,22 @@ contract Tatacuy is
         uint256 likelihood,
         uint256 pachaUuid,
         uint256 tatacuyUuid,
-        address pachaOwner
+        address pachaOwner,
+        uint256 idFromFront
+    );
+
+    /**
+     * @notice Event emitted when the tatacuy owner closes a Tatacuy campaign
+     * @param tatacuyOwner: wallet address of the tatacuy owner
+     * @param totalSamiPoints: total funds deposited in sami points
+     * @param samiPointsClaimed: total funds claimed in sami points
+     * @param changeSamiPoints: change back in sami points
+     */
+    event FinishTatacuyCampaign(
+        address tatacuyOwner,
+        uint256 totalSamiPoints,
+        uint256 samiPointsClaimed,
+        uint256 changeSamiPoints
     );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -176,18 +203,14 @@ contract Tatacuy is
      * @dev A user can create as many campaigns as Tatacuys he has
      * @param _pachaUuid: Uuid of the Pacha that will received a Tatacuy
      * @param _tatacuyUuid: Uuid assigned when a Tatacuy was minted
-     * @param _totalFundsPcuyDeposited: Total funds (in Sami Points) to be distributed in a Tatacuy campaign
-     * @param _ratePcuyToSamiPoints: Total funds (in Sami Points) to be distributed in a Tatacuy campaign
-     * @param _totalFundsSamiPoints: Total funds (in Sami Points) to be distributed in a Tatacuy campaign
-     * @param _prizePerWinnerSamiPoints: Prize (in Sami Points) to be given to a winner after playing at Tatacuy
+     * @param _totalFundsPcuyDeposited: Total funds (in PCUY) to be distributed in a Tatacuy campaign
+     * @param _prizePerWinnerPcuy: Prize to be given (in PCUY) to each winner at tatacuy
      */
     function startTatacuyCampaign(
         uint256 _pachaUuid,
         uint256 _tatacuyUuid,
         uint256 _totalFundsPcuyDeposited,
-        uint256 _ratePcuyToSamiPoints,
-        uint256 _totalFundsSamiPoints,
-        uint256 _prizePerWinnerSamiPoints
+        uint256 _prizePerWinnerPcuy
     ) external {
         TatacuyInfo storage tatacuyInfo = ownerToTatacuy[_msgSender()][
             _pachaUuid
@@ -203,9 +226,14 @@ contract Tatacuy is
         );
 
         tatacuyInfo.totalFundsPcuyDeposited = _totalFundsPcuyDeposited;
-        tatacuyInfo.ratePcuyToSamiPoints = _ratePcuyToSamiPoints;
-        tatacuyInfo.totalFundsSamiPoints = _totalFundsSamiPoints;
-        tatacuyInfo.prizePerWinnerSamiPoints = _prizePerWinnerSamiPoints;
+        tatacuyInfo.ratePcuyToSamiPoints = pachacuyInfo
+            .exchangeRatePcuyToSami();
+        tatacuyInfo.totalFundsSamiPoints = pachacuyInfo.convertPcuyToSami(
+            _totalFundsPcuyDeposited
+        );
+        tatacuyInfo.prizePerWinnerSamiPoints = pachacuyInfo.convertPcuyToSami(
+            _prizePerWinnerPcuy
+        );
         tatacuyInfo.campaignStartDate = block.timestamp;
         tatacuyInfo.isCampaignActive = true;
 
@@ -218,22 +246,17 @@ contract Tatacuy is
         emit TatacuyCampaignStarted(
             _msgSender(),
             _totalFundsPcuyDeposited,
-            _ratePcuyToSamiPoints,
-            _totalFundsSamiPoints,
-            _prizePerWinnerSamiPoints,
-            block.timestamp
+            _prizePerWinnerPcuy
         );
 
-        purchaseAssetController.transferPcuyFromUserToPoolReward(
-            _msgSender(),
-            _totalFundsPcuyDeposited
-        );
+        IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
+            .transferPcuyFromUserToPoolReward(
+                _msgSender(),
+                _totalFundsPcuyDeposited
+            );
     }
 
-    function finishTatacuyCampaign(uint256 _pachaUuid)
-        external
-        returns (uint256)
-    {
+    function finishTatacuyCampaign(uint256 _pachaUuid) external {
         TatacuyInfo storage tatacuyInfo = ownerToTatacuy[_msgSender()][
             _pachaUuid
         ];
@@ -255,6 +278,15 @@ contract Tatacuy is
         tatacuyInfo.prizePerWinnerSamiPoints = 0;
         tatacuyInfo.campaignEndDate = block.timestamp;
 
+        assert(_total >= _claimed);
+
+        emit FinishTatacuyCampaign(
+            _msgSender(),
+            _total,
+            _claimed,
+            _total - _claimed
+        );
+
         // 2 - delete from list of campaigns
         uint256 _ix = _campaignIx[_msgSender()][tatacuyInfo.tatacuyUuid];
         delete _campaignIx[_msgSender()][tatacuyInfo.tatacuyUuid];
@@ -262,8 +294,7 @@ contract Tatacuy is
         if (listActiveCampaigns.length == 1) {
             listActiveCampaigns.pop();
             _tokenIdCounter.decrement();
-            // get back the sami points
-            return _total - _claimed;
+            return;
         }
 
         TatacuyInfo memory _last = listActiveCampaigns[
@@ -273,9 +304,6 @@ contract Tatacuy is
         listActiveCampaigns.pop();
         _campaignIx[_last.owner][_last.tatacuyUuid] = _ix;
         _tokenIdCounter.decrement();
-
-        // get back the sami points
-        return _total - _claimed;
     }
 
     /**
@@ -286,12 +314,14 @@ contract Tatacuy is
      * @param _pachaOwner: Wallet address of the pacha at which this Tatacuy is placed
      * @param _pachaUuid: Uuid of the pacha received when it was minted
      * @param _likelihood: A number between 1 and 10 in inclusive that represents tha chances of winning
+     * @param _idFromFront: An ID coming from front to keep track of the winner at Tatacuy
      */
     function tryMyLuckTatacuy(
         address _account,
         address _pachaOwner,
         uint256 _pachaUuid,
-        uint256 _likelihood
+        uint256 _likelihood,
+        uint256 _idFromFront
     ) external onlyRole(GAME_MANAGER) {
         TatacuyInfo storage tatacuyInfo = ownerToTatacuy[_pachaOwner][
             _pachaUuid
@@ -320,7 +350,8 @@ contract Tatacuy is
             tatacuyUuid: tatacuyInfo.tatacuyUuid,
             prizeWinner: tatacuyInfo.prizePerWinnerSamiPoints,
             account: _account,
-            likelihood: _likelihood
+            likelihood: _likelihood,
+            idFromFront: _idFromFront
         });
 
         tatacuyInfo.totalSamiPointsClaimed += tatacuyInfo
@@ -345,7 +376,8 @@ contract Tatacuy is
             randomTx.prizeWinner,
             randomTx.pachaUuid,
             randomTx.tatacuyUuid,
-            randomTx.pachaOwner
+            randomTx.pachaOwner,
+            randomTx.idFromFront
         );
 
         delete _randomTxs[_account];
@@ -383,13 +415,11 @@ contract Tatacuy is
         return listActiveCampaigns;
     }
 
-    function setAddPAController(address _purchaseAssetController)
+    function setPachacuyInfoAddress(address _infoAddress)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        purchaseAssetController = IPurchaseAssetController(
-            _purchaseAssetController
-        );
+        pachacuyInfo = IPachacuyInfo(_infoAddress);
     }
 
     ///////////////////////////////////////////////////////////////

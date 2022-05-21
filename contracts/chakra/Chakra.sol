@@ -49,8 +49,8 @@ contract Chakra is
      * @param chakraUuid: Uuid of the chakra when it was minted
      * @param pachaUuid: Uuid of the pacha where the chakra belongs to
      * @param creationDate: Date when the chakra was minted
-     * @param prizeOfChakra: Price in PCUY of the chakra NFT
-     * @param prizePerFood: Price in PCUY to pay for each food by the Guinea Pig
+     * @param priceOfChakra: Price in PCUY of the chakra NFT
+     * @param pricePerFood: Price in PCUY to pay for each food by the Guinea Pig
      * @param totalFood: Number of food to be purchased from chakra
      * @param availableFood: Amount of food available to sell. Decrease one by one as Guinea Pig purchase food
      * @param hasChakra: Indicates wheter a chakra exists or not
@@ -60,8 +60,8 @@ contract Chakra is
         uint256 chakraUuid;
         uint256 pachaUuid;
         uint256 creationDate;
-        uint256 prizeOfChakra;
-        uint256 prizePerFood;
+        uint256 priceOfChakra;
+        uint256 pricePerFood;
         uint256 totalFood;
         uint256 availableFood;
         bool hasChakra;
@@ -96,24 +96,23 @@ contract Chakra is
      * @param _pachaUuid: Uuid of the pacha when it was minted
      * @param _chakraUuid: Uuid of the Tatacuy when it was minted
      * @param _chakraPrice: Price in PCUY of the chakra
-     * @param _prizePerFood: Price in PCUY of each food to be sold from the Chakra
      */
     function registerChakra(
         address _account,
         uint256 _pachaUuid,
         uint256 _chakraUuid,
-        uint256 _chakraPrice,
-        uint256 _prizePerFood
+        uint256 _chakraPrice
     ) external onlyRole(GAME_MANAGER) {
         uint256 _totalFood = pachacuyInfo.totalFood();
+        uint256 _pricePerFood = pachacuyInfo.pricePerFood();
 
         ChakraInfo memory chakra = ChakraInfo({
             owner: _account,
             chakraUuid: _chakraUuid,
             pachaUuid: _pachaUuid,
             creationDate: block.timestamp,
-            prizeOfChakra: _chakraPrice,
-            prizePerFood: _prizePerFood,
+            priceOfChakra: _chakraPrice,
+            pricePerFood: _pricePerFood,
             totalFood: _totalFood,
             availableFood: _totalFood,
             hasChakra: true
@@ -127,16 +126,31 @@ contract Chakra is
         listOfChakrasWithFood.push(chakra);
     }
 
-    function consumeFoodFromChakra(uint256 _chakraUuid)
+    function updateFoodPriceAtChakra(uint256 _chakraUuid, uint256 _pricePerFood)
+        external
+    {
+        ChakraInfo storage chakraInfo1 = uuidToChakraInfo[_chakraUuid];
+        require(_msgSender() == chakraInfo1.owner, "Chakra: Not the owner");
+        chakraInfo1.pricePerFood = _pricePerFood;
+
+        uint256 _ix = _chakraIx[_chakraUuid];
+        ChakraInfo storage chakraInfo2 = listOfChakrasWithFood[_ix];
+        chakraInfo2.pricePerFood = _pricePerFood;
+    }
+
+    function consumeFoodFromChakra(uint256 _chakraUuid, uint256 _amountFood)
         external
         onlyRole(GAME_MANAGER)
         returns (uint256)
     {
+        require(_amountFood > 0, "Chakra: Amount food cannot be 0");
+
         ChakraInfo storage chakra = uuidToChakraInfo[_chakraUuid];
         if (
-            chakra.availableFood > 0 && chakra.availableFood <= chakra.totalFood
+            chakra.availableFood >= _amountFood &&
+            (chakra.availableFood + _amountFood) <= chakra.totalFood
         ) {
-            chakra.availableFood--;
+            chakra.availableFood -= _amountFood;
 
             if (chakra.availableFood == 0) {
                 _removeChakraWithUuid(_chakraUuid);
@@ -204,15 +218,6 @@ contract Chakra is
         returns (ChakraInfo memory)
     {
         return uuidToChakraInfo[_chakraUuid];
-    }
-
-    function getFoodPriceNOwner(uint256 _chakraUuid)
-        external
-        view
-        returns (uint256 foodPrice, address owner)
-    {
-        foodPrice = uuidToChakraInfo[_chakraUuid].prizePerFood;
-        owner = uuidToChakraInfo[_chakraUuid].owner;
     }
 
     ///////////////////////////////////////////////////////////////

@@ -41,6 +41,8 @@ contract PachacuyInfo is
     address public hatunWasiAddress;
     address public wiracochaAddress;
     address public tatacuyAddress;
+    address public purchaseACAddress;
+    address public pachaCuyTokenAddress;
 
     // Asset Management
     uint256 public purchaseTax;
@@ -49,7 +51,16 @@ contract PachacuyInfo is
     uint256 public amountOfBoxesPerPachaPerDay;
     uint256 public amountOfMinimumSamiPoints;
     uint256 public amountOfMaximumSamiPoints;
+
+    // Business Prices in BUSD
+    uint256 public chakraPrice;
+    uint256 public pachaPrice;
+    uint256 public qhatuWasiPrice;
+    uint256 public misayWasiPrice;
+
+    // Rates
     uint256 public exchangeRatePcuyToSami;
+    uint256 public exchangeRateBusdToPcuy;
 
     struct InformationBasedOnRank {
         uint256 maxSamiPoints;
@@ -69,11 +80,13 @@ contract PachacuyInfo is
         uint256 affectation
     );
     event ExchangeRatePcuyToSamiDx(uint256 previousAmount, uint256 amount);
+    event ExchangeRateBusdToPcuyDx(uint256 previousAmount, uint256 amount);
 
     ///////////////////////////////////////////////////////////////
     ////                        CHAKRA                         ////
     ///////////////////////////////////////////////////////////////
     uint256 public totalFood;
+    uint256 public pricePerFood;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -116,13 +129,26 @@ contract PachacuyInfo is
         amountOfMinimumSamiPoints = 1;
         amountOfMaximumSamiPoints = 15;
 
-        // 1 PCUY = 25 sami points
-        exchangeRatePcuyToSami = 25;
-
         // 18%
         purchaseTax = 18;
 
+        // Food at chakra
         totalFood = 12;
+        pricePerFood = 25 * 10e18;
+
+        // business prices en BUSD
+        chakraPrice = 10 * 10e18;
+        pachaPrice = 200 * 10e18;
+        qhatuWasiPrice = 3 * 10e18;
+        misayWasiPrice = 10 * 10e18;
+
+        // rates
+        // 1 BUSD = 25 PCUY
+        exchangeRateBusdToPcuy = 25;
+        // 100 sami points = 1 BUSD
+        // 1 BUSD = 25 PCUY
+        // 1 PCUY = 4 sami points
+        exchangeRatePcuyToSami = 4;
     }
 
     ///////////////////////////////////////////////////////////////
@@ -145,10 +171,6 @@ contract PachacuyInfo is
         _amountOfMinimumSamiPoints = amountOfMinimumSamiPoints;
         _amountOfMaximumSamiPoints = amountOfMaximumSamiPoints;
         _exchangeRatePcuyToSami = exchangeRatePcuyToSami;
-    }
-
-    function getExchangeRatePcuyToSami() external view returns (uint256) {
-        return exchangeRatePcuyToSami;
     }
 
     function getInformationByRank(uint256 _rank)
@@ -198,14 +220,6 @@ contract PachacuyInfo is
         amountOfMaximumSamiPoints = _amount;
     }
 
-    function setExchangeRatePcuyToSami(uint256 _amount)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        emit ExchangeRatePcuyToSamiDx(exchangeRatePcuyToSami, _amount);
-        exchangeRatePcuyToSami = _amount;
-    }
-
     function setChakraAddress(address _chakraAddress)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -241,11 +255,71 @@ contract PachacuyInfo is
         wiracochaAddress = _wiracochaAddress;
     }
 
+    function setAddPAController(address _purchaseACAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        purchaseACAddress = _purchaseACAddress;
+    }
+
+    function setPachaCuyTokenAddress(address _pachaCuyTokenAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        pachaCuyTokenAddress = _pachaCuyTokenAddress;
+    }
+
     function setPurchaseTax(uint256 _purchaseTax)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         purchaseTax = _purchaseTax;
+    }
+
+    //////////////////////////////////////////////////////////////////
+    ///                       EXCHANGE RATE                        ///
+    //////////////////////////////////////////////////////////////////
+    function setExchangeRateBusdToPcuy(uint256 _exchangeRateBusdToPcuy)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        emit ExchangeRateBusdToPcuyDx(
+            exchangeRatePcuyToSami,
+            _exchangeRateBusdToPcuy
+        );
+        exchangeRateBusdToPcuy = _exchangeRateBusdToPcuy;
+    }
+
+    function setExchangeRatePcuyToSami(uint256 _amount)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        emit ExchangeRatePcuyToSamiDx(exchangeRatePcuyToSami, _amount);
+        exchangeRatePcuyToSami = _amount;
+    }
+
+    function convertBusdToPcuy(uint256 _busdAmount)
+        external
+        view
+        returns (uint256 _pacuyAmount)
+    {
+        _pacuyAmount = _busdAmount * exchangeRateBusdToPcuy;
+    }
+
+    function convertPcuyToSami(uint256 _pcuyAmount)
+        external
+        view
+        returns (uint256 _samiPoints)
+    {
+        _samiPoints = (_pcuyAmount / 10e18) * exchangeRatePcuyToSami;
+    }
+
+    function convertSamiToPcuy(uint256 _samiAmount)
+        external
+        view
+        returns (uint256 _pcuyAmount)
+    {
+        _pcuyAmount = (_samiAmount / exchangeRatePcuyToSami) * 10e18;
     }
 
     ///////////////////////////////////////////////////////////////

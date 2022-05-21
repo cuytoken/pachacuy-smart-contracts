@@ -37,6 +37,10 @@ async function main() {
    * - pI 006 - DEFAULT - set total food per chakra
    * - pI 007 - DEFAULT set exchange rate pcuy to sami
    * - pI 008 - set hatun wasi address
+   * - pI 009 - setTatacuyAddress
+   * - pI 010 - setWiracochaAddress
+   * - pI 011 - set Purchase A C A ddress
+   * - pI 012 - setPachaCuyTokenAddress
    */
   var PachacuyInfo = await gcf("PachacuyInfo");
   var pachacuyInfo = await dp(
@@ -117,7 +121,7 @@ async function main() {
    * 1, tt 001 - Tatacuy must grant game_manager role to relayer bsc testnet
    * 2, tt 002 - Tatacuy must grant game_manager role to Nft producer
    * 3. tt 003 - Grant role rng_generator to the random number generator sc
-   * 4. tt 004 - set address of purchase asset controller in Tatacuy
+   * 4. tt 004 - setPachacuyInfoAddress
    *
    */
   var Tatacuy = await gcf("Tatacuy");
@@ -134,7 +138,7 @@ async function main() {
    * 1. wi 001 - Gave game_manager to relayer
    * 2. wi 002 - Gave game_manager to Nft Producer
    * 2. wi 003 - Gave game_manager to Purchase asset contoller
-   * 2. wi 004 - set address of purchase asset controller in Wiracocha
+   * 2. wi 004 - setPachacuyInfoAddress
    */
   var Wiracocha = await gcf("Wiracocha");
   var wiracocha = await dp(Wiracocha, [], {
@@ -240,20 +244,22 @@ async function main() {
   var nftAdd = nftProducerPachacuy.address;
   var pacAdd = purchaseAssetController.address;
   var rngAdd = randomNumberGenerator.address;
+  var pIAdd = pachacuyInfo.address;
   await executeSet(tt, "grantRole", [game_manager, rel], "tt 001");
   await executeSet(tt, "grantRole", [game_manager, nftAdd], "tt 002");
   await executeSet(tt, "grantRole", [rng_generator, rngAdd], "tt 003");
-  await executeSet(tt, "setAddPAController", [pacAdd], "tt 004");
+  await executeSet(tt, "setPachacuyInfoAddress", [pIAdd], "tt 004");
 
   // Wiracocha
   var wi = wiracocha;
   var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
   var nftAdd = nftProducerPachacuy.address;
   var pacAdd = purchaseAssetController.address;
+  var pIAdd = pachacuyInfo.address;
   await executeSet(wi, "grantRole", [game_manager, rel], "wi 001");
   await executeSet(wi, "grantRole", [game_manager, nftAdd], "wi 002");
   await executeSet(wi, "grantRole", [game_manager, pacAdd], "wi 003");
-  await executeSet(wi, "setAddPAController", [pacAdd], "wi 004");
+  await executeSet(wi, "setPachacuyInfoAddress", [pIAdd], "wi 004");
 
   // CHAKRA
   var ck = chakra;
@@ -266,11 +272,15 @@ async function main() {
   var hwAdd = hatunWasi.address;
   var wir = wiracocha.address;
   var ttc = tatacuy.address;
+  var pacAdd = purchaseAssetController.address;
+  var pcuyAdd = pachaCuyToken.address;
   await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
   await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
   await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
   await executeSet(pI, "setTatacuyAddress", [ttc], "pI 009");
   await executeSet(pI, "setWiracochaAddress", [wir], "pI 010");
+  await executeSet(pI, "setAddPAController", [pacAdd], "pI 011");
+  await executeSet(pI, "setPachaCuyTokenAddress", [pcuyAdd], "pI 012");
 
   // HATUN WASI
   var hw = hatunWasi;
