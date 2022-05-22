@@ -333,9 +333,9 @@ async function upgrade() {
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-upgrade()
-  // resetOngoingTransaction()
-  // main()
+// upgrade()
+// resetOngoingTransaction()
+main()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);
