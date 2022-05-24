@@ -17,6 +17,7 @@ const {
   verify,
   executeSet,
 } = require("../js-utils/helpers");
+var pe = ethers.utils.parseEther;
 
 // const NETWORK = "BSCNET";
 const NETWORK = "BSCTESTNET";
@@ -322,20 +323,39 @@ async function upgrade() {
   // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
   // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
 
-  var TatacuyAddress = "0xd09Eb12047905B6C4Ec9f445D6871346645c1e8c";
+  var TatacuyAddress = "0x7dc7ea4A35879D6cb3A0f40076671e8c768952cA";
   const Tatacuy = await gcf("Tatacuy");
   await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
 
-  // var WiracochaAddress = "0xa106BFC5387939DeA7d1EEf4d7bE008543174B1d";
-  // const WiracochaContract = await gcf("Wiracocha");
-  // await upgrades.upgradeProxy(WiracochaAddress, WiracochaContract);
+  // var PachaCuyTokenAddress = "0x88114135e76b555490d9040c1d01A548B0570e99";
+  // var PachaCuyToken = await gcf("PachaCuyToken");
+  // var pachaCuyToken = await PachaCuyToken.attach(PachaCuyTokenAddress);
+  // var wallets = [
+  //   "0xb8fF16Af207ce357E5A53103D5789c4b1c103B61", // 0
+  //   "0x3dFFC99BFD24bA180a114a4b7072998508a5176c",
+  //   "0xfAE9B5c5a4Ed1292F039D78d775CC2F343abaf92",
+  //   "0xEa206afF5776fe17CF0bd117ac9818847e727776",
+  //   "0xE2F557575e55fcc816a8ac3ACb99672147E7E3E3",
+  //   "0x15Bfec909Fc3643618985d96a09860f98fB733fA",
+  //   "0x243E3C2704DDa9d27b87aBf8b85816D34849AB30",
+  //   "0x718429DDe591a305610a664c7046664422095ac3", // 7
+  // ];
+
+  // await pachaCuyToken.send(wallets[0], pe("10000"), "0x");
+  // await pachaCuyToken.send(wallets[1], pe("10000"), "0x");
+  // await pachaCuyToken.send(wallets[2], pe("10000"), "0x");
+  // await pachaCuyToken.send(wallets[3], pe("10000"), "0x");
+  // await pachaCuyToken.send(wallets[4], pe("10000"), "0x");
+  // await pachaCuyToken.send(wallets[5], pe("10000"), "0x");
+  // await pachaCuyToken.send(wallets[6], pe("10000"), "0x");
+  // await pachaCuyToken.send(wallets[7], pe("10000"), "0x");
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-// upgrade()
-// resetOngoingTransaction()
-main()
+upgrade()
+  // resetOngoingTransaction()
+  // main()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

@@ -271,10 +271,12 @@ contract Tatacuy is
         // 1 - reset info about campaign
         uint256 _total = tatacuyInfo.totalFundsSamiPoints;
         uint256 _claimed = tatacuyInfo.totalSamiPointsClaimed;
+
         tatacuyInfo.isCampaignActive = false;
         tatacuyInfo.totalFundsPcuyDeposited = 0;
         tatacuyInfo.ratePcuyToSamiPoints = 0;
         tatacuyInfo.totalFundsSamiPoints = 0;
+        tatacuyInfo.totalSamiPointsClaimed = 0;
         tatacuyInfo.prizePerWinnerSamiPoints = 0;
         tatacuyInfo.campaignEndDate = block.timestamp;
 
