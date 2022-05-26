@@ -45,9 +45,13 @@ contract PachacuyInfo is
     address public pachaCuyTokenAddress;
     address public misayWasiAddress;
     address public nftProducerAddress;
+    address public guineaPigAddress;
+    address public randomNumberGAddress;
+    address public binarySearchAddress;
 
     // Asset Management
     uint256 public purchaseTax;
+    uint256 public raffleTax;
 
     // Magical Boxes
     uint256 public amountOfBoxesPerPachaPerDay;
@@ -137,6 +141,7 @@ contract PachacuyInfo is
 
         // 18%
         purchaseTax = 18;
+        raffleTax = 18;
 
         // Food at chakra
         totalFood = 12;
@@ -313,11 +318,43 @@ contract PachacuyInfo is
         nftProducerAddress = _nftProducerAddress;
     }
 
+    function setGuineaPigAddress(address _guineaPigAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        guineaPigAddress = _guineaPigAddress;
+    }
+
+    function setRandomNumberGAddress(address _randomNumberGAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        randomNumberGAddress = _randomNumberGAddress;
+    }
+
+    function setBinarySearchAddress(address _binarySearchAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        binarySearchAddress = _binarySearchAddress;
+    }
+
+    //////////////////////////////////////////////////////////////////
+    ///                         TAXES/FEES                         ///
+    //////////////////////////////////////////////////////////////////
+
     function setPurchaseTax(uint256 _purchaseTax)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         purchaseTax = _purchaseTax;
+    }
+
+    function setRaffleTax(uint256 _raffleTax)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        raffleTax = _raffleTax;
     }
 
     //////////////////////////////////////////////////////////////////

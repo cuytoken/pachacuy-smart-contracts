@@ -14,7 +14,7 @@
 ////     \__\/       \__\/         \__\/         \__\/         \__\/         \__\/         \__\/                 ////
 ////                                                                                                             ////
 ////                                                 LAND OF CUYS                                                ////
-////                                                    Chakra                                                   ////
+////                                                  Guniea Pig                                                 ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // SPDX-License-Identifier: MIT
@@ -28,7 +28,7 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../info/IPachacuyInfo.sol";
 
 /// @custom:security-contact lee@cuytoken.com
-contract Chakra is
+contract GuineaPig is
     Initializable,
     PausableUpgradeable,
     AccessControlUpgradeable,
@@ -43,156 +43,214 @@ contract Chakra is
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _tokenIdCounter;
 
-    /**
-     * @dev Details the information of a Tatacuy. Additional properties attached for its campaign
-     * @param owner: Wallet address of the current owner of the Tatacuy
-     * @param chakraUuid: Uuid of the chakra when it was minted
-     * @param pachaUuid: Uuid of the pacha where the chakra belongs to
-     * @param creationDate: Date when the chakra was minted
-     * @param priceOfChakra: Price in PCUY of the chakra NFT
-     * @param pricePerFood: Price in PCUY to pay for each food by the Guinea Pig
-     * @param totalFood: Number of food to be purchased from chakra
-     * @param availableFood: Amount of food available to sell. Decrease one by one as Guinea Pig purchase food
-     * @param hasChakra: Indicates wheter a chakra exists or not
-     */
-    struct ChakraInfo {
+    // Guinea pig data
+    struct GuineaPigInfo {
+        bool isGuineaPig;
+        string race;
+        string gender;
+        uint256 speed;
+        uint256 daysUntilHungry;
+        uint256 daysUntilDeath;
+        uint256 samiPoints;
+        uint256 uuid;
+        uint256 idForJsonFile;
+        uint256 feedingDate;
+        uint256 burningDate;
+        uint256 wasBorn;
         address owner;
-        uint256 chakraUuid;
-        uint256 pachaUuid;
-        uint256 creationDate;
-        uint256 priceOfChakra;
-        uint256 pricePerFood;
-        uint256 totalFood;
-        uint256 availableFood;
-        bool hasChakra;
     }
-    // Chakra UUID  -> Struct of Chakra Info
-    mapping(uint256 => ChakraInfo) internal uuidToChakraInfo;
+    // uuid => GuineaPig
+    mapping(uint256 => GuineaPigInfo) internal _uuidToGuineaPigInfo;
 
-    // List of Available Chakras
-    ChakraInfo[] listOfChakrasWithFood;
-    // chakra uuid => array index
-    mapping(uint256 => uint256) internal _chakraIx;
+    // List of Guinea Pigs
+    GuineaPigInfo[] listOfGuineaPigs;
+    // guinea pig uuid => array index
+    mapping(uint256 => uint256) internal _guineaPigsIx;
+
+    // Guinea Pig races
+    string[4] private _races;
+    uint256[4] private _speeds;
+    uint256[4] private _daysUntilHungry;
+    uint256[4] private _daysUntilDeath;
+    uint256[4] private _samiPoints;
+
+    // likelihood
+    mapping(uint256 => uint256[]) likelihoodData;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
-    function initialize(address _pachacuyInfoAdd) public initializer {
+    function initialize() public initializer {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
-
-        pachacuyInfo = IPachacuyInfo(_pachacuyInfoAdd);
 
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
         _grantRole(GAME_MANAGER, _msgSender());
+
+        // 4 Races of guinea pig
+        _races = ["PERU", "INTI", "ANDINO", "SINTETICO"];
+        _speeds = [uint256(100), 105, 110, 115];
+        _daysUntilHungry = [uint256(5), 6, 7, 8];
+        _daysUntilDeath = [uint256(3), 4, 5, 6];
+        _samiPoints = [uint256(9), 10, 11, 12];
+
+        // Guniea pig purchase - likelihood
+        _setLikelihoodAndPrices();
     }
 
     /**
      * @dev Trigger when it is minted
-     * @param _account: Wallet address of the current owner of the Pacha
-     * @param _pachaUuid: Uuid of the pacha when it was minted
-     * @param _chakraUuid: Uuid of the Tatacuy when it was minted
-     * @param _chakraPrice: Price in PCUY of the chakra
+     * @param _account:
+     * @param _gender:
+     * @param _race:
+     * @param _idForJsonFile:
+     * @param _guineaPigUuid:
      */
-    function registerChakra(
+    function registerGuineaPig(
         address _account,
-        uint256 _pachaUuid,
-        uint256 _chakraUuid,
-        uint256 _chakraPrice
+        uint256 _gender, // 0, 1
+        uint256 _race, // 1 -> 4
+        uint256 _idForJsonFile, // 1 -> 8
+        uint256 _guineaPigUuid
     ) external onlyRole(GAME_MANAGER) {
-        uint256 _totalFood = pachacuyInfo.totalFood();
-        uint256 _pricePerFood = pachacuyInfo.pricePerFood();
-
-        ChakraInfo memory chakra = ChakraInfo({
-            owner: _account,
-            chakraUuid: _chakraUuid,
-            pachaUuid: _pachaUuid,
-            creationDate: block.timestamp,
-            priceOfChakra: _chakraPrice,
-            pricePerFood: _pricePerFood,
-            totalFood: _totalFood,
-            availableFood: _totalFood,
-            hasChakra: true
-        });
-        uuidToChakraInfo[_chakraUuid] = chakra;
+        GuineaPigInfo memory _guineaPig = _getGuinieaPigStruct(
+            _gender,
+            _race,
+            _guineaPigUuid,
+            _idForJsonFile,
+            _account
+        );
+        _uuidToGuineaPigInfo[_guineaPigUuid] = _guineaPig;
 
         uint256 current = _tokenIdCounter.current();
         _tokenIdCounter.increment();
 
-        _chakraIx[_chakraUuid] = current;
-        listOfChakrasWithFood.push(chakra);
-    }
-
-    function updateFoodPriceAtChakra(uint256 _chakraUuid, uint256 _pricePerFood)
-        external
-    {
-        ChakraInfo storage chakraInfo1 = uuidToChakraInfo[_chakraUuid];
-        require(_msgSender() == chakraInfo1.owner, "Chakra: Not the owner");
-        chakraInfo1.pricePerFood = _pricePerFood;
-
-        uint256 _ix = _chakraIx[_chakraUuid];
-        ChakraInfo storage chakraInfo2 = listOfChakrasWithFood[_ix];
-        chakraInfo2.pricePerFood = _pricePerFood;
-    }
-
-    function consumeFoodFromChakra(uint256 _chakraUuid, uint256 _amountFood)
-        external
-        onlyRole(GAME_MANAGER)
-        returns (uint256)
-    {
-        require(_amountFood > 0, "Chakra: Amount food cannot be 0");
-
-        ChakraInfo storage chakra = uuidToChakraInfo[_chakraUuid];
-
-        if (chakra.availableFood >= _amountFood) {
-            unchecked {
-                chakra.availableFood -= _amountFood;
-            }
-
-            if (chakra.availableFood == 0) {
-                _removeChakraWithUuid(_chakraUuid);
-            }
-            return chakra.availableFood;
-        }
-
-        revert("Chakra: No food at chakra");
-    }
-
-    function burnChakra(uint256 _chakraUuid) external onlyRole(GAME_MANAGER) {
-        delete uuidToChakraInfo[_chakraUuid];
-        _removeChakraWithUuid(_chakraUuid);
+        _guineaPigsIx[_guineaPigUuid] = current;
+        listOfGuineaPigs.push(_guineaPig);
     }
 
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
+    /**
+     * @dev Returns the race and gender based on a random number from VRF
+     * @param _raceRN is the random number (from VRF) used to calculate the race
+     * @param _genderRN is the random number (from VRF) used to calculate the gender
+     * @return Two integers are returned: race and gender respectively
+     * @dev race   could be one of 1, 2, 3, 4 -> R1, R2, R3, R4
+     * @dev gender could be one of 0, 1       -> Male, Female
+     * uint256 public constant PERU_MALE = 1;
+     * uint256 public constant INTI_MALE = 2;
+     * uint256 public constant ANDINO_MALE = 3;
+     * uint256 public constant SINTETICO_MALE = 4;
+     * uint256 public constant PERU_FEMALE = 5;
+     * uint256 public constant INTI_FEMALE = 6;
+     * uint256 public constant ANDINO_FEMALE = 7;
+     * uint256 public constant SINTETICO_FEMALE = 8;
+     */
+    function getRaceGenderGuineaPig(
+        uint256 _ix,
+        uint256 _raceRN, // [1, 100]
+        uint256 _genderRN // [0, 1]
+    )
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            string memory
+        )
+    {
+        // race between 1 and 4
+        uint256 i;
+        for (i = 0; i < likelihoodData[_ix].length; i++) {
+            if (_raceRN <= likelihoodData[_ix][i]) break;
+        }
+
+        i += 1;
+        assert(i >= 1 && i <= 4);
+
+        // 0: male, 1: female
+        uint256 id = i + _genderRN * 4;
+        assert(id >= 1 && i <= 8);
+
+        if (id == 1) return (_genderRN, i, id, "PERU MALE");
+        else if (id == 2) return (_genderRN, i, id, "INTI MALE");
+        else if (id == 3) return (_genderRN, i, id, "ANDINO MALE");
+        else if (id == 4) return (_genderRN, i, id, "SINTETICO MALE");
+        else if (id == 5) return (_genderRN, i, id, "PERU FEMALE");
+        else if (id == 6) return (_genderRN, i, id, "INTI FEMALE");
+        else if (id == 7) return (_genderRN, i, id, "ANDINO FEMALE");
+        else return (_genderRN, i, id, "SINTETICO FEMALE");
+    }
+
+    function _setLikelihoodAndPrices() internal {
+        likelihoodData[1] = [uint256(70), 85, 95, 100];
+        likelihoodData[2] = [uint256(20), 50, 80, 100];
+        likelihoodData[3] = [uint256(10), 30, 60, 100];
+    }
+
+    function getGuineaPigData(uint256 _uuid)
+        external
+        view
+        returns (
+            bool isGuineaPig,
+            string memory gender,
+            string memory race,
+            uint256 speed,
+            uint256 daysUntilHungry,
+            uint256 daysUntilDeath,
+            uint256 samiPoints,
+            uint256 uuid,
+            uint256 idForJsonFile,
+            uint256 feedingDate,
+            uint256 burningDate,
+            uint256 wasBorn,
+            address owner
+        )
+    {
+        isGuineaPig = _uuidToGuineaPigInfo[_uuid].isGuineaPig;
+        gender = _uuidToGuineaPigInfo[_uuid].gender;
+        race = _uuidToGuineaPigInfo[_uuid].race;
+        speed = _uuidToGuineaPigInfo[_uuid].speed;
+        daysUntilHungry = _uuidToGuineaPigInfo[_uuid].daysUntilHungry;
+        daysUntilDeath = _uuidToGuineaPigInfo[_uuid].daysUntilDeath;
+        samiPoints = _uuidToGuineaPigInfo[_uuid].samiPoints;
+        uuid = _uuidToGuineaPigInfo[_uuid].uuid;
+        idForJsonFile = _uuidToGuineaPigInfo[_uuid].idForJsonFile;
+        feedingDate = _uuidToGuineaPigInfo[_uuid].feedingDate;
+        burningDate = _uuidToGuineaPigInfo[_uuid].burningDate;
+        wasBorn = _uuidToGuineaPigInfo[_uuid].wasBorn;
+        owner = _uuidToGuineaPigInfo[_uuid].owner;
+    }
 
     function _removeChakraWithUuid(uint256 _chakraUuid) internal {
-        uint256 _length = listOfChakrasWithFood.length;
+        uint256 _length = listOfGuineaPigs.length;
         if (_length == 1) {
-            listOfChakrasWithFood.pop();
-            delete _chakraIx[_chakraUuid];
+            listOfGuineaPigs.pop();
+            delete _guineaPigsIx[_chakraUuid];
             _tokenIdCounter.decrement();
         }
 
         // get _ix of element to remove
-        uint256 _ix = _chakraIx[_chakraUuid];
-        delete _chakraIx[_chakraUuid];
+        uint256 _ix = _guineaPigsIx[_chakraUuid];
+        delete _guineaPigsIx[_chakraUuid];
 
         // temp of El at last position of array to be removed
-        ChakraInfo memory _chakra = listOfChakrasWithFood[_length - 1];
+        GuineaPigInfo memory _guineaPig = listOfGuineaPigs[_length - 1];
 
         // point last El to index to be replaced
-        _chakraIx[_chakra.chakraUuid] = _ix;
+        _guineaPigsIx[_guineaPig.uuid] = _ix;
 
         // swap last El from last position to index to be replaced
-        listOfChakrasWithFood[_ix] = _chakra;
+        listOfGuineaPigs[_ix] = _guineaPig;
 
         // remove last element
-        listOfChakrasWithFood.pop();
+        listOfGuineaPigs.pop();
 
         // decrease counter since array decreased in one
         _tokenIdCounter.decrement();
@@ -204,20 +262,55 @@ contract Chakra is
         returns (string memory)
     {}
 
-    function getListOfChakrasWithFood()
+    function getListOfGuineaPigs()
         external
         view
-        returns (ChakraInfo[] memory)
+        returns (GuineaPigInfo[] memory)
     {
-        return listOfChakrasWithFood;
+        return listOfGuineaPigs;
     }
 
-    function getChakraWithUuid(uint256 _chakraUuid)
+    function getGuineaPigWithUuid(uint256 _guineaPigUuid)
         external
         view
-        returns (ChakraInfo memory)
+        returns (GuineaPigInfo memory)
     {
-        return uuidToChakraInfo[_chakraUuid];
+        return _uuidToGuineaPigInfo[_guineaPigUuid];
+    }
+
+    function setPachacuyInfoaddress(address _pachacuyInfo)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        pachacuyInfo = IPachacuyInfo(_pachacuyInfo);
+    }
+
+    function _getGuinieaPigStruct(
+        uint256 _gender,
+        uint256 _race,
+        uint256 _uuid,
+        uint256 _tokenId,
+        address _account
+    ) internal view returns (GuineaPigInfo memory) {
+        return
+            GuineaPigInfo({
+                isGuineaPig: true,
+                gender: _gender == 0 ? "MALE" : "FEMALE",
+                race: _races[_race - 1],
+                speed: _speeds[_race - 1],
+                daysUntilHungry: _daysUntilHungry[_race - 1],
+                daysUntilDeath: _daysUntilDeath[_race - 1],
+                samiPoints: _samiPoints[_race - 1],
+                uuid: _uuid,
+                idForJsonFile: _tokenId,
+                feedingDate: block.timestamp +
+                    (_daysUntilHungry[_race - 1] * 1 days),
+                burningDate: block.timestamp +
+                    (_daysUntilHungry[_race - 1] * 1 days) +
+                    (_daysUntilDeath[_race - 1] * 1 days),
+                wasBorn: block.timestamp,
+                owner: _account
+            });
     }
 
     ///////////////////////////////////////////////////////////////

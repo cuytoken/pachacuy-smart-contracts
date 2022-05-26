@@ -28,6 +28,8 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../info/IPachacuyInfo.sol";
 import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 import "../purchaseAssetController/IPurchaseAssetController.sol";
+import "../vrf/IRandomNumberGenerator.sol";
+import "../binarysearch/IBinarySearch.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract MisayWasi is
@@ -39,6 +41,7 @@ contract MisayWasi is
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant GAME_MANAGER = keccak256("GAME_MANAGER");
+    bytes32 public constant RNG_GENERATOR = keccak256("RNG_GENERATOR");
 
     IPachacuyInfo pachacuyInfo;
 
@@ -81,12 +84,26 @@ contract MisayWasi is
     mapping(uint256 => MisayWasiInfo) internal uuidToMisayWasiInfo;
 
     // List of Available MisayWasis
-    MisayWasiInfo[] listOfActiveMWRaffles;
+    uint256[] listUuidActiveRaffles;
     // MisayWasi uuid => array index
     mapping(uint256 => uint256) internal _misayWasiIx;
 
-    // ticket uuid => wallet address => amount of tickets
-    mapping(uint256 => mapping(address => uint256)) listOfRaffleTickets;
+    // ticket uuid => misay wasi uuid
+    mapping(uint256 => uint256) _ticketUuidToMisayWasiUuid;
+
+    // misay wasi uuid => wallet address => amount of tickets
+    mapping(uint256 => mapping(address => uint256)) _misayWasiToTickets;
+
+    // list misay wasis to raffle at once
+    uint256[] misayWasiUuids;
+
+    event RaffleContestFinished(
+        address winner,
+        uint256 misayWasiUuid,
+        uint256 rafflePrize,
+        uint256 raffleTax,
+        uint256 ticketUuid
+    );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -140,6 +157,8 @@ contract MisayWasi is
         uint256 _ticketPrice,
         uint256 _campaignEndDate
     ) external {
+        require(_ticketPrice > 0, "Misay Wasi: Zero price");
+
         IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
             .transferPcuyFromUserToPoolReward(_msgSender(), _rafflePrize);
 
@@ -172,17 +191,19 @@ contract MisayWasi is
         _tokenIdCounter.increment();
 
         _misayWasiIx[_misayWasiUuid] = current;
-        listOfActiveMWRaffles.push(misayWasiInfo);
+        listUuidActiveRaffles.push(_misayWasiUuid);
+
+        // link ticket uuid to misay wasi uuid
+        _ticketUuidToMisayWasiUuid[_ticketUuid] = _misayWasiUuid;
     }
 
     function registerTicketPurchase(
         address _account,
-        uint256 _ticketUuid,
         uint256 _misayWasiUuid,
         uint256 _amountOfTickets,
         bool newCustomer
     ) external onlyRole(GAME_MANAGER) {
-        listOfRaffleTickets[_ticketUuid][_account] += _amountOfTickets;
+        _misayWasiToTickets[_misayWasiUuid][_account] += _amountOfTickets;
 
         MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[
             _misayWasiUuid
@@ -196,13 +217,168 @@ contract MisayWasi is
         }
     }
 
-    // function purchase
-    // start contest
-    //
+    function startRaffleContest(uint256[] memory _misayWasiUuids)
+        external
+        onlyRole(GAME_MANAGER)
+    {
+        misayWasiUuids = _misayWasiUuids;
+        IRandomNumberGenerator(pachacuyInfo.randomNumberGAddress())
+            .requestRandomNumber(_msgSender());
+    }
+
+    // Callback from VRF
+    function fulfillRandomness(address, uint256[] memory _randomNumbers)
+        external
+        onlyRole(RNG_GENERATOR)
+    {
+        // random number
+        uint256 randomNumber = _randomNumbers[0];
+
+        uint256[] memory _misayWasiUuids = misayWasiUuids;
+        misayWasiUuids = new uint256[](0);
+        uint256 length = _misayWasiUuids.length;
+        for (uint256 ix = 0; ix < length; ix++) {
+            _findWinnerOfRaffle(_misayWasiUuids[ix], randomNumber);
+        }
+    }
+
+    function _findWinnerOfRaffle(uint256 _misayWasiUuid, uint256 _randomNumber)
+        internal
+    {
+        MisayWasiInfo memory misayWasiInfo = uuidToMisayWasiInfo[
+            _misayWasiUuid
+        ];
+        address[] memory _participants = misayWasiInfo.listOfParticipants;
+        uint256 _lengthP = _participants.length;
+        if (_lengthP == 0) {
+            // Gives full prize to owner
+            IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
+                .transferPcuyFromPoolRewardToUser(
+                    misayWasiInfo.owner,
+                    misayWasiInfo.rafflePrize
+                );
+
+            // remove misay wasi from active list
+            _removeMisayWasiFromActive(_misayWasiUuid);
+            return;
+        }
+        _randomNumber = _randomNumber % misayWasiInfo.numberTicketsPurchased;
+        uint256[] memory _accumulative = new uint256[](_lengthP);
+        uint256 temp = 0;
+        for (uint256 ix = 0; ix < _lengthP; ix++) {
+            temp += _misayWasiToTickets[_misayWasiUuid][_participants[ix]];
+            _accumulative[ix] = temp;
+        }
+        uint256 _winnerIx = IBinarySearch(pachacuyInfo.binarySearchAddress())
+            .binarySearch(_accumulative, _randomNumber);
+
+        uint256 _feePrize = (misayWasiInfo.rafflePrize *
+            pachacuyInfo.raffleTax()) / 100;
+        uint256 _netPrize = misayWasiInfo.rafflePrize - _feePrize;
+
+        address _winner = _participants[_winnerIx];
+        emit RaffleContestFinished(
+            _winner,
+            _misayWasiUuid,
+            _netPrize,
+            _feePrize,
+            misayWasiInfo.ticketUuid
+        );
+
+        // Gives prize
+        IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
+            .transferPcuyFromPoolRewardToUser(_winner, _netPrize);
+
+        // Cleans raffle from Misay Wasi
+        _removeMisayWasiFromActive(_misayWasiUuid);
+    }
 
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
+
+    function _removeMisayWasiFromActive(uint256 _misayWasiUuid) internal {
+        MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[
+            _misayWasiUuid
+        ];
+        misayWasiInfo.isCampaignActive = false;
+        misayWasiInfo.listOfParticipants = new address[](0);
+        misayWasiInfo.campaignEndDate = block.timestamp;
+        misayWasiInfo.ticketPrice = 0;
+        misayWasiInfo.ticketUuid = 0;
+        misayWasiInfo.rafflePrize = 0;
+        misayWasiInfo.numberTicketsPurchased = 0;
+
+        // remove uuid from list
+        uint256 _ix = _misayWasiIx[_misayWasiUuid];
+        delete _misayWasiIx[_misayWasiUuid];
+
+        if (listUuidActiveRaffles.length == 1) {
+            listUuidActiveRaffles.pop();
+            _tokenIdCounter.decrement();
+            return;
+        }
+        uint256 _lastUuid = listUuidActiveRaffles[
+            listUuidActiveRaffles.length - 1
+        ];
+        listUuidActiveRaffles[_ix] = _lastUuid;
+        listUuidActiveRaffles.pop();
+        _tokenIdCounter.decrement();
+        _misayWasiIx[_lastUuid] = _ix;
+    }
+
+    /**
+     * @notice Get a list of Misay Wasis that are ready to start their raffle contest
+     * @dev It verifies that campaign ending data is less than actual timestamp
+     */
+    function getListOfMisayWasisReadyToRaffle()
+        external
+        view
+        returns (uint256[] memory _listOfRafflesToStart)
+    {
+        _listOfRafflesToStart = new uint256[](0);
+
+        for (uint256 ix = 0; ix < listUuidActiveRaffles.length; ix++) {
+            uint256 activeRaffleUuid = listUuidActiveRaffles[ix];
+            if (
+                uuidToMisayWasiInfo[activeRaffleUuid].campaignEndDate <
+                block.timestamp
+            ) {
+                _listOfRafflesToStart[
+                    _listOfRafflesToStart.length
+                ] = activeRaffleUuid;
+            }
+        }
+    }
+
+    function getListOfActiveMWRaffles()
+        external
+        view
+        returns (MisayWasiInfo[] memory listOfMisayWasis)
+    {
+        listOfMisayWasis = new MisayWasiInfo[](listUuidActiveRaffles.length);
+        for (uint256 ix = 0; ix < listUuidActiveRaffles.length; ix++) {
+            listOfMisayWasis[ix] = uuidToMisayWasiInfo[
+                listUuidActiveRaffles[ix]
+            ];
+        }
+    }
+
+    function getMiswayWasiWithUuid(uint256 _misayWasiUuid)
+        external
+        view
+        returns (MisayWasiInfo memory)
+    {
+        return uuidToMisayWasiInfo[_misayWasiUuid];
+    }
+
+    function getMiswayWasiWithTicketUuid(uint256 _ticketUuid)
+        external
+        view
+        returns (MisayWasiInfo memory)
+    {
+        return uuidToMisayWasiInfo[_ticketUuidToMisayWasiUuid[_ticketUuid]];
+    }
 
     function setPachacuyInfoAddress(address _infoAddress)
         external

@@ -33,6 +33,7 @@ import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 import "../chakra/IChakra.sol";
 import "../info/IPachacuyInfo.sol";
 import "../misayWasi/IMisayWasi.sol";
+import "../guineapig/IGuineaPig.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract PurchaseAssetController is
@@ -47,6 +48,8 @@ contract PurchaseAssetController is
     bytes32 public constant RNG_GENERATOR = keccak256("RNG_GENERATOR");
     bytes32 public constant MONEY_TRANSFER = keccak256("MONEY_TRANSFER");
 
+    using StringsUpgradeable for uint256;
+
     // BUSD token
     using SafeERC20Upgradeable for IERC20Upgradeable;
     IERC20Upgradeable public busdToken;
@@ -60,10 +63,6 @@ contract PurchaseAssetController is
     // Pachacuy Information
     IPachacuyInfo pachacuyInfo;
 
-    // Exchange rate PCUY -> BUSD
-    // Means 1 BUSD = 25 PCUY
-    uint256 public rateBusdToPcuy;
-
     IRandomNumberGenerator public randomNumberGenerator;
 
     // GuineaPig ERC1155
@@ -71,9 +70,6 @@ contract PurchaseAssetController is
 
     // pool rewards for busd
     address public poolRewardsAddress;
-
-    // price of each pacha
-    uint256 public landPrice;
 
     // Verifies that customer has one transaction at a time
     /**
@@ -90,13 +86,6 @@ contract PurchaseAssetController is
         uint256 ix;
     }
     mapping(address => Transaction) ongoingTransaction;
-
-    // likelihood
-    struct LikelihoodData {
-        uint256 price;
-        uint256[] likelihood;
-    }
-    mapping(uint256 => LikelihoodData) likelihoodData;
 
     // Marks the beginning of a guinea pig purchase
     event GuineaPigPurchaseFinish(
@@ -163,12 +152,6 @@ contract PurchaseAssetController is
         busdToken = IERC20Upgradeable(_busdAddress);
         poolRewardsAddress = _poolRewardsAddress;
 
-        rateBusdToPcuy = 25;
-        landPrice = 200 * rateBusdToPcuy * 1e18;
-
-        // Guniea pig purchase - likelihood
-        _setLikelihoodAndPrices(rateBusdToPcuy);
-
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
@@ -216,10 +199,12 @@ contract PurchaseAssetController is
         // Verify that customer does not have an ongoing transaction
         require(
             !ongoingTransaction[_msgSender()].ongoing,
-            "PurchaseAC: Customer cannot have multiple ongoing transactions."
+            "PurchaseAC: Multiple ongoing transactions"
         );
 
-        uint256 price = likelihoodData[_ix].price;
+        uint256 price = pachacuyInfo.getPriceInPcuy(
+            abi.encodePacked("GUINEA_PIG_", _ix.toString())
+        );
 
         // Make transfer with appropiate token address
         _purchaseAtPriceInPcuyAndToken(price, _tokenAddress);
@@ -257,8 +242,10 @@ contract PurchaseAssetController is
      * @param _location Location of the land from 1 to 697
      */
     function _purchaseLand(uint256 _location, address _tokenAddress) internal {
+        uint256 pachaPrice = pachacuyInfo.getPriceInPcuy("PACHA");
+
         // Make transfer with appropiate token address
-        _purchaseAtPriceInPcuyAndToken(landPrice, _tokenAddress);
+        _purchaseAtPriceInPcuyAndToken(pachaPrice, _tokenAddress);
 
         // mint a pacha
         uint256 uuid = nftProducerPachacuy.mintLandNft(
@@ -271,7 +258,7 @@ contract PurchaseAssetController is
         emit PurchaseLand(
             _msgSender(),
             uuid,
-            landPrice,
+            pachaPrice,
             _location,
             poolRewardsAddress
         );
@@ -284,7 +271,7 @@ contract PurchaseAssetController is
         if (_tokenAddress == address(pachaCuyToken)) {
             require(
                 pachaCuyToken.balanceOf(_msgSender()) >= _priceInPcuy,
-                "PurchaseAC: Not enough PCUY balance."
+                "PurchaseAC: Not enough PCUY"
             );
             pachaCuyToken.operatorSend(
                 _msgSender(),
@@ -297,14 +284,14 @@ contract PurchaseAssetController is
             _priceInPcuy = _fromPcuyToBusd(_priceInPcuy);
             require(
                 busdToken.balanceOf(_msgSender()) >= _priceInPcuy,
-                "PurchaseAC: Not enough BUSD balance."
+                "PurchaseAC: Not enough BUSD"
             );
 
             // Verify id customer has given allowance to the PurchaseAC contract
             require(
                 busdToken.allowance(_msgSender(), address(this)) >=
                     _priceInPcuy,
-                "PurchaseAC: Allowance has not been given."
+                "PurchaseAC: Allowance not given"
             );
 
             // SC transfers BUSD from purchaser to pool rewards
@@ -367,7 +354,7 @@ contract PurchaseAssetController is
         if (_tokenAddress == address(pachaCuyToken)) {
             require(
                 pachaCuyToken.balanceOf(_msgSender()) >= pachaPassPrice,
-                "PurchaseAC: Not enough PCUY balance"
+                "PurchaseAC: Not enough PCUY"
             );
 
             // No need to verify allowance
@@ -390,14 +377,14 @@ contract PurchaseAssetController is
 
             require(
                 busdToken.balanceOf(_msgSender()) >= pachaPassPrice,
-                "PurchaseAC: Not enough BUSD balance"
+                "PurchaseAC: Not enough BUSD"
             );
 
             // Verify that customer has given allowance to the PurchaseAC contract
             require(
                 busdToken.allowance(_msgSender(), address(this)) >=
                     pachaPassPrice,
-                "PurchaseAC: Allowance has not been given"
+                "PurchaseAC: Allowance not given"
             );
 
             // SC transfers BUSD from purchaser to pool rewards
@@ -547,7 +534,7 @@ contract PurchaseAssetController is
     ) external onlyRole(MONEY_TRANSFER) {
         require(
             pachaCuyToken.balanceOf(_account) >= _pcuyAmount,
-            "PurchaseAC: Not enough PCUY balance."
+            "PurchaseAC: Not enough PCUY"
         );
 
         pachaCuyToken.operatorSend(
@@ -579,7 +566,7 @@ contract PurchaseAssetController is
     ) internal returns (uint256 _net, uint256 _fee) {
         require(
             pachaCuyToken.balanceOf(_from) >= _pcuyAmount,
-            "PurchaseAC: Not enough PCUY balance."
+            "PurchaseAC: Not enough PCUY"
         );
 
         _fee = (_pcuyAmount * pachacuyInfo.purchaseTax()) / 100;
@@ -602,7 +589,7 @@ contract PurchaseAssetController is
     ) internal {
         require(
             pachaCuyToken.balanceOf(_from) >= _pcuyAmount,
-            "PurchaseAC: Not enough PCUY balance."
+            "PurchaseAC: Not enough PCUY"
         );
 
         pachaCuyToken.operatorSend(_from, _to, _pcuyAmount, "", "");
@@ -612,22 +599,8 @@ contract PurchaseAssetController is
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
 
-    function _fromPcuyToBusd(uint256 _amount) internal view returns (uint256) {
-        return _amount / rateBusdToPcuy;
-    }
-
-    function _fromBusdToPcuy(uint256 _amount) internal view returns (uint256) {
-        return _amount * rateBusdToPcuy;
-    }
-
-    function setRateBusdToPcuy(uint256 _newRate)
-        external
-        onlyRole(GAME_MANAGER)
-    {
-        require(_newRate > 0, "PurchaseAC: Must be greater than 0");
-
-        rateBusdToPcuy = _newRate;
-        _setLikelihoodAndPrices(_newRate);
+    function _fromPcuyToBusd(uint256 _amount) internal returns (uint256) {
+        return _amount / pachacuyInfo.exchangeRateBusdToPcuy();
     }
 
     function _finishPurchaseGuineaPig(
@@ -641,7 +614,7 @@ contract PurchaseAssetController is
             uint256 _race,
             uint256 _guineaPigId, // idForJsonFile 1 -> 8
             string memory _raceAndGender
-        ) = _getRaceGenderGuineaPig(
+        ) = IGuineaPig(pachacuyInfo.guineaPigAddress()).getRaceGenderGuineaPig(
                 _ix,
                 (_randomNumber1 % 100) + 1,
                 _randomNumber2 % 2
@@ -652,7 +625,7 @@ contract PurchaseAssetController is
 
         require(
             address(nftProducerPachacuy) != address(0),
-            "PurchaseAC: Guinea Pig Token not set."
+            "PurchaseAC: Guinea Pig Token not set"
         );
 
         // Mint Guinea Pigs
@@ -664,86 +637,17 @@ contract PurchaseAssetController is
             ""
         );
 
+        uint256 price = pachacuyInfo.getPriceInPcuy(
+            abi.encodePacked("GUINEA_PIG_", _ix.toString())
+        );
+
         emit GuineaPigPurchaseFinish(
             _account,
-            likelihoodData[_ix].price,
+            price,
             _guineaPigId,
             _uuid,
             _raceAndGender
         );
-    }
-
-    function _setLikelihoodAndPrices(uint256 _rateBusdToPcuy) internal {
-        likelihoodData[1] = LikelihoodData(
-            5 * _rateBusdToPcuy * 1e18,
-            new uint256[](4)
-        );
-        likelihoodData[1].likelihood = [70, 85, 95, 100];
-
-        likelihoodData[2] = LikelihoodData(
-            10 * _rateBusdToPcuy * 1e18,
-            new uint256[](4)
-        );
-        likelihoodData[2].likelihood = [20, 50, 80, 100];
-
-        likelihoodData[3] = LikelihoodData(
-            15 * _rateBusdToPcuy * 1e18,
-            new uint256[](4)
-        );
-        likelihoodData[3].likelihood = [10, 30, 60, 100];
-    }
-
-    /**
-     * @dev Returns the race and gender based on a random number from VRF
-     * @param _raceRN is the random number (from VRF) used to calculate the race
-     * @param _genderRN is the random number (from VRF) used to calculate the gender
-     * @return Two integers are returned: race and gender respectively
-     * @dev race   could be one of 1, 2, 3, 4 -> R1, R2, R3, R4
-     * @dev gender could be one of 0, 1       -> Male, Female
-     * uint256 public constant PERU_MALE = 1;
-     * uint256 public constant INTI_MALE = 2;
-     * uint256 public constant ANDINO_MALE = 3;
-     * uint256 public constant SINTETICO_MALE = 4;
-     * uint256 public constant PERU_FEMALE = 5;
-     * uint256 public constant INTI_FEMALE = 6;
-     * uint256 public constant ANDINO_FEMALE = 7;
-     * uint256 public constant SINTETICO_FEMALE = 8;
-     */
-    function _getRaceGenderGuineaPig(
-        uint256 _ix,
-        uint256 _raceRN, // [1, 100]
-        uint256 _genderRN // [0, 1]
-    )
-        internal
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            string memory
-        )
-    {
-        // race between 1 and 4
-        uint256 i;
-        for (i = 0; i < likelihoodData[_ix].likelihood.length; i++) {
-            if (_raceRN <= likelihoodData[_ix].likelihood[i]) break;
-        }
-
-        i += 1;
-        assert(i >= 1 && i <= 4);
-
-        // 0: male, 1: female
-        uint256 id = i + _genderRN * 4;
-        assert(id >= 1 && i <= 8);
-
-        if (id == 1) return (_genderRN, i, id, "PERU MALE");
-        else if (id == 2) return (_genderRN, i, id, "INTI MALE");
-        else if (id == 3) return (_genderRN, i, id, "ANDINO MALE");
-        else if (id == 4) return (_genderRN, i, id, "SINTETICO MALE");
-        else if (id == 5) return (_genderRN, i, id, "PERU FEMALE");
-        else if (id == 6) return (_genderRN, i, id, "INTI FEMALE");
-        else if (id == 7) return (_genderRN, i, id, "ANDINO FEMALE");
-        else return (_genderRN, i, id, "SINTETICO FEMALE");
     }
 
     function _compareStrings(string memory a, string memory b)
@@ -793,10 +697,6 @@ contract PurchaseAssetController is
         account = ongoingTransaction[_account].account;
         ongoing = ongoingTransaction[_account].ongoing;
         ix = ongoingTransaction[_account].ix;
-    }
-
-    function setLandPrice(uint256 _landPrice) external onlyRole(GAME_MANAGER) {
-        landPrice = _landPrice;
     }
 
     function setPcuyTokenAddress(address _pachaCuyTokenAddress)

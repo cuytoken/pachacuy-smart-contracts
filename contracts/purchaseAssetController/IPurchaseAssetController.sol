@@ -7,6 +7,12 @@ interface IPurchaseAssetController {
         uint256 _pcuyAmount
     ) external;
 
+    function transferPcuyWithTax(
+        address _from,
+        address _to,
+        uint256 _pcuyAmount
+    ) external returns (uint256 _net, uint256 _fee);
+
     function transferPcuyFromPoolRewardToUser(
         address _account,
         uint256 _pcuyAmount

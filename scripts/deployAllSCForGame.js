@@ -44,6 +44,9 @@ async function main() {
    * - pI 012 - setPachaCuyTokenAddress
    * - pI 013 - setNftProducerAddress
    * - pI 014 - setMisayWasiAddress
+   * - pI 015 - setGuineaPigAddress
+   * - pI 016 - setRandomNumberGAddress
+   * - pI 017 - setBinarySearchAddress
    */
   var PachacuyInfo = await gcf("PachacuyInfo");
   var pachacuyInfo = await dp(
@@ -68,6 +71,7 @@ async function main() {
    * 1. Set Random Number Generator address as consumer in VRF subscription
    * 2. rng 001 - Add PurchaseAssetController sc within the whitelist of Random Number Generator
    * 2. rng 002 - Add Tatacuy sc within the whitelist of Random Number Generator
+   * 2. rng 003 - Add Misay Wasi sc within the whitelist of Random Number Generator
    */
   const RandomNumberGenerator = await gcf("RandomNumberGenerator");
   const randomNumberGenerator = await dp(RandomNumberGenerator, [], {
@@ -209,18 +213,44 @@ async function main() {
 
   /**
    * MISAY WASI
-   * 1. setPachacuyInfoAddress
-   * 2. grant game_manager role to nftProducer
+   * 1. msws 001 - setPachacuyInfoAddress
+   * 2. msws 002 - grant game_manager role to nftProducer
+   * 3. msws 003 - grant game_manager role to relayer
+   * 4. msws 004 - grant RNG_GENERATOR role to RNG sc
    */
   var MisayWasi = await gcf("MisayWasi");
   var misayWasi = await dp(MisayWasi, [], {
     kind: "uups",
   });
-
   await misayWasi.deployed();
   console.log("MisayWasi Proxy:", misayWasi.address);
   var misayWasiImp = await getImplementation(misayWasi);
   console.log("MisayWasi Imp:", misayWasiImp);
+
+  /**
+   * GUINEA PIG
+   * 1. gp 001 - setPachacuyInfoAddress
+   */
+  var GuineaPig = await gcf("GuineaPig");
+  var guineaPig = await dp(GuineaPig, [], {
+    kind: "uups",
+  });
+  await guineaPig.deployed();
+  console.log("GuineaPig Proxy:", guineaPig.address);
+  var guineaPigImp = await getImplementation(guineaPig);
+  console.log("GuineaPig Imp:", guineaPigImp);
+
+  /**
+   * Binary Search
+   */
+  var BinarySearch = await gcf("BinarySearch");
+  var binarySearch = await dp(BinarySearch, [], {
+    kind: "uups",
+  });
+  await binarySearch.deployed();
+  console.log("BinarySearch Proxy:", binarySearch.address);
+  var binarySearchImp = await getImplementation(binarySearch);
+  console.log("BinarySearch Imp:", binarySearchImp);
 
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Finish Setting up Smart Contracts");
@@ -230,8 +260,10 @@ async function main() {
   var rng = randomNumberGenerator;
   var pacAdd = purchaseAssetController.address;
   var ttAdd = tatacuy.address;
+  var mswsAdd = misayWasi.address;
   await executeSet(rng, "addToWhiteList", [pacAdd], "rng 001");
   await executeSet(rng, "addToWhiteList", [ttAdd], "rng 002");
+  await executeSet(rng, "addToWhiteList", [mswsAdd], "rng 003");
 
   // PURCHASE ASSET CONTROLLER
   var pac = purchaseAssetController;
@@ -300,6 +332,8 @@ async function main() {
   var pcuyAdd = pachaCuyToken.address;
   var nftAdd = nftProducerPachacuy.address;
   var mswsAdd = misayWasi.address;
+  var gpAdd = guineaPig.address;
+  var rngAdd = randomNumberGenerator.address;
   await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
   await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
   await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
@@ -309,11 +343,30 @@ async function main() {
   await executeSet(pI, "setPachaCuyTokenAddress", [pcuyAdd], "pI 012");
   await executeSet(pI, "setNftProducerAddress", [nftAdd], "pI 013");
   await executeSet(pI, "setMisayWasiAddress", [mswsAdd], "pI 014");
+  await executeSet(pI, "setGuineaPigAddress", [gpAdd], "pI 015");
+  await executeSet(pI, "setRandomNumberGAddress", [rngAdd], "pI 016");
+  await executeSet(pI, "setBinarySearchAddress", [rngAdd], "pI 016");
 
   // HATUN WASI
   var hw = hatunWasi;
   var nftAdd = nftProducerPachacuy.address;
   await executeSet(hw, "grantRole", [game_manager, nftAdd], "hw 001");
+
+  // GUINEA PIG
+  var gp = guineaPig;
+  var pcIAdd = pachacuyInfo.address;
+  await executeSet(gp, "setPachacuyInfoAddress", [pcIAdd], "gp 001");
+
+  // MISAY WASI
+  var msws = misayWasi;
+  var nftAdd = nftProducerPachacuy.address;
+  var pcIadd = pachacuyInfo.address;
+  var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
+  var rngAdd = randomNumberGenerator.address;
+  await executeSet(msws, "setPachacuyInfoAddress", [pcIadd], "msws 001");
+  await executeSet(msws, "grantRole", [game_manager, nftAdd], "msws 002");
+  await executeSet(msws, "grantRole", [game_manager, rel], "msws 003");
+  await executeSet(msws, "grantRole", [rng_generator, rngAdd], "msws 004");
 
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Final setting finished!");
@@ -331,6 +384,9 @@ async function main() {
   await verify(chakraImp, "Chakra");
   await verify(pachacuyInfoImp, "Pachacuy Info");
   await verify(hatunWasiImp, "Hatun Wasi");
+  await verify(misayWasiImp, "Misay Wasi");
+  await verify(guineaPigImp, "Guinea Pig");
+  await verify(binarySearchImp, "Binary Search");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Verification of smart contracts finished");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");

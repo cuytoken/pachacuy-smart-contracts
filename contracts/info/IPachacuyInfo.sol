@@ -24,6 +24,18 @@ interface IPachacuyInfo {
 
     function nftProducerAddress() external returns (address);
 
+    function guineaPigAddress() external returns (address);
+
+    function randomNumberGAddress() external returns (address);
+
+    function binarySearchAddress() external returns (address);
+
+    //////////////////////////////////////////////////////////////////
+    ///                          TAXES/FEES                        ///
+    //////////////////////////////////////////////////////////////////
+
+    function raffleTax() external returns (uint256);
+
     function purchaseTax() external returns (uint256);
 
     //////////////////////////////////////////////////////////////////

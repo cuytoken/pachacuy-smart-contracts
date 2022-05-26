@@ -31,7 +31,6 @@ interface IMisayWasi {
 
     function registerTicketPurchase(
         address _account,
-        uint256 _ticketUuid,
         uint256 _misayWasiUuid,
         uint256 _amountOfTickets,
         bool newCustomer

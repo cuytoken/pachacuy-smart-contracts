@@ -37,6 +37,7 @@ import "../chakra/IChakra.sol";
 import "../hatunwasi/IHatunWasi.sol";
 import "../info/IPachacuyInfo.sol";
 import "../misayWasi/IMisayWasi.sol";
+import "../guineapig/IGuineaPig.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract NftProducerPachacuy is
@@ -69,27 +70,9 @@ contract NftProducerPachacuy is
     bytes32 public constant MISAYWASI = keccak256("MISAYWASI");
     bytes32 public constant QHATUWASI = keccak256("QHATUWASI");
     bytes32 public constant RAFFLE = keccak256("RAFFLE");
+    bytes32 public constant GUINEAPIG = keccak256("GUINEAPIG");
 
     event Uuid(uint256 uuid);
-
-    // Guinea pig data
-    struct GuineaPigData {
-        bool isGuineaPig;
-        string race;
-        string gender;
-        uint256 speed;
-        uint256 daysUntilHungry;
-        uint256 daysUntilDeath;
-        uint256 samiPoints;
-        uint256 uuid;
-        uint256 idForJsonFile;
-        uint256 feedingDate;
-        uint256 burningDate;
-        uint256 wasBorn;
-        address owner;
-    }
-    // uuid => GuineaPig
-    mapping(uint256 => GuineaPigData) internal _uuidToGuineaPigData;
 
     // typeOfDistribution:PachaPass 1 private with not price | 2 public with price
     // Land data
@@ -138,13 +121,6 @@ contract NftProducerPachacuy is
     // Token prefix
     string internal _prefix;
 
-    // Guinea Pig races
-    string[4] private _races;
-    uint256[4] private _speeds;
-    uint256[4] private _daysUntilHungry;
-    uint256[4] private _daysUntilDeath;
-    uint256[4] private _samiPoints;
-
     // Map uuid with NFT type
     mapping(uint256 => bytes32) internal _nftTypes;
 
@@ -174,48 +150,40 @@ contract NftProducerPachacuy is
         _grantRole(UPGRADER_ROLE, _msgSender());
         _grantRole(GAME_MANAGER, _msgSender());
 
-        // 4 Races of guinea pig
-        _races = ["PERU", "INTI", "ANDINO", "SINTETICO"];
-        _speeds = [uint256(100), 105, 110, 115];
-        _daysUntilHungry = [uint256(5), 6, 7, 8];
-        _daysUntilDeath = [uint256(3), 4, 5, 6];
-        _samiPoints = [uint256(9), 10, 11, 12];
-
         // starts counter at one
         _tokenIdCounter.increment();
     }
 
     function mintGuineaPigNft(
-        address account,
-        uint256 gender, // 0, 1
-        uint256 race, // 1 -> 4
-        uint256 idForJsonFile, // 1 -> 8
-        bytes memory data
-    ) public onlyRole(MINTER_ROLE) returns (uint256) {
+        address _account,
+        uint256 _gender, // 0, 1
+        uint256 _race, // 1 -> 4
+        uint256 _idForJsonFile // 1 -> 8
+    ) public onlyRole(MINTER_ROLE) {
         // Creates a UUID for each mint
         uint256 uuid = _tokenIdCounter.current();
-
-        // Map uuid -> idForJsonFile
-        _uuidToJsonFile[uuid] = idForJsonFile;
+        _mint(_account, uuid, 1, "");
 
         // Map owner -> uuid[]
-        _ownerToUuids[account].push(uuid);
+        // save in list of uuids for owner
+        _ownerToUuids[_account].push(uuid);
 
-        // Map uuid -> Guinea Pig Struct
-        _uuidToGuineaPigData[uuid] = _getGuinieaPigStruct(
-            gender,
-            race,
-            uuid,
-            idForJsonFile,
-            account
+        // save type of uuid minted
+        _nftTypes[uuid] = GUINEAPIG;
+
+        // Save info in Guinea Pig SC
+        IGuineaPig(pachacuyInfo.guineaPigAddress()).registerGuineaPig(
+            _account,
+            _gender,
+            _race,
+            _idForJsonFile,
+            uuid
         );
-        uint256 amount = 1;
-        _mint(account, uuid, amount, data);
-        _setApprovalForAll(account, address(this), true);
+
+        _setApprovalForAll(_account, address(this), true);
 
         _tokenIdCounter.increment();
-
-        return uuid;
+        emit Uuid(uuid);
     }
 
     function mintLandNft(
@@ -473,7 +441,6 @@ contract NftProducerPachacuy is
         _nftTypes[uuid] = CHAKRA;
 
         // Save info in Chakra SC
-        // uuid =>  chakraUuid
         IChakra(pachacuyInfo.chakraAddress()).registerChakra(
             _account,
             _pachaUuid,
@@ -587,7 +554,6 @@ contract NftProducerPachacuy is
 
         IMisayWasi(pachacuyInfo.misayWasiAddress()).registerTicketPurchase(
             _account,
-            _ticketUuid,
             _misayWasiUuid,
             _amountOfTickets,
             hasBoughtBefore
@@ -707,104 +673,42 @@ contract NftProducerPachacuy is
     //     } else return false;
     // }
 
-    function _getGuinieaPigStruct(
-        uint256 _gender,
-        uint256 _race,
-        uint256 _uuid,
-        uint256 _tokenId,
-        address _account
-    ) internal view returns (GuineaPigData memory) {
-        return
-            GuineaPigData({
-                isGuineaPig: true,
-                gender: _gender == 0 ? "MALE" : "FEMALE",
-                race: _races[_race - 1],
-                speed: _speeds[_race - 1],
-                daysUntilHungry: _daysUntilHungry[_race - 1],
-                daysUntilDeath: _daysUntilDeath[_race - 1],
-                samiPoints: _samiPoints[_race - 1],
-                uuid: _uuid,
-                idForJsonFile: _tokenId,
-                feedingDate: block.timestamp +
-                    (_daysUntilHungry[_race - 1] * 1 days),
-                burningDate: block.timestamp +
-                    (_daysUntilHungry[_race - 1] * 1 days) +
-                    (_daysUntilDeath[_race - 1] * 1 days),
-                wasBorn: block.timestamp,
-                owner: _account
-            });
-    }
+    // function getListOfNftsPerAccount(address _account)
+    //     external
+    //     view
+    //     returns (
+    //         uint256[] memory guineaPigs,
+    //         uint256[] memory lands,
+    //         uint256[] memory pachaPasses
+    //     )
+    // {
+    //     {
+    //         uint256[] memory _uuidsList = _ownerToUuids[_account];
+    //         uint256 length = _uuidsList.length;
 
-    function getListOfNftsPerAccount(address _account)
-        external
-        view
-        returns (
-            uint256[] memory guineaPigs,
-            uint256[] memory lands,
-            uint256[] memory pachaPasses
-        )
-    {
-        {
-            uint256[] memory _uuidsList = _ownerToUuids[_account];
-            uint256 length = _uuidsList.length;
+    //         guineaPigs = new uint256[](length);
+    //         lands = new uint256[](length);
+    //         pachaPasses = new uint256[](length);
 
-            guineaPigs = new uint256[](length);
-            lands = new uint256[](length);
-            pachaPasses = new uint256[](length);
+    //         uint256 g = 0;
+    //         uint256 l = 0;
+    //         uint256 h = 0;
 
-            uint256 g = 0;
-            uint256 l = 0;
-            uint256 h = 0;
-
-            for (uint256 i = 0; i < length; i++) {
-                if (_uuidToGuineaPigData[_uuidsList[i]].isGuineaPig) {
-                    guineaPigs[g] = _uuidsList[i];
-                    ++g;
-                } else if (_uuidToLandData[_uuidsList[i]].isLand) {
-                    lands[l] = _uuidsList[i];
-                    ++l;
-                }
-                // else if (_uuidToPachaPassData[_uuidsList[i]].isPachaPass) {
-                //     pachaPasses[h] = _uuidsList[i];
-                //     ++h;
-                // }
-            }
-        }
-    }
-
-    function getGuineaPigData(uint256 _uuid)
-        external
-        view
-        returns (
-            bool isGuineaPig,
-            string memory gender,
-            string memory race,
-            uint256 speed,
-            uint256 daysUntilHungry,
-            uint256 daysUntilDeath,
-            uint256 samiPoints,
-            uint256 uuid,
-            uint256 idForJsonFile,
-            uint256 feedingDate,
-            uint256 burningDate,
-            uint256 wasBorn,
-            address owner
-        )
-    {
-        isGuineaPig = _uuidToGuineaPigData[_uuid].isGuineaPig;
-        gender = _uuidToGuineaPigData[_uuid].gender;
-        race = _uuidToGuineaPigData[_uuid].race;
-        speed = _uuidToGuineaPigData[_uuid].speed;
-        daysUntilHungry = _uuidToGuineaPigData[_uuid].daysUntilHungry;
-        daysUntilDeath = _uuidToGuineaPigData[_uuid].daysUntilDeath;
-        samiPoints = _uuidToGuineaPigData[_uuid].samiPoints;
-        uuid = _uuidToGuineaPigData[_uuid].uuid;
-        idForJsonFile = _uuidToGuineaPigData[_uuid].idForJsonFile;
-        feedingDate = _uuidToGuineaPigData[_uuid].feedingDate;
-        burningDate = _uuidToGuineaPigData[_uuid].burningDate;
-        wasBorn = _uuidToGuineaPigData[_uuid].wasBorn;
-        owner = _uuidToGuineaPigData[_uuid].owner;
-    }
+    //         for (uint256 i = 0; i < length; i++) {
+    //             if (_uuidToGuineaPigData[_uuidsList[i]].isGuineaPig) {
+    //                 guineaPigs[g] = _uuidsList[i];
+    //                 ++g;
+    //             } else if (_uuidToLandData[_uuidsList[i]].isLand) {
+    //                 lands[l] = _uuidsList[i];
+    //                 ++l;
+    //             }
+    //             // else if (_uuidToPachaPassData[_uuidsList[i]].isPachaPass) {
+    //             //     pachaPasses[h] = _uuidsList[i];
+    //             //     ++h;
+    //             // }
+    //         }
+    //     }
+    // }
 
     function getLandData(uint256 _uuid)
         external
@@ -917,28 +821,28 @@ contract NftProducerPachacuy is
     }
 
     function tokenURI(uint256 _uuid) public view returns (string memory) {
-        require(exists(_uuid), "NFP: Token has not been minted.");
+        // require(exists(_uuid), "NFP: Token has not been minted.");
 
-        uint256 idForJsonFile = _uuidToJsonFile[_uuid];
+        // uint256 idForJsonFile = _uuidToJsonFile[_uuid];
 
         string memory fileName;
-        if (_uuidToGuineaPigData[_uuid].isGuineaPig) {
-            fileName = string(
-                abi.encodePacked(_prefix, idForJsonFile.toString(), ".json")
-            );
-        } else if (_uuidToLandData[_uuid].isLand) {
-            fileName = string(
-                abi.encodePacked(
-                    _prefix,
-                    "PACHA",
-                    idForJsonFile.toString(),
-                    ".json"
-                )
-            );
-        }
-        //  else if (_uuidToPachaPassData[_uuid].isPachaPass) {
-        //     fileName = string(abi.encodePacked(_prefix, "PACHAPASS.json"));
+        // if (_uuidToGuineaPigData[_uuid].isGuineaPig) {
+        //     fileName = string(
+        //         abi.encodePacked(_prefix, idForJsonFile.toString(), ".json")
+        //     );
+        // } else if (_uuidToLandData[_uuid].isLand) {
+        //     fileName = string(
+        //         abi.encodePacked(
+        //             _prefix,
+        //             "PACHA",
+        //             idForJsonFile.toString(),
+        //             ".json"
+        //         )
+        //     );
         // }
+        // //  else if (_uuidToPachaPassData[_uuid].isPachaPass) {
+        // //     fileName = string(abi.encodePacked(_prefix, "PACHAPASS.json"));
+        // // }
 
         return bytes(_prefix).length > 0 ? fileName : "";
     }
