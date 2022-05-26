@@ -14,7 +14,7 @@
 ////     \__\/       \__\/         \__\/         \__\/         \__\/         \__\/         \__\/                 ////
 ////                                                                                                             ////
 ////                                                 LAND OF CUYS                                                ////
-////                                                    Chakra                                                   ////
+////                                                  Misay Wasi                                                   ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // SPDX-License-Identifier: MIT
@@ -26,9 +26,11 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../info/IPachacuyInfo.sol";
+import "../NftProducerPachacuy/INftProducerPachacuy.sol";
+import "../purchaseAssetController/IPurchaseAssetController.sol";
 
 /// @custom:security-contact lee@cuytoken.com
-contract Chakra is
+contract MisayWasi is
     Initializable,
     PausableUpgradeable,
     AccessControlUpgradeable,
@@ -46,43 +48,53 @@ contract Chakra is
     /**
      * @dev Details the information of a Tatacuy. Additional properties attached for its campaign
      * @param owner: Wallet address of the current owner of the Tatacuy
-     * @param chakraUuid: Uuid of the chakra when it was minted
-     * @param pachaUuid: Uuid of the pacha where the chakra belongs to
-     * @param creationDate: Date when the chakra was minted
-     * @param priceOfChakra: Price in PCUY of the chakra NFT
-     * @param pricePerFood: Price in PCUY to pay for each food by the Guinea Pig
-     * @param totalFood: Number of food to be purchased from chakra
-     * @param availableFood: Amount of food available to sell. Decrease one by one as Guinea Pig purchase food
-     * @param hasChakra: Indicates wheter a chakra exists or not
+     * @param misayWasiUuid: Uuid of the misay waysi when it was minted
+     * @param pachaUuid: Uuid of the pacha where the misay waysi belongs to
+     * @param creationDate: Date when the misay waysi was minted
+     * @param ticketPrice: Price ticket to participate in the raffle
+     * @param ticketUuid: Uuid of the ticket of the Misay Wasi
+     * @param misayWasiPrice: Price in PCUY of the Misay Wasi
+     * @param rafflePrize: Prize of winning at the raffle
+     * @param numberTicketsPurchased: Number of raffle tickets bought
+     * @param campaignStartDate: Timestamp when the raffle initiated
+     * @param campaignEndDate: Timestamp when the raffle ends
+     * @param isCampaignActive: Indicates wheter this misay waysi is running a raffle or not
+     * @param hasMisayWasi: Indicates wheter a misay wasi exists or not
      */
-    struct ChakraInfo {
+    struct MisayWasiInfo {
         address owner;
-        uint256 chakraUuid;
+        uint256 misayWasiUuid;
         uint256 pachaUuid;
         uint256 creationDate;
-        uint256 priceOfChakra;
-        uint256 pricePerFood;
-        uint256 totalFood;
-        uint256 availableFood;
-        bool hasChakra;
+        uint256 ticketPrice;
+        uint256 ticketUuid;
+        uint256 misayWasiPrice;
+        uint256 rafflePrize;
+        uint256 numberTicketsPurchased;
+        uint256 campaignStartDate;
+        uint256 campaignEndDate;
+        bool isCampaignActive;
+        bool hasMisayWasi;
+        address[] listOfParticipants;
     }
-    // Chakra UUID  -> Struct of Chakra Info
-    mapping(uint256 => ChakraInfo) internal uuidToChakraInfo;
+    // MisayWasi UUID  -> Struct of MisayWasi Info
+    mapping(uint256 => MisayWasiInfo) internal uuidToMisayWasiInfo;
 
-    // List of Available Chakras
-    ChakraInfo[] listOfChakrasWithFood;
-    // chakra uuid => array index
-    mapping(uint256 => uint256) internal _chakraIx;
+    // List of Available MisayWasis
+    MisayWasiInfo[] listOfActiveMWRaffles;
+    // MisayWasi uuid => array index
+    mapping(uint256 => uint256) internal _misayWasiIx;
+
+    // ticket uuid => wallet address => amount of tickets
+    mapping(uint256 => mapping(address => uint256)) listOfRaffleTickets;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
-    function initialize(address _pachacuyInfoAdd) public initializer {
+    function initialize() public initializer {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
-
-        pachacuyInfo = IPachacuyInfo(_pachacuyInfoAdd);
 
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
@@ -94,130 +106,117 @@ contract Chakra is
      * @dev Trigger when it is minted
      * @param _account: Wallet address of the current owner of the Pacha
      * @param _pachaUuid: Uuid of the pacha when it was minted
-     * @param _chakraUuid: Uuid of the Tatacuy when it was minted
-     * @param _chakraPrice: Price in PCUY of the chakra
+     * @param _misayWasiUuid: Uuid of the Tatacuy when it was minted
+     * @param _misayWasiPrice: Price in PCUY of the Misay Wasi
      */
-    function registerChakra(
+    function registerMisayWasi(
         address _account,
         uint256 _pachaUuid,
-        uint256 _chakraUuid,
-        uint256 _chakraPrice
+        uint256 _misayWasiUuid,
+        uint256 _misayWasiPrice
     ) external onlyRole(GAME_MANAGER) {
-        uint256 _totalFood = pachacuyInfo.totalFood();
-        uint256 _pricePerFood = pachacuyInfo.pricePerFood();
-
-        ChakraInfo memory chakra = ChakraInfo({
+        MisayWasiInfo memory misayWasiInfo = MisayWasiInfo({
             owner: _account,
-            chakraUuid: _chakraUuid,
+            misayWasiUuid: _misayWasiUuid,
             pachaUuid: _pachaUuid,
             creationDate: block.timestamp,
-            priceOfChakra: _chakraPrice,
-            pricePerFood: _pricePerFood,
-            totalFood: _totalFood,
-            availableFood: _totalFood,
-            hasChakra: true
+            ticketPrice: 0,
+            ticketUuid: 0,
+            misayWasiPrice: _misayWasiPrice,
+            rafflePrize: 0,
+            numberTicketsPurchased: 0,
+            campaignStartDate: 0,
+            campaignEndDate: 0,
+            isCampaignActive: false,
+            hasMisayWasi: true,
+            listOfParticipants: new address[](0)
         });
-        uuidToChakraInfo[_chakraUuid] = chakra;
+        uuidToMisayWasiInfo[_misayWasiUuid] = misayWasiInfo;
+    }
+
+    function startMisayWasiRaffle(
+        uint256 _misayWasiUuid,
+        uint256 _rafflePrize,
+        uint256 _ticketPrice,
+        uint256 _campaignEndDate
+    ) external {
+        IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
+            .transferPcuyFromUserToPoolReward(_msgSender(), _rafflePrize);
+
+        MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[
+            _misayWasiUuid
+        ];
+
+        require(
+            !misayWasiInfo.isCampaignActive,
+            "Misay Wasi: Campaign is active"
+        );
+
+        require(
+            misayWasiInfo.owner == _msgSender(),
+            "Misay Wasi: Not the owner"
+        );
+
+        uint256 _ticketUuid = INftProducerPachacuy(
+            pachacuyInfo.nftProducerAddress()
+        ).createTicketIdRaffle();
+
+        misayWasiInfo.rafflePrize = _rafflePrize;
+        misayWasiInfo.ticketPrice = _ticketPrice;
+        misayWasiInfo.campaignEndDate = _campaignEndDate;
+        misayWasiInfo.isCampaignActive = true;
+        misayWasiInfo.ticketUuid = _ticketUuid;
+        misayWasiInfo.campaignStartDate = block.timestamp;
 
         uint256 current = _tokenIdCounter.current();
         _tokenIdCounter.increment();
 
-        _chakraIx[_chakraUuid] = current;
-        listOfChakrasWithFood.push(chakra);
+        _misayWasiIx[_misayWasiUuid] = current;
+        listOfActiveMWRaffles.push(misayWasiInfo);
     }
 
-    function updateFoodPriceAtChakra(uint256 _chakraUuid, uint256 _pricePerFood)
-        external
-    {
-        ChakraInfo storage chakraInfo1 = uuidToChakraInfo[_chakraUuid];
-        require(_msgSender() == chakraInfo1.owner, "Chakra: Not the owner");
-        chakraInfo1.pricePerFood = _pricePerFood;
+    function registerTicketPurchase(
+        address _account,
+        uint256 _ticketUuid,
+        uint256 _misayWasiUuid,
+        uint256 _amountOfTickets,
+        bool newCustomer
+    ) external onlyRole(GAME_MANAGER) {
+        listOfRaffleTickets[_ticketUuid][_account] += _amountOfTickets;
 
-        uint256 _ix = _chakraIx[_chakraUuid];
-        ChakraInfo storage chakraInfo2 = listOfChakrasWithFood[_ix];
-        chakraInfo2.pricePerFood = _pricePerFood;
-    }
+        MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[
+            _misayWasiUuid
+        ];
 
-    function consumeFoodFromChakra(uint256 _chakraUuid, uint256 _amountFood)
-        external
-        onlyRole(GAME_MANAGER)
-        returns (uint256)
-    {
-        require(_amountFood > 0, "Chakra: Amount food cannot be 0");
+        misayWasiInfo.numberTicketsPurchased += _amountOfTickets;
 
-        ChakraInfo storage chakra = uuidToChakraInfo[_chakraUuid];
-
-        if (chakra.availableFood >= _amountFood) {
-            unchecked {
-                chakra.availableFood -= _amountFood;
-            }
-
-            if (chakra.availableFood == 0) {
-                _removeChakraWithUuid(_chakraUuid);
-            }
-            return chakra.availableFood;
+        if (newCustomer) {
+            uint256 _l = misayWasiInfo.listOfParticipants.length;
+            misayWasiInfo.listOfParticipants[_l] = _account;
         }
-
-        revert("Chakra: No food at chakra");
     }
 
-    function burnChakra(uint256 _chakraUuid) external onlyRole(GAME_MANAGER) {
-        delete uuidToChakraInfo[_chakraUuid];
-        _removeChakraWithUuid(_chakraUuid);
-    }
+    // function purchase
+    // start contest
+    //
 
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
 
-    function _removeChakraWithUuid(uint256 _chakraUuid) internal {
-        uint256 _length = listOfChakrasWithFood.length;
-        if (_length == 1) {
-            listOfChakrasWithFood.pop();
-            delete _chakraIx[_chakraUuid];
-            _tokenIdCounter.decrement();
-        }
-
-        // get _ix of element to remove
-        uint256 _ix = _chakraIx[_chakraUuid];
-        delete _chakraIx[_chakraUuid];
-
-        // temp of El at last position of array to be removed
-        ChakraInfo memory _chakra = listOfChakrasWithFood[_length - 1];
-
-        // point last El to index to be replaced
-        _chakraIx[_chakra.chakraUuid] = _ix;
-
-        // swap last El from last position to index to be replaced
-        listOfChakrasWithFood[_ix] = _chakra;
-
-        // remove last element
-        listOfChakrasWithFood.pop();
-
-        // decrease counter since array decreased in one
-        _tokenIdCounter.decrement();
+    function setPachacuyInfoAddress(address _infoAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        pachacuyInfo = IPachacuyInfo(_infoAddress);
     }
 
-    function tokenUri(uint256 _chakraUuid)
-        public
-        view
-        returns (string memory)
-    {}
-
-    function getListOfChakrasWithFood()
+    function getMisayWasiWithUuid(uint256 _misayWasiUuid)
         external
         view
-        returns (ChakraInfo[] memory)
+        returns (MisayWasiInfo memory)
     {
-        return listOfChakrasWithFood;
-    }
-
-    function getChakraWithUuid(uint256 _chakraUuid)
-        external
-        view
-        returns (ChakraInfo memory)
-    {
-        return uuidToChakraInfo[_chakraUuid];
+        return uuidToMisayWasiInfo[_misayWasiUuid];
     }
 
     ///////////////////////////////////////////////////////////////

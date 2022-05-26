@@ -84,6 +84,21 @@ const money_transfer = ethers.utils.keccak256(
   ethers.utils.toUtf8Bytes("MONEY_TRANSFER")
 );
 
+function toBytes32(KEY) {
+  return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(KEY));
+}
+var businessesPrice = [10, 200, 3, 10, 5, 10, 15];
+var businesses = [
+  "CHAKRA",
+  "PACHA",
+  "QHATU_WASI",
+  "MISAY_WASI",
+  "GUINEA_PIG_1",
+  "GUINEA_PIG_2",
+  "GUINEA_PIG_3",
+];
+var businessesKey = businesses.map(toBytes32);
+
 var pachacuyInfoForGame = {
   maxSamiPoints: [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000],
   boxes: [100, 120, 140, 160, 180, 200, 220, 240, 260, 280],
@@ -358,6 +373,8 @@ function infoHelper(net = "") {
 
 module.exports = {
   ...roles,
+  businessesPrice,
+  businessesKey,
   pachacuyInfoForGame,
   getImplementation,
   infoHelper,

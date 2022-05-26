@@ -70,6 +70,7 @@ contract Wiracocha is
      * @param totalPcuyBalance: total amount of PCUY tokens after the exchange
      * @param samiPoints: amount sami points to be exchange gor PCUY tokens
      * @param ratePcuyToSami: exchange rate between PCUY to sami points
+     * @param idFromFront: An ID coming from front to keep track of the exchange at Wiracocha
      */
     event WiracochaExchange(
         address exchanger,
@@ -78,7 +79,8 @@ contract Wiracocha is
         uint256 amountPcuy,
         uint256 totalPcuyBalance,
         uint256 samiPoints,
-        uint256 ratePcuyToSami
+        uint256 ratePcuyToSami,
+        uint256 idFromFront
     );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -126,12 +128,14 @@ contract Wiracocha is
      * @param _pachaOwner: Wallet address of the pacha owner
      * @param _pachaUuid: Uuid of the pacha when it was minted
      * @param _samiPoints: Amount of Sami Points to exchange
+     * @param _idFromFront: An ID coming from front to keep track of the exchange at Wiracocha
      */
     function exchangeSamiToPcuy(
         address _exchanger,
         address _pachaOwner,
         uint256 _pachaUuid,
-        uint256 _samiPoints
+        uint256 _samiPoints,
+        uint256 _idFromFront
     ) external onlyRole(GAME_MANAGER) {
         uint256 _amountPcuy = pachacuyInfo.convertSamiToPcuy(_samiPoints);
 
@@ -149,7 +153,8 @@ contract Wiracocha is
                 _exchanger
             ),
             _samiPoints,
-            pachacuyInfo.exchangeRatePcuyToSami()
+            pachacuyInfo.exchangeRatePcuyToSami(),
+            _idFromFront
         );
     }
 

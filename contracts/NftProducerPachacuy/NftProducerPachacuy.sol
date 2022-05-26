@@ -36,6 +36,7 @@ import "../wiracocha/IWiracocha.sol";
 import "../chakra/IChakra.sol";
 import "../hatunwasi/IHatunWasi.sol";
 import "../info/IPachacuyInfo.sol";
+import "../misayWasi/IMisayWasi.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract NftProducerPachacuy is
@@ -53,10 +54,6 @@ contract NftProducerPachacuy is
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant GAME_MANAGER = keccak256("GAME_MANAGER");
 
-    ITatacuy tatacuy;
-    IWiracocha wiracocha;
-    IChakra chakra;
-    IHatunWasi hatunWasi;
     IPachacuyInfo pachacuyInfo;
 
     using CountersUpgradeable for CountersUpgradeable.Counter;
@@ -69,6 +66,9 @@ contract NftProducerPachacuy is
     bytes32 public constant WIRACOCHA = keccak256("WIRACOCHA");
     bytes32 public constant CHAKRA = keccak256("CHAKRA");
     bytes32 public constant HATUNWASI = keccak256("HATUNWASI");
+    bytes32 public constant MISAYWASI = keccak256("MISAYWASI");
+    bytes32 public constant QHATUWASI = keccak256("QHATUWASI");
+    bytes32 public constant RAFFLE = keccak256("RAFFLE");
 
     event Uuid(uint256 uuid);
 
@@ -533,6 +533,67 @@ contract NftProducerPachacuy is
         return uuid;
     }
 
+    function mintMisayWasi(
+        address _account,
+        uint256 _pachaUuid,
+        uint256 _misayWasiPrice
+    ) external onlyRole(GAME_MANAGER) {
+        // validate that _account is an owner of that pacha
+        require(balanceOf(_account, _pachaUuid) > 0, "NFP: No pacha found");
+
+        uint256 uuid = _tokenIdCounter.current();
+        _mint(_msgSender(), uuid, 1, "");
+
+        // save in list of uuids for owner
+        _ownerToUuids[_msgSender()].push(uuid);
+
+        // save type of uuid minted
+        _nftTypes[uuid] = MISAYWASI;
+
+        // Save info in Misay Wasi SC
+        IMisayWasi(pachacuyInfo.misayWasiAddress()).registerMisayWasi(
+            _account,
+            _pachaUuid,
+            uuid,
+            _misayWasiPrice
+        );
+
+        _tokenIdCounter.increment();
+
+        emit Uuid(uuid);
+    }
+
+    function createTicketIdRaffle()
+        external
+        onlyRole(GAME_MANAGER)
+        returns (uint256 _raffleUuid)
+    {
+        uint256 uuid = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+        return uuid;
+    }
+
+    function purchaseTicketRaffle(
+        address _account,
+        uint256 _ticketUuid,
+        uint256 _misayWasiUuid,
+        uint256 _amountOfTickets
+    ) external onlyRole(GAME_MANAGER) {
+        // has tickets already?
+        bool hasBoughtBefore = balanceOf(_account, _ticketUuid) > 0;
+
+        // mint the tickets of the raffle
+        _mint(_account, _ticketUuid, _amountOfTickets, "");
+
+        IMisayWasi(pachacuyInfo.misayWasiAddress()).registerTicketPurchase(
+            _account,
+            _ticketUuid,
+            _misayWasiUuid,
+            _amountOfTickets,
+            hasBoughtBefore
+        );
+    }
+
     // function mintPachaPassNft(
     //     address _account,
     //     uint256 _landUuid,
@@ -802,31 +863,31 @@ contract NftProducerPachacuy is
             keccak256(abi.encodePacked((b))));
     }
 
-    function _rmvElFromOwnerToUuids(address _account, uint256 _uuid) internal {
-        require(_ownerToUuids[_account].length > 0, "NFP: Array is empty");
+    // function _rmvElFromOwnerToUuids(address _account, uint256 _uuid) internal {
+    //     require(_ownerToUuids[_account].length > 0, "NFP: Array is empty");
 
-        if (_ownerToUuids[_account].length == 1) {
-            if (_ownerToUuids[_account][0] == _uuid) {
-                _ownerToUuids[_account].pop();
-                return;
-            } else {
-                revert("NFP: Not found");
-            }
-        }
+    //     if (_ownerToUuids[_account].length == 1) {
+    //         if (_ownerToUuids[_account][0] == _uuid) {
+    //             _ownerToUuids[_account].pop();
+    //             return;
+    //         } else {
+    //             revert("NFP: Not found");
+    //         }
+    //     }
 
-        // find the index of _uuid
-        uint256 i;
-        for (i = 0; i < _ownerToUuids[_account].length; i++) {
-            if (_ownerToUuids[_account][i] == _uuid) break;
-        }
-        require(i != _ownerToUuids[_account].length, "NFP: Not found");
+    //     // find the index of _uuid
+    //     uint256 i;
+    //     for (i = 0; i < _ownerToUuids[_account].length; i++) {
+    //         if (_ownerToUuids[_account][i] == _uuid) break;
+    //     }
+    //     require(i != _ownerToUuids[_account].length, "NFP: Not found");
 
-        // remove the element
-        _ownerToUuids[_account][i] = _ownerToUuids[_account][
-            _ownerToUuids[_account].length - 1
-        ];
-        _ownerToUuids[_account].pop();
-    }
+    //     // remove the element
+    //     _ownerToUuids[_account][i] = _ownerToUuids[_account][
+    //         _ownerToUuids[_account].length - 1
+    //     ];
+    //     _ownerToUuids[_account].pop();
+    // }
 
     function getListOfUuidsPerAccount(address _account)
         external
@@ -907,14 +968,14 @@ contract NftProducerPachacuy is
     }
 
     // Have a look later
-    function mintBatch(
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) public onlyRole(MINTER_ROLE) {
-        _mintBatch(to, ids, amounts, data);
-    }
+    // function mintBatch(
+    //     address to,
+    //     uint256[] memory ids,
+    //     uint256[] memory amounts,
+    //     bytes memory data
+    // ) public onlyRole(MINTER_ROLE) {
+    //     _mintBatch(to, ids, amounts, data);
+    // }
 
     function _beforeTokenTransfer(
         address operator,

@@ -371,16 +371,29 @@ contract Tatacuy is
         uint256 randomNumber = (_randomNumbers[0] % 10) + 1;
         RandomTx memory randomTx = _randomTxs[_account];
 
-        emit TatacuyTryMyLuckResult(
-            _account,
-            randomNumber <= randomTx.likelihood,
-            randomTx.likelihood,
-            randomTx.prizeWinner,
-            randomTx.pachaUuid,
-            randomTx.tatacuyUuid,
-            randomTx.pachaOwner,
-            randomTx.idFromFront
-        );
+        if (randomNumber <= randomTx.likelihood) {
+            emit TatacuyTryMyLuckResult(
+                _account,
+                true,
+                randomTx.likelihood,
+                randomTx.prizeWinner,
+                randomTx.pachaUuid,
+                randomTx.tatacuyUuid,
+                randomTx.pachaOwner,
+                randomTx.idFromFront
+            );
+        } else {
+            emit TatacuyTryMyLuckResult(
+                _account,
+                true,
+                randomTx.likelihood,
+                0,
+                randomTx.pachaUuid,
+                randomTx.tatacuyUuid,
+                randomTx.pachaOwner,
+                randomTx.idFromFront
+            );
+        }
 
         delete _randomTxs[_account];
     }

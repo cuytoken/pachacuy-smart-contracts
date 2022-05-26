@@ -20,6 +20,10 @@ interface IPachacuyInfo {
 
     function pachaCuyTokenAddress() external returns (address);
 
+    function misayWasiAddress() external returns (address);
+
+    function nftProducerAddress() external returns (address);
+
     function purchaseTax() external returns (uint256);
 
     //////////////////////////////////////////////////////////////////
@@ -32,6 +36,8 @@ interface IPachacuyInfo {
     function qhatuWasiPrice() external returns (uint256);
 
     function misayWasiPrice() external returns (uint256);
+
+    function getPriceInPcuy(bytes memory _type) external returns (uint256);
 
     //////////////////////////////////////////////////////////////////
     ///                       EXCHANGE RATE                        ///

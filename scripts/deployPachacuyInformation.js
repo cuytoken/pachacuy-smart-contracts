@@ -5,6 +5,8 @@ const {
   safeAwait,
   getImplementation,
   pachacuyInfo,
+  businessesPrice,
+  businessesKey,
 } = require("../js-utils/helpers");
 
 // const NETWORK = "BSCNET";
@@ -42,13 +44,16 @@ async function main() {
 }
 
 async function upgrade() {
-  var PachacuyInformationAddress = "0xB9ca45D3d4288745636d8a904a42E92741C5aBB8";
+  var PachacuyInformationAddress = "0xcF2dbF4C6C3574c5Aa189dd1630cfBcCfCbd3821";
   const PachacuyInfo = await gcf("PachacuyInfo");
-  await upgrades.upgradeProxy(PachacuyInformationAddress, PachacuyInfo);
+  // await upgrades.upgradeProxy(PachacuyInformationAddress, PachacuyInfo);
+
+  var pachacuyInfo = await PachacuyInfo.attach(PachacuyInformationAddress);
+  await pachacuyInfo.setBusinessesPrice(businessesPrice, businessesKey);
 }
 
-// upgrade();
-main()
+// main()
+upgrade()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

@@ -32,6 +32,7 @@ import "../vrf/IRandomNumberGenerator.sol";
 import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 import "../chakra/IChakra.sol";
 import "../info/IPachacuyInfo.sol";
+import "../misayWasi/IMisayWasi.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract PurchaseAssetController is
@@ -435,12 +436,8 @@ contract PurchaseAssetController is
         external
         returns (uint256 chakraUuid)
     {
-        // in BUSD
-        uint256 _chakraPrice = pachacuyInfo.chakraPrice();
-        _purchaseAtPriceInPcuyAndToken(
-            pachacuyInfo.convertBusdToPcuy(_chakraPrice),
-            address(pachaCuyToken)
-        );
+        uint256 _chakraPrice = pachacuyInfo.getPriceInPcuy("CHAKRA");
+        _purchaseAtPriceInPcuyAndToken(_chakraPrice, address(pachaCuyToken));
 
         // mint a chakra
         chakraUuid = nftProducerPachacuy.mintChakra(
@@ -487,6 +484,60 @@ contract PurchaseAssetController is
             _net,
             _fee,
             pachacuyInfo.purchaseTax()
+        );
+    }
+
+    /**
+     * @notice Purchase a specific amount of food at a chakra by using its uuid
+     * @param _misayWasiUuid: uuid of the misay wasi where the tickets are being purchased
+     * @param _amountOfTickets: amount of food to be purchased from chakra
+     */
+    function purchaseTicketFromMisayWasi(
+        uint256 _misayWasiUuid,
+        uint256 _amountOfTickets
+    ) external {
+        IMisayWasi.MisayWasiInfo memory misayWasiInfo = IMisayWasi(
+            pachacuyInfo.misayWasiAddress()
+        ).getMisayWasiWithUuid(_misayWasiUuid);
+
+        require(
+            misayWasiInfo.isCampaignActive,
+            "PurchaseAC: No raffle running"
+        );
+
+        _transferPcuyWithoutTax(
+            _msgSender(),
+            misayWasiInfo.owner,
+            misayWasiInfo.ticketPrice
+        );
+
+        nftProducerPachacuy.purchaseTicketRaffle(
+            _msgSender(),
+            misayWasiInfo.ticketUuid,
+            _misayWasiUuid,
+            _amountOfTickets
+        );
+
+        // emit PurchaseFoodChakra(
+        //     _chakraUuid,
+        //     _amountFood,
+        //     availableFood,
+        //     chakraInfo.owner,
+        //     _net,
+        //     _fee,
+        //     pachacuyInfo.purchaseTax()
+        // );
+    }
+
+    function purchaseMisayWasi(uint256 _pachaUuid) external {
+        uint256 _misayWasiPrice = pachacuyInfo.getPriceInPcuy("MISAY_WASI");
+        _purchaseAtPriceInPcuyAndToken(_misayWasiPrice, address(pachaCuyToken));
+
+        // mint a Misay Wasi
+        nftProducerPachacuy.mintMisayWasi(
+            _msgSender(),
+            _pachaUuid,
+            _misayWasiPrice
         );
     }
 
@@ -542,6 +593,19 @@ contract PurchaseAssetController is
             "",
             ""
         );
+    }
+
+    function _transferPcuyWithoutTax(
+        address _from,
+        address _to,
+        uint256 _pcuyAmount
+    ) internal {
+        require(
+            pachaCuyToken.balanceOf(_from) >= _pcuyAmount,
+            "PurchaseAC: Not enough PCUY balance."
+        );
+
+        pachaCuyToken.operatorSend(_from, _to, _pcuyAmount, "", "");
     }
 
     ///////////////////////////////////////////////////////////////

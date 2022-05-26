@@ -51,4 +51,19 @@ interface INftProducerPachacuy {
         uint256 _chakraUuid,
         uint256 _amountFood
     ) external returns (uint256 availableFood);
+
+    function mintMisayWasi(
+        address _account,
+        uint256 _pachaUuid,
+        uint256 _misayWasiPrice
+    ) external;
+
+    function createTicketIdRaffle() external returns (uint256 _raffleUuid);
+
+    function purchaseTicketRaffle(
+        address _account,
+        uint256 _ticketUuid,
+        uint256 _misayWasiUuid,
+        uint256 _amountOfTickets
+    ) external;
 }

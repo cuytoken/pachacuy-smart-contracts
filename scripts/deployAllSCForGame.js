@@ -42,6 +42,8 @@ async function main() {
    * - pI 010 - setWiracochaAddress
    * - pI 011 - set Purchase A C A ddress
    * - pI 012 - setPachaCuyTokenAddress
+   * - pI 013 - setNftProducerAddress
+   * - pI 014 - setMisayWasiAddress
    */
   var PachacuyInfo = await gcf("PachacuyInfo");
   var pachacuyInfo = await dp(
@@ -85,6 +87,7 @@ async function main() {
    * 5. PAC 004 grant role money_transfer to Tatacuy
    * 6. PAC 005 grant role money_transfer to Wiracocha
    * 7. PAC 006 set Pachacuy Info address with setPachacuyInfoAddress
+   * 7. PAC 007 grantRole money_transfer to misay wasi
    */
   var { _busdToken } = infoHelper(NETWORK);
   const PurchaseAssetController = await gcf("PurchaseAssetController");
@@ -105,6 +108,7 @@ async function main() {
    * nftP 001 - Grant Mint roles to PurchaseAssetController
    * nftP 002 - set setPachacuyInfoaddress
    * nftP 003 - grant game_role to PurchaseAssetController
+   * nftP 004 - grant game_role to Misay Wasi
    */
   var name = "In-game NFT Pachacuy";
   var symbol = "NFTGAMEPCUY";
@@ -203,6 +207,21 @@ async function main() {
   var hatunWasiImp = await getImplementation(hatunWasi);
   console.log("Hatun Wasi Imp:", hatunWasiImp);
 
+  /**
+   * MISAY WASI
+   * 1. setPachacuyInfoAddress
+   * 2. grant game_manager role to nftProducer
+   */
+  var MisayWasi = await gcf("MisayWasi");
+  var misayWasi = await dp(MisayWasi, [], {
+    kind: "uups",
+  });
+
+  await misayWasi.deployed();
+  console.log("MisayWasi Proxy:", misayWasi.address);
+  var misayWasiImp = await getImplementation(misayWasi);
+  console.log("MisayWasi Imp:", misayWasiImp);
+
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Finish Setting up Smart Contracts");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
@@ -222,12 +241,14 @@ async function main() {
   var ttAdd = tatacuy.address;
   var wAdd = wiracocha.address;
   var pIAdd = pachacuyInfo.address;
+  var mswsAdd = misayWasi.address;
   await executeSet(pac, "setNftPAddress", [nftPAdd], "PAC 001");
   await executeSet(pac, "setPcuyTokenAddress", [pCuyAdd], "PAC 002");
   await executeSet(pac, "grantRole", [rng_generator, rngAdd], "PAC 003");
   await executeSet(pac, "grantRole", [money_transfer, ttAdd], "PAC 004");
   await executeSet(pac, "grantRole", [money_transfer, wAdd], "PAC 005");
   await executeSet(pac, "setPachacuyInfoAddress", [pIAdd], "PAC 006");
+  await executeSet(pac, "grantRole", [money_transfer, mswsAdd], "PAC 007");
 
   // NFT PRODUCER
   var nftP = nftProducerPachacuy;
@@ -235,9 +256,11 @@ async function main() {
   var ttAdd = tatacuy.address;
   var wAd = wiracocha.address;
   var pIAdd = pachacuyInfo.address;
+  var mswsAdd = misayWasi.address;
   await executeSet(nftP, "grantRole", [minter_role, pacAdd], "nftP 001");
   await executeSet(nftP, "setPachacuyInfoaddress", [pIAdd], "nftP 002");
   await executeSet(nftP, "grantRole", [game_manager, pacAdd], "nftP 003");
+  await executeSet(nftP, "grantRole", [game_manager, mswsAdd], "nftP 004");
 
   // Tatacuy
   var tt = tatacuy;
@@ -275,6 +298,8 @@ async function main() {
   var ttc = tatacuy.address;
   var pacAdd = purchaseAssetController.address;
   var pcuyAdd = pachaCuyToken.address;
+  var nftAdd = nftProducerPachacuy.address;
+  var mswsAdd = misayWasi.address;
   await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
   await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
   await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
@@ -282,6 +307,8 @@ async function main() {
   await executeSet(pI, "setWiracochaAddress", [wir], "pI 010");
   await executeSet(pI, "setAddPAController", [pacAdd], "pI 011");
   await executeSet(pI, "setPachaCuyTokenAddress", [pcuyAdd], "pI 012");
+  await executeSet(pI, "setNftProducerAddress", [nftAdd], "pI 013");
+  await executeSet(pI, "setMisayWasiAddress", [mswsAdd], "pI 014");
 
   // HATUN WASI
   var hw = hatunWasi;
@@ -323,9 +350,13 @@ async function upgrade() {
   // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
   // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
 
-  var TatacuyAddress = "0x7dc7ea4A35879D6cb3A0f40076671e8c768952cA";
-  const Tatacuy = await gcf("Tatacuy");
-  await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
+  // var WiracochaAddress = "0xA5100bE10f9e9da4cD1bA33553Fe119861E11a27";
+  // const Wiracocha = await gcf("Wiracocha");
+  // await upgrades.upgradeProxy(WiracochaAddress, Wiracocha);
+
+  var ChakraAddress = "0xab87082eCac2A7D4fcAB8Fa8f097C9C4F75E05D1";
+  const Chakra = await gcf("Chakra");
+  await upgrades.upgradeProxy(ChakraAddress, Chakra);
 
   // var PachaCuyTokenAddress = "0x88114135e76b555490d9040c1d01A548B0570e99";
   // var PachaCuyToken = await gcf("PachaCuyToken");

@@ -43,6 +43,8 @@ contract PachacuyInfo is
     address public tatacuyAddress;
     address public purchaseACAddress;
     address public pachaCuyTokenAddress;
+    address public misayWasiAddress;
+    address public nftProducerAddress;
 
     // Asset Management
     uint256 public purchaseTax;
@@ -87,6 +89,10 @@ contract PachacuyInfo is
     ///////////////////////////////////////////////////////////////
     uint256 public totalFood;
     uint256 public pricePerFood;
+
+    // Prices
+    // type of business => price of business
+    mapping(bytes32 => uint256) public businesses;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -151,9 +157,33 @@ contract PachacuyInfo is
         exchangeRatePcuyToSami = 4;
     }
 
+    function setBusinessesPrice(
+        uint256[] memory _prices,
+        bytes32[] memory _types
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 _ix = 0; _ix < _prices.length; _ix++) {
+            businesses[_types[_ix]] = _prices[_ix];
+        }
+    }
+
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
+
+    function getPriceInPcuy(bytes memory _type)
+        external
+        view
+        returns (uint256)
+    {
+        return convertBusdToPcuy(businesses[keccak256(_type)]);
+    }
+
+    function setPriceBusinessInBusd(bytes32 _type, uint256 _newPrice)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        businesses[_type] = _newPrice;
+    }
 
     function getAllGameInformation()
         external
@@ -269,6 +299,20 @@ contract PachacuyInfo is
         pachaCuyTokenAddress = _pachaCuyTokenAddress;
     }
 
+    function setMisayWasiAddress(address _misayWasiAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        misayWasiAddress = _misayWasiAddress;
+    }
+
+    function setNftProducerAddress(address _nftProducerAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        nftProducerAddress = _nftProducerAddress;
+    }
+
     function setPurchaseTax(uint256 _purchaseTax)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -299,7 +343,7 @@ contract PachacuyInfo is
     }
 
     function convertBusdToPcuy(uint256 _busdAmount)
-        external
+        public
         view
         returns (uint256 _pacuyAmount)
     {
@@ -307,7 +351,7 @@ contract PachacuyInfo is
     }
 
     function convertPcuyToSami(uint256 _pcuyAmount)
-        external
+        public
         view
         returns (uint256 _samiPoints)
     {
@@ -315,7 +359,7 @@ contract PachacuyInfo is
     }
 
     function convertSamiToPcuy(uint256 _samiAmount)
-        external
+        public
         view
         returns (uint256 _pcuyAmount)
     {
