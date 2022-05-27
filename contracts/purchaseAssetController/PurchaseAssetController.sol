@@ -504,16 +504,6 @@ contract PurchaseAssetController is
             _misayWasiUuid,
             _amountOfTickets
         );
-
-        // emit PurchaseFoodChakra(
-        //     _chakraUuid,
-        //     _amountFood,
-        //     availableFood,
-        //     chakraInfo.owner,
-        //     _net,
-        //     _fee,
-        //     pachacuyInfo.purchaseTax()
-        // );
     }
 
     function purchaseMisayWasi(uint256 _pachaUuid) external {

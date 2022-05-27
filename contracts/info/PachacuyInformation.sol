@@ -48,6 +48,7 @@ contract PachacuyInfo is
     address public guineaPigAddress;
     address public randomNumberGAddress;
     address public binarySearchAddress;
+    address public pachaAddress;
 
     // Asset Management
     uint256 public purchaseTax;
@@ -337,6 +338,13 @@ contract PachacuyInfo is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         binarySearchAddress = _binarySearchAddress;
+    }
+
+    function setPachaAddress(address _pachaAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        pachaAddress = _pachaAddress;
     }
 
     //////////////////////////////////////////////////////////////////

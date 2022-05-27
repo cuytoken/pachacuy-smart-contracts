@@ -30,6 +30,8 @@ interface IPachacuyInfo {
 
     function binarySearchAddress() external returns (address);
 
+    function pachaAddress() external returns (address);
+
     //////////////////////////////////////////////////////////////////
     ///                          TAXES/FEES                        ///
     //////////////////////////////////////////////////////////////////

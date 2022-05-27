@@ -47,6 +47,7 @@ async function main() {
    * - pI 015 - setGuineaPigAddress
    * - pI 016 - setRandomNumberGAddress
    * - pI 017 - setBinarySearchAddress
+   * - pI 018 - setPachaAddress
    */
   var PachacuyInfo = await gcf("PachacuyInfo");
   var pachacuyInfo = await dp(
@@ -162,25 +163,28 @@ async function main() {
    * Pachacuy Token PCUY
    * 1. Gather all operators and pass it to the initialize
    */
-  const PachaCuyToken = await gcf("PachaCuyToken");
-  const pachaCuyToken = await dp(
-    PachaCuyToken,
-    [
-      owner.address,
-      owner.address,
-      owner.address,
-      owner.address,
-      owner.address,
-      [purchaseAssetController.address],
-    ],
-    {
-      kind: "uups",
-    }
-  );
-  await pachaCuyToken.deployed();
-  console.log("PachaCuyToken Proxy:", pachaCuyToken.address);
-  var pachacuyTokenImp = await getImplementation(pachaCuyToken);
-  console.log("PachaCuyToken Imp:", pachacuyTokenImp);
+  var PachaCuyToken, pachaCuyToken, pachacuyTokenImp;
+  if (process.env.HARDHAT_NETWORK) {
+    PachaCuyToken = await gcf("PachaCuyToken");
+    pachaCuyToken = await dp(
+      PachaCuyToken,
+      [
+        owner.address,
+        owner.address,
+        owner.address,
+        owner.address,
+        owner.address,
+        [purchaseAssetController.address],
+      ],
+      {
+        kind: "uups",
+      }
+    );
+    await pachaCuyToken.deployed();
+    console.log("PachaCuyToken Proxy:", pachaCuyToken.address);
+    pachacuyTokenImp = await getImplementation(pachaCuyToken);
+    console.log("PachaCuyToken Imp:", pachacuyTokenImp);
+  }
 
   /**
    * CHAKRA
@@ -252,6 +256,20 @@ async function main() {
   var binarySearchImp = await getImplementation(binarySearch);
   console.log("BinarySearch Imp:", binarySearchImp);
 
+  /**
+   * PACHA
+   * 1. set pachacuyInfo address
+   * 2. gives game_manager to nft producer
+   */
+  var Pacha = await gcf("Pacha");
+  var pacha = await dp(Pacha, [], {
+    kind: "uups",
+  });
+  await pacha.deployed();
+  console.log("Pacha Proxy:", pacha.address);
+  var pachaImp = await getImplementation(pacha);
+  console.log("Pacha Imp:", pachaImp);
+
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Finish Setting up Smart Contracts");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
@@ -268,7 +286,9 @@ async function main() {
   // PURCHASE ASSET CONTROLLER
   var pac = purchaseAssetController;
   var nftPAdd = nftProducerPachacuy.address;
-  var pCuyAdd = pachaCuyToken.address;
+  var pCuyAdd;
+  if (process.env.HARDHAT_NETWORK) pCuyAdd = pachaCuyToken.address;
+  else pCuyAdd = nftProducerPachacuy.address;
   var rngAdd = randomNumberGenerator.address;
   var ttAdd = tatacuy.address;
   var wAdd = wiracocha.address;
@@ -329,23 +349,27 @@ async function main() {
   var wir = wiracocha.address;
   var ttc = tatacuy.address;
   var pacAdd = purchaseAssetController.address;
-  var pcuyAdd = pachaCuyToken.address;
+  var pCuyAdd;
+  if (process.env.HARDHAT_NETWORK) pCuyAdd = pachaCuyToken.address;
+  else pCuyAdd = nftProducerPachacuy.address;
   var nftAdd = nftProducerPachacuy.address;
   var mswsAdd = misayWasi.address;
   var gpAdd = guineaPig.address;
   var rngAdd = randomNumberGenerator.address;
+  var pcAdd = pacha.address;
   await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
   await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
   await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
   await executeSet(pI, "setTatacuyAddress", [ttc], "pI 009");
   await executeSet(pI, "setWiracochaAddress", [wir], "pI 010");
   await executeSet(pI, "setAddPAController", [pacAdd], "pI 011");
-  await executeSet(pI, "setPachaCuyTokenAddress", [pcuyAdd], "pI 012");
+  await executeSet(pI, "setPachaCuyTokenAddress", [pCuyAdd], "pI 012");
   await executeSet(pI, "setNftProducerAddress", [nftAdd], "pI 013");
   await executeSet(pI, "setMisayWasiAddress", [mswsAdd], "pI 014");
   await executeSet(pI, "setGuineaPigAddress", [gpAdd], "pI 015");
   await executeSet(pI, "setRandomNumberGAddress", [rngAdd], "pI 016");
-  await executeSet(pI, "setBinarySearchAddress", [rngAdd], "pI 016");
+  await executeSet(pI, "setBinarySearchAddress", [rngAdd], "pI 017");
+  await executeSet(pI, "setPachaAddress", [pacAdd], "pI 018");
 
   // HATUN WASI
   var hw = hatunWasi;
@@ -425,7 +449,9 @@ async function upgrade() {
   //   "0xE2F557575e55fcc816a8ac3ACb99672147E7E3E3",
   //   "0x15Bfec909Fc3643618985d96a09860f98fB733fA",
   //   "0x243E3C2704DDa9d27b87aBf8b85816D34849AB30",
-  //   "0x718429DDe591a305610a664c7046664422095ac3", // 7
+  //   "0x718429DDe591a305610a664c7046664422095ac3",
+  //   "0x800C44906Fe05B66A7276930894efF2a4cA348CE", // puffy
+  //   "0x2203Ba9Be40AbB782A6b0FA1E3CdFd707CF57364", // 7 // forky
   // ];
 
   // await pachaCuyToken.send(wallets[0], pe("10000"), "0x");
@@ -440,9 +466,9 @@ async function upgrade() {
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-upgrade()
-  // resetOngoingTransaction()
-  // main()
+// upgrade()
+// resetOngoingTransaction()
+main()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

@@ -38,6 +38,7 @@ import "../hatunwasi/IHatunWasi.sol";
 import "../info/IPachacuyInfo.sol";
 import "../misayWasi/IMisayWasi.sol";
 import "../guineapig/IGuineaPig.sol";
+import "../pacha/IPacha.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract NftProducerPachacuy is
@@ -71,25 +72,10 @@ contract NftProducerPachacuy is
     bytes32 public constant QHATUWASI = keccak256("QHATUWASI");
     bytes32 public constant RAFFLE = keccak256("RAFFLE");
     bytes32 public constant GUINEAPIG = keccak256("GUINEAPIG");
+    bytes32 public constant PACHA = keccak256("PACHA");
 
     event Uuid(uint256 uuid);
-
-    // typeOfDistribution:PachaPass 1 private with not price | 2 public with price
-    // Land data
-    struct LandData {
-        bool isLand;
-        bool isPublic;
-        uint256 uuid;
-        uint256 pachaPassUuid;
-        uint256 pachaPassPrice;
-        uint256 typeOfDistribution;
-        uint256 idForJsonFile;
-        uint256 wasPurchased;
-        uint256 location;
-        address owner;
-    }
-    // uuid => Land
-    mapping(uint256 => LandData) internal _uuidToLandData;
+    event UuidAndAmount(uint256 uuid, uint256 amount);
 
     // transferMode: purchased | transferred
     // Pacha data
@@ -103,13 +89,6 @@ contract NftProducerPachacuy is
     // }
     // // uuid => Pacha Pass
     // mapping(uint256 => PachaPassdata) internal _uuidToPachaPassData;
-
-    // Marks as true when a land has been purchased
-    mapping(uint256 => bool) internal isLandAlreadyTaken;
-
-    // Map uuid -> token id or jsonForFile
-    // Used to get the id for the json file metadata
-    mapping(uint256 => uint256) internal _uuidToJsonFile;
 
     // Map owner -> uuid[]
     mapping(address => uint256[]) internal _ownerToUuids;
@@ -187,51 +166,37 @@ contract NftProducerPachacuy is
     }
 
     function mintLandNft(
-        address account,
-        uint256 idForJsonFile, // comes from front-end 1 -> 697
+        address _account,
+        uint256 _idForJsonFile, // comes from front-end 1 -> 697
         bytes memory data
-    ) public onlyRole(MINTER_ROLE) returns (uint256) {
+    ) public onlyRole(MINTER_ROLE) {
         // Veryfies that location is not taken already
         require(
-            !isLandAlreadyTaken[idForJsonFile],
+            !IPacha(pachacuyInfo.pachaAddress()).isPachaAlreadyTaken(
+                _idForJsonFile
+            ),
             "NFP: location already taken"
         );
 
         // Creates a UUID for each mint
         uint256 uuid = _tokenIdCounter.current();
-
-        // Map uuid -> idForJsonFile
-        _uuidToJsonFile[uuid] = idForJsonFile;
-
-        // Mark that space of land as purchased
-        isLandAlreadyTaken[idForJsonFile] = true;
+        _mint(_account, uuid, 1, data);
 
         // Map owner -> uuid[]
-        _ownerToUuids[account].push(uuid);
+        _ownerToUuids[_account].push(uuid);
+
+        // save type of uuid minted
+        _nftTypes[uuid] = PACHA;
 
         // Map uuid -> Guinea Pig Struct
-        _uuidToLandData[uuid] = LandData({
-            isLand: true,
-            isPublic: true,
-            pachaPassUuid: 0,
-            pachaPassPrice: 0,
-            typeOfDistribution: 0,
-            uuid: uuid,
-            location: idForJsonFile,
-            idForJsonFile: idForJsonFile,
-            owner: account,
-            wasPurchased: block.timestamp
-        });
-
-        uint256 amount = 1;
-        _mint(account, uuid, amount, data);
-        _setApprovalForAll(account, address(this), true);
+        IPacha(pachacuyInfo.pachaAddress()).registerPacha(
+            _account,
+            _idForJsonFile,
+            uuid
+        );
 
         _tokenIdCounter.increment();
-
         emit Uuid(uuid);
-
-        return uuid;
     }
 
     // function setPachaToPublic(uint256 _landUuid) public {
@@ -558,6 +523,7 @@ contract NftProducerPachacuy is
             _amountOfTickets,
             hasBoughtBefore
         );
+        emit UuidAndAmount(_ticketUuid, balanceOf(_account, _ticketUuid));
     }
 
     // function mintPachaPassNft(

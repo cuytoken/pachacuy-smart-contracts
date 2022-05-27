@@ -278,7 +278,7 @@ contract GuineaPig is
         return _uuidToGuineaPigInfo[_guineaPigUuid];
     }
 
-    function setPachacuyInfoaddress(address _pachacuyInfo)
+    function setPachacuyInfoAddress(address _pachacuyInfo)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
