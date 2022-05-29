@@ -77,6 +77,12 @@ contract GuineaPig is
     // likelihood
     mapping(uint256 => uint256[]) likelihoodData;
 
+    event GuineaPigFed(
+        uint256 daysUntilHungry,
+        uint256 daysUntilDead,
+        address owner
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -130,6 +136,21 @@ contract GuineaPig is
 
         _guineaPigsIx[_guineaPigUuid] = current;
         listOfGuineaPigs.push(_guineaPig);
+    }
+
+    function feedGuineaPig(uint256 _guineaPigUuid)
+        external
+        onlyRole(GAME_MANAGER)
+    {
+        GuineaPigInfo storage _guineaPig = _uuidToGuineaPigInfo[_guineaPigUuid];
+        _guineaPig.feedingDate += _guineaPig.daysUntilHungry * 1 days;
+        _guineaPig.burningDate += _guineaPig.daysUntilHungry * 1 days;
+
+        emit GuineaPigFed(
+            _guineaPig.feedingDate,
+            _guineaPig.burningDate,
+            _guineaPig.owner
+        );
     }
 
     ///////////////////////////////////////////////////////////////
@@ -226,34 +247,6 @@ contract GuineaPig is
         burningDate = _uuidToGuineaPigInfo[_uuid].burningDate;
         wasBorn = _uuidToGuineaPigInfo[_uuid].wasBorn;
         owner = _uuidToGuineaPigInfo[_uuid].owner;
-    }
-
-    function _removeChakraWithUuid(uint256 _chakraUuid) internal {
-        uint256 _length = listOfGuineaPigs.length;
-        if (_length == 1) {
-            listOfGuineaPigs.pop();
-            delete _guineaPigsIx[_chakraUuid];
-            _tokenIdCounter.decrement();
-        }
-
-        // get _ix of element to remove
-        uint256 _ix = _guineaPigsIx[_chakraUuid];
-        delete _guineaPigsIx[_chakraUuid];
-
-        // temp of El at last position of array to be removed
-        GuineaPigInfo memory _guineaPig = listOfGuineaPigs[_length - 1];
-
-        // point last El to index to be replaced
-        _guineaPigsIx[_guineaPig.uuid] = _ix;
-
-        // swap last El from last position to index to be replaced
-        listOfGuineaPigs[_ix] = _guineaPig;
-
-        // remove last element
-        listOfGuineaPigs.pop();
-
-        // decrease counter since array decreased in one
-        _tokenIdCounter.decrement();
     }
 
     function tokenUri(uint256 _chakraUuid)

@@ -364,14 +364,6 @@ contract MisayWasi is
         }
     }
 
-    function getMiswayWasiWithUuid(uint256 _misayWasiUuid)
-        external
-        view
-        returns (MisayWasiInfo memory)
-    {
-        return uuidToMisayWasiInfo[_misayWasiUuid];
-    }
-
     function getMiswayWasiWithTicketUuid(uint256 _ticketUuid)
         external
         view

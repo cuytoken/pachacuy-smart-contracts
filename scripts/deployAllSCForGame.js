@@ -48,6 +48,7 @@ async function main() {
    * - pI 016 - setRandomNumberGAddress
    * - pI 017 - setBinarySearchAddress
    * - pI 018 - setPachaAddress
+   * - pI 019 - setQhatuWasiAddress
    */
   var PachacuyInfo = await gcf("PachacuyInfo");
   var pachacuyInfo = await dp(
@@ -93,6 +94,7 @@ async function main() {
    * 6. PAC 005 grant role money_transfer to Wiracocha
    * 7. PAC 006 set Pachacuy Info address with setPachacuyInfoAddress
    * 7. PAC 007 grantRole money_transfer to misay wasi
+   * 7. PAC 008 grantRole money_transfer to qhatu wasi
    */
   var { _busdToken } = infoHelper(NETWORK);
   const PurchaseAssetController = await gcf("PurchaseAssetController");
@@ -258,8 +260,8 @@ async function main() {
 
   /**
    * PACHA
-   * 1. set pachacuyInfo address
-   * 2. gives game_manager to nft producer
+   * 1. pc 001 - set pachacuyInfo address
+   * 2. pc 002 - gives game_manager to nft producer
    */
   var Pacha = await gcf("Pacha");
   var pacha = await dp(Pacha, [], {
@@ -269,6 +271,20 @@ async function main() {
   console.log("Pacha Proxy:", pacha.address);
   var pachaImp = await getImplementation(pacha);
   console.log("Pacha Imp:", pachaImp);
+
+  /**
+   * QHATU WASI
+   * 1. qw 001 - set pachacuyInfo address
+   * 2. qw 002 - gives game_manager role to nft producer
+   */
+  var QhatuWasi = await gcf("QhatuWasi");
+  var qhatuWasi = await dp(QhatuWasi, [], {
+    kind: "uups",
+  });
+  await qhatuWasi.deployed();
+  console.log("Qhatu Wasi Proxy:", qhatuWasi.address);
+  var qhatuWasiImp = await getImplementation(qhatuWasi);
+  console.log("Qhatu Wasi Imp:", qhatuWasiImp);
 
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Finish Setting up Smart Contracts");
@@ -294,6 +310,7 @@ async function main() {
   var wAdd = wiracocha.address;
   var pIAdd = pachacuyInfo.address;
   var mswsAdd = misayWasi.address;
+  var qwAdd = qhatuWasi.address;
   await executeSet(pac, "setNftPAddress", [nftPAdd], "PAC 001");
   await executeSet(pac, "setPcuyTokenAddress", [pCuyAdd], "PAC 002");
   await executeSet(pac, "grantRole", [rng_generator, rngAdd], "PAC 003");
@@ -301,6 +318,7 @@ async function main() {
   await executeSet(pac, "grantRole", [money_transfer, wAdd], "PAC 005");
   await executeSet(pac, "setPachacuyInfoAddress", [pIAdd], "PAC 006");
   await executeSet(pac, "grantRole", [money_transfer, mswsAdd], "PAC 007");
+  await executeSet(pac, "grantRole", [money_transfer, qwAdd], "PAC 008");
 
   // NFT PRODUCER
   var nftP = nftProducerPachacuy;
@@ -357,6 +375,7 @@ async function main() {
   var gpAdd = guineaPig.address;
   var rngAdd = randomNumberGenerator.address;
   var pcAdd = pacha.address;
+  var qtwsAdd = qhatuWasi.address;
   await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
   await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
   await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
@@ -370,6 +389,7 @@ async function main() {
   await executeSet(pI, "setRandomNumberGAddress", [rngAdd], "pI 016");
   await executeSet(pI, "setBinarySearchAddress", [rngAdd], "pI 017");
   await executeSet(pI, "setPachaAddress", [pacAdd], "pI 018");
+  await executeSet(pI, "setQhatuWasiAddress", [qtwsAdd], "pI 019");
 
   // HATUN WASI
   var hw = hatunWasi;
@@ -392,6 +412,22 @@ async function main() {
   await executeSet(msws, "grantRole", [game_manager, rel], "msws 003");
   await executeSet(msws, "grantRole", [rng_generator, rngAdd], "msws 004");
 
+  // BINARY SEARCH
+
+  // PACHA
+  var pc = pacha;
+  var pcIadd = pachacuyInfo.address;
+  var nftAdd = nftProducerPachacuy.address;
+  await executeSet(pc, "setPachacuyInfoAddress", [pcIadd], "pc 001");
+  await executeSet(pc, "grantRole", [game_manager, nftAdd], "pc 002");
+
+  // QHATU WASI
+  var qw = qhatuWasi;
+  var pcIadd = pachacuyInfo.address;
+  var nftAdd = nftProducerPachacuy.address;
+  await executeSet(qw, "setPachacuyInfoAddress", [pcIadd], "qw 001");
+  await executeSet(qw, "grantRole", [game_manager, nftAdd], "qw 002");
+
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Final setting finished!");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
@@ -411,6 +447,8 @@ async function main() {
   await verify(misayWasiImp, "Misay Wasi");
   await verify(guineaPigImp, "Guinea Pig");
   await verify(binarySearchImp, "Binary Search");
+  await verify(pachaImp, "Pacha");
+  await verify(qhatuWasiImp, "Qhatu Wasi");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Verification of smart contracts finished");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
@@ -426,17 +464,17 @@ async function upgrade() {
   // const PurchaseAssetController = await gcf("PurchaseAssetController");
   // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
 
-  // var NFTPAddress = "0xd991d1c6e5c669b8aec320816726a32e69b3db42";
-  // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
-  // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
+  var NFTPAddress = "0x867Cd9A1D6636094B87ABD1100688DEdd1E42C71";
+  const NftProducerPachacuy = await gcf("NftProducerPachacuy");
+  await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
 
   // var WiracochaAddress = "0xA5100bE10f9e9da4cD1bA33553Fe119861E11a27";
   // const Wiracocha = await gcf("Wiracocha");
   // await upgrades.upgradeProxy(WiracochaAddress, Wiracocha);
 
-  var ChakraAddress = "0xab87082eCac2A7D4fcAB8Fa8f097C9C4F75E05D1";
-  const Chakra = await gcf("Chakra");
-  await upgrades.upgradeProxy(ChakraAddress, Chakra);
+  // var ChakraAddress = "0xab87082eCac2A7D4fcAB8Fa8f097C9C4F75E05D1";
+  // const Chakra = await gcf("Chakra");
+  // await upgrades.upgradeProxy(ChakraAddress, Chakra);
 
   // var PachaCuyTokenAddress = "0x88114135e76b555490d9040c1d01A548B0570e99";
   // var PachaCuyToken = await gcf("PachaCuyToken");
@@ -454,21 +492,21 @@ async function upgrade() {
   //   "0x2203Ba9Be40AbB782A6b0FA1E3CdFd707CF57364", // 7 // forky
   // ];
 
-  // await pachaCuyToken.send(wallets[0], pe("10000"), "0x");
-  // await pachaCuyToken.send(wallets[1], pe("10000"), "0x");
-  // await pachaCuyToken.send(wallets[2], pe("10000"), "0x");
-  // await pachaCuyToken.send(wallets[3], pe("10000"), "0x");
-  // await pachaCuyToken.send(wallets[4], pe("10000"), "0x");
-  // await pachaCuyToken.send(wallets[5], pe("10000"), "0x");
-  // await pachaCuyToken.send(wallets[6], pe("10000"), "0x");
-  // await pachaCuyToken.send(wallets[7], pe("10000"), "0x");
+  // await pachaCuyToken.send(wallets[0], pe("50000"), "0x");
+  // await pachaCuyToken.send(wallets[1], pe("50000"), "0x");
+  // await pachaCuyToken.send(wallets[2], pe("50000"), "0x");
+  // await pachaCuyToken.send(wallets[3], pe("50000"), "0x");
+  // await pachaCuyToken.send(wallets[4], pe("50000"), "0x");
+  // await pachaCuyToken.send(wallets[5], pe("50000"), "0x");
+  // await pachaCuyToken.send(wallets[6], pe("50000"), "0x");
+  // await pachaCuyToken.send(wallets[7], pe("50000"), "0x");
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-// upgrade()
-// resetOngoingTransaction()
-main()
+upgrade()
+  // resetOngoingTransaction()
+  // main()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

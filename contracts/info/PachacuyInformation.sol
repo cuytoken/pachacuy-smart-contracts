@@ -49,6 +49,7 @@ contract PachacuyInfo is
     address public randomNumberGAddress;
     address public binarySearchAddress;
     address public pachaAddress;
+    address public qhatuWasiAddress;
 
     // Asset Management
     uint256 public purchaseTax;
@@ -345,6 +346,13 @@ contract PachacuyInfo is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         pachaAddress = _pachaAddress;
+    }
+
+    function setQhatuWasiAddress(address _qhatuWasiAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        qhatuWasiAddress = _qhatuWasiAddress;
     }
 
     //////////////////////////////////////////////////////////////////

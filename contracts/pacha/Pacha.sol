@@ -120,6 +120,123 @@ contract Pacha is
         listUuidsPachas.push(_pachaUuid);
     }
 
+    // function setPachaToPublic(uint256 _landUuid) public {
+    //     // Verify that land's uuid exists
+    //     require(exists(_landUuid), "NFP: land uuid does not exist");
+
+    //     // Verify that is land's owner
+    //     require(
+    //         _uuidToLandData[_landUuid].owner == _msgSender(),
+    //         "NFP: you are not the owner of this land"
+    //     );
+
+    //     // Verify that land is private
+    //     require(
+    //         !_uuidToLandData[_landUuid].isPublic,
+    //         "NFP: land must be private"
+    //     );
+
+    //     // make the land public
+    //     _uuidToLandData[_landUuid].isPublic = true;
+    // }
+
+    // /**
+    //  * @notice Set a Pacha to private and choose type of distribution (private with not price or public with price)
+    //  * @param _landUuid uuid of the land for which the pacha pass will be created
+    //  * @param _price cost of pachapass in PCUY. If '_typeOfDistribution' is 1, '_price' must be 0
+    //  * @param _typeOfDistribution (1, 2) - private distribution (no price) or public sale of pacha pass
+    //  * @param _accounts list of addresses to mint the pachapass. If empty array is passed there is no mint of pacha passes
+    //  */
+    // function setPachaToPrivateAndDistribution(
+    //     uint256 _landUuid,
+    //     uint256 _price,
+    //     uint256 _typeOfDistribution,
+    //     address[] memory _accounts
+    // ) public {
+    //     // Verify that land's uuid exists
+    //     require(exists(_landUuid), "NFP: land uuid does not exist");
+
+    //     // Verify that is land's owner
+    //     require(
+    //         _uuidToLandData[_landUuid].owner == _msgSender(),
+    //         "NFP: you are not the owner of this land"
+    //     );
+
+    //     // Verify that distribution is either 0 or 1
+    //     require(
+    //         _typeOfDistribution == 1 || _typeOfDistribution == 2,
+    //         "NFP: distribution is 1 or 2"
+    //     );
+
+    //     // Verify that land is public
+    //     require(
+    //         _uuidToLandData[_landUuid].isPublic,
+    //         "NFP: land must be public"
+    //     );
+
+    //     // make the land private
+    //     _uuidToLandData[_landUuid].isPublic = false;
+
+    //     // set type of distribution for land
+    //     _uuidToLandData[_landUuid].typeOfDistribution = _typeOfDistribution;
+
+    //     // Creates a UUID for each mint
+    //     uint256 _uuid = _tokenIdCounter.current();
+    //     // For a land, set its pacha pass uuid
+    //     _uuidToLandData[_landUuid].pachaPassUuid = _uuid;
+
+    //     // if type of distribution of pachapass is private (with no price)
+    //     if (_typeOfDistribution == 1) {
+    //         require(_price == 0, "Nft. P: price must be 0");
+    //     } else if (_typeOfDistribution == 2) {
+    //         // if type of distribution of pachapass is public (with price)
+    //         require(_price > 0, "Nft. P: price greater than 0");
+    //         // For a land, set its pacha pass price
+    //         _uuidToLandData[_landUuid].pachaPassPrice = _price;
+    //     }
+
+    //     // If there are accounts, mint the pacha pass to each address
+    //     if (_accounts.length > 0) {
+    //         for (uint256 i = 0; i < _accounts.length; i++) {
+    //             _mintPachaPassNft(
+    //                 _accounts[i],
+    //                 _landUuid,
+    //                 _uuid,
+    //                 _typeOfDistribution,
+    //                 _price,
+    //                 "transferred"
+    //             );
+    //         }
+    //     }
+
+    //     _tokenIdCounter.increment();
+    // }
+
+    // function _mintPachaPassNft(
+    //     address _account,
+    //     uint256 _landUuid,
+    //     uint256 _uuidPachaPass,
+    //     uint256 _typeOfDistribution,
+    //     uint256 _price,
+    //     string memory _transferMode
+    // ) internal {
+    //     _mint(_account, _uuidPachaPass, 1, "");
+
+    //     // Map owner -> uuid[]
+    //     _ownerToUuids[_account].push(_uuidPachaPass);
+    //     _setApprovalForAll(_account, address(this), true);
+
+    //     // Map uuid -> Pacha Pass Struct
+    //     _uuidToPachaPassData[_uuidPachaPass] = PachaPassdata({
+    //         isPachaPass: true,
+    //         pachaUuid: _landUuid,
+    //         typeOfDistribution: _typeOfDistribution,
+    //         uuid: _uuidPachaPass,
+    //         cost: _price,
+    //         transferMode: _transferMode
+    //     });
+    // }
+
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////

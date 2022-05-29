@@ -438,10 +438,13 @@ contract PurchaseAssetController is
      * @notice Purchase a specific amount of food at a chakra by using its uuid
      * @param _chakraUuid: uuid of the chakra from where food is being purchased
      * @param _amountFood: amount of food to be purchased from chakra
+     * @param _guineaPigUuid: uuid of the guinea pig being fed
      */
-    function purchaseFoodFromChakra(uint256 _chakraUuid, uint256 _amountFood)
-        external
-    {
+    function purchaseFoodFromChakra(
+        uint256 _chakraUuid,
+        uint256 _amountFood,
+        uint256 _guineaPigUuid
+    ) external {
         IChakra.ChakraInfo memory chakraInfo = IChakra(
             pachacuyInfo.chakraAddress()
         ).getChakraWithUuid(_chakraUuid);
@@ -458,9 +461,9 @@ contract PurchaseAssetController is
         );
 
         uint256 availableFood = nftProducerPachacuy.purchaseFood(
-            _msgSender(),
             _chakraUuid,
-            _amountFood
+            _amountFood,
+            _guineaPigUuid
         );
 
         emit PurchaseFoodChakra(
@@ -515,6 +518,18 @@ contract PurchaseAssetController is
             _msgSender(),
             _pachaUuid,
             _misayWasiPrice
+        );
+    }
+
+    function purchaseQhatuWasi(uint256 _pachaUuid) external {
+        uint256 _qhatuWasiPrice = pachacuyInfo.getPriceInPcuy("QHATU_WASI");
+        _purchaseAtPriceInPcuyAndToken(_qhatuWasiPrice, address(pachaCuyToken));
+
+        // mint a Qhatu Wasi
+        nftProducerPachacuy.mintQhatuWasi(
+            _pachaUuid,
+            _msgSender(),
+            _qhatuWasiPrice
         );
     }
 

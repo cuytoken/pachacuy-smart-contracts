@@ -22,4 +22,6 @@ interface IGuineaPig {
             uint256,
             string memory
         );
+
+    function feedGuineaPig(uint256 _guineaPigUuid) external;
 }

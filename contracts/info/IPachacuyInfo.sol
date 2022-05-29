@@ -32,6 +32,8 @@ interface IPachacuyInfo {
 
     function pachaAddress() external returns (address);
 
+    function qhatuWasiAddress() external returns (address);
+
     //////////////////////////////////////////////////////////////////
     ///                          TAXES/FEES                        ///
     //////////////////////////////////////////////////////////////////

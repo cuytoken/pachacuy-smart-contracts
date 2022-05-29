@@ -47,9 +47,9 @@ interface INftProducerPachacuy {
     ) external returns (uint256);
 
     function purchaseFood(
-        address _account,
         uint256 _chakraUuid,
-        uint256 _amountFood
+        uint256 _amountFood,
+        uint256 _guineaPigUuid
     ) external returns (uint256 availableFood);
 
     function mintMisayWasi(
@@ -65,5 +65,11 @@ interface INftProducerPachacuy {
         uint256 _ticketUuid,
         uint256 _misayWasiUuid,
         uint256 _amountOfTickets
+    ) external;
+
+    function mintQhatuWasi(
+        uint256 _pachaUuid,
+        address _account,
+        uint256 _qhatuWasiPrice
     ) external;
 }
