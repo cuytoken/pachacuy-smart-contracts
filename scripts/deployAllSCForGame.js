@@ -73,7 +73,7 @@ async function main() {
    * 1. Set Random Number Generator address as consumer in VRF subscription
    * 2. rng 001 - Add PurchaseAssetController sc within the whitelist of Random Number Generator
    * 2. rng 002 - Add Tatacuy sc within the whitelist of Random Number Generator
-   * 2. rng 003 - Add Misay Wasi sc within the whitelist of Random Number Generator
+   * 3. rng 003 - Add Misay Wasi sc within the whitelist of Random Number Generator
    */
   const RandomNumberGenerator = await gcf("RandomNumberGenerator");
   const randomNumberGenerator = await dp(RandomNumberGenerator, [], {
@@ -236,6 +236,7 @@ async function main() {
   /**
    * GUINEA PIG
    * 1. gp 001 - setPachacuyInfoAddress
+   * 2. gp 002 - give role_manager to nftProducer
    */
   var GuineaPig = await gcf("GuineaPig");
   var guineaPig = await dp(GuineaPig, [], {
@@ -398,8 +399,10 @@ async function main() {
 
   // GUINEA PIG
   var gp = guineaPig;
+  var nftAdd = nftProducerPachacuy.address;
   var pcIAdd = pachacuyInfo.address;
   await executeSet(gp, "setPachacuyInfoAddress", [pcIAdd], "gp 001");
+  await executeSet(gp, "grantRole", [game_manager, nftAdd], "gp 002");
 
   // MISAY WASI
   var msws = misayWasi;

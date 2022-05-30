@@ -47,6 +47,23 @@ describe("Tesing Pachacuy Game", function () {
     pachaCuyToken,
     chakra,
     hatunWasi;
+  var MisayWasi,
+    misayWasi,
+    misayWasiImp,
+    GuineaPig,
+    guineaPig,
+    guineaPigImp,
+    BinarySearch,
+    binarySearch,
+    binarySearchImp,
+    Pacha,
+    pacha,
+    pachaImp,
+    QhatuWasi,
+    qhatuWasi,
+    qhatuWasiImp;
+  var PachacuyInfo;
+  var pachacuyInfo;
   var gcf = hre.ethers.getContractFactory;
   var dp = upgrades.deployProxy;
   var signers;
@@ -80,7 +97,30 @@ describe("Tesing Pachacuy Game", function () {
        * - pI 006 - DEFAULT - set total food per chakra
        * - pI 007 - DEFAULT set exchange rate pcuy to sami
        * - pI 008 - set hatun wasi address
+       * - pI 009 - setTatacuyAddress
+       * - pI 010 - setWiracochaAddress
+       * - pI 011 - set Purchase A C A ddress
+       * - pI 012 - setPachaCuyTokenAddress
+       * - pI 013 - setNftProducerAddress
+       * - pI 014 - setMisayWasiAddress
+       * - pI 015 - setGuineaPigAddress
+       * - pI 016 - setRandomNumberGAddress
+       * - pI 017 - setBinarySearchAddress
+       * - pI 018 - setPachaAddress
+       * - pI 019 - setQhatuWasiAddress
        */
+      PachacuyInfo = await gcf("PachacuyInfo");
+      pachacuyInfo = await dp(
+        PachacuyInfo,
+        [
+          pachacuyInfoForGame.maxSamiPoints,
+          pachacuyInfoForGame.boxes,
+          pachacuyInfoForGame.affectation,
+        ],
+        {
+          kind: "uups",
+        }
+      );
       PachacuyInfo = await gcf("PachacuyInfo");
       pachacuyInfo = await dp(
         PachacuyInfo,
@@ -100,6 +140,7 @@ describe("Tesing Pachacuy Game", function () {
        * 1. Set Random Number Generator address as consumer in VRF subscription
        * 2. rng 001 - Add PurchaseAssetController sc within the whitelist of Random Number Generator
        * 2. rng 002 - Add Tatacuy sc within the whitelist of Random Number Generator
+       * 3. rng 003 - Add Misay Wasi sc within the whitelist of Random Number Generator
        */
       // RandomNumberGenerator = await gcf("RandomNumberGenerator");
       RandomNumberGenerator = await gcf("RandomNumberV2Mock");
@@ -118,6 +159,8 @@ describe("Tesing Pachacuy Game", function () {
        * 5. PAC 004 grant role money_transfer to Tatacuy
        * 6. PAC 005 grant role money_transfer to Wiracocha
        * 7. PAC 006 set Pachacuy Info address with setPachacuyInfoAddress
+       * 7. PAC 007 grantRole money_transfer to misay wasi
+       * 7. PAC 008 grantRole money_transfer to qhatu wasi
        */
       var { _busdToken } = infoHelper(NETWORK);
       PurchaseAssetController = await gcf("PurchaseAssetController");
@@ -139,6 +182,7 @@ describe("Tesing Pachacuy Game", function () {
        * nftP 001 - Grant Mint roles to PurchaseAssetController
        * nftP 002 - set setPachacuyInfoaddress
        * nftP 003 - grant game_role to PurchaseAssetController
+       * nftP 004 - grant game_role to Misay Wasi
        */
       var name = "In-game NFT Pachacuy";
       var symbol = "NFTGAMEPCUY";
@@ -153,7 +197,7 @@ describe("Tesing Pachacuy Game", function () {
        * 1, tt 001 - Tatacuy must grant game_manager role to relayer bsc testnet
        * 2, tt 002 - Tatacuy must grant game_manager role to Nft producer
        * 3. tt 003 - Grant role rng_generator to the random number generator sc
-       * 4. tt 004 - set address of purchase asset controller in Tatacuy
+       * 4. tt 004 - setPachacuyInfoAddress
        *
        */
       Tatacuy = await gcf("Tatacuy");
@@ -166,7 +210,8 @@ describe("Tesing Pachacuy Game", function () {
        * Wiracocha
        * 1. wi 001 - Gave game_manager to relayer
        * 2. wi 002 - Gave game_manager to Nft Producer
-       * 2. wi 003 - set address of purchase asset controller in Wiracocha
+       * 3. wi 003 - Gave game_manager to Purchase asset contoller
+       * 4. wi 004 - setPachacuyInfoAddress
        */
       Wiracocha = await gcf("Wiracocha");
       wiracocha = await dp(Wiracocha, [], {
@@ -218,6 +263,66 @@ describe("Tesing Pachacuy Game", function () {
       });
 
       await hatunWasi.deployed();
+
+      /**
+       * MISAY WASI
+       * 1. msws 001 - setPachacuyInfoAddress
+       * 2. msws 002 - grant game_manager role to nftProducer
+       * 3. msws 003 - grant game_manager role to relayer
+       * 4. msws 004 - grant RNG_GENERATOR role to RNG sc
+       */
+      MisayWasi = await gcf("MisayWasi");
+      misayWasi = await dp(MisayWasi, [], {
+        kind: "uups",
+      });
+      await misayWasi.deployed();
+      misayWasiImp = await getImplementation(misayWasi);
+
+      /**
+       * GUINEA PIG
+       * 1. gp 001 - setPachacuyInfoAddress
+       * 2. gp 002 - give role_manager to nftProducer
+       */
+      GuineaPig = await gcf("GuineaPig");
+      guineaPig = await dp(GuineaPig, [], {
+        kind: "uups",
+      });
+      await guineaPig.deployed();
+      guineaPigImp = await getImplementation(guineaPig);
+
+      /**
+       * Binary Search
+       */
+      BinarySearch = await gcf("BinarySearch");
+      binarySearch = await dp(BinarySearch, [], {
+        kind: "uups",
+      });
+      await binarySearch.deployed();
+      binarySearchImp = await getImplementation(binarySearch);
+
+      /**
+       * PACHA
+       * 1. pc 001 - set pachacuyInfo address
+       * 2. pc 002 - gives game_manager to nft producer
+       */
+      Pacha = await gcf("Pacha");
+      pacha = await dp(Pacha, [], {
+        kind: "uups",
+      });
+      await pacha.deployed();
+      pachaImp = await getImplementation(pacha);
+
+      /**
+       * QHATU WASI
+       * 1. qw 001 - set pachacuyInfo address
+       * 2. qw 002 - gives game_manager role to nft producer
+       */
+      QhatuWasi = await gcf("QhatuWasi");
+      qhatuWasi = await dp(QhatuWasi, [], {
+        kind: "uups",
+      });
+      await qhatuWasi.deployed();
+      qhatuWasiImp = await getImplementation(qhatuWasi);
     });
 
     it("Sets up all Smart Contracts", async () => {
@@ -225,8 +330,10 @@ describe("Tesing Pachacuy Game", function () {
       var rng = randomNumberGenerator;
       var pacAdd = purchaseAssetController.address;
       var ttAdd = tatacuy.address;
+      var mswsAdd = misayWasi.address;
       await executeSet(rng, "addToWhiteList", [pacAdd], "rng 001");
       await executeSet(rng, "addToWhiteList", [ttAdd], "rng 002");
+      await executeSet(rng, "addToWhiteList", [mswsAdd], "rng 003");
 
       // PURCHASE ASSET CONTROLLER
       var pac = purchaseAssetController;
@@ -236,12 +343,16 @@ describe("Tesing Pachacuy Game", function () {
       var ttAdd = tatacuy.address;
       var wAdd = wiracocha.address;
       var pIAdd = pachacuyInfo.address;
+      var mswsAdd = misayWasi.address;
+      var qwAdd = qhatuWasi.address;
       await executeSet(pac, "setNftPAddress", [nftPAdd], "PAC 001");
       await executeSet(pac, "setPcuyTokenAddress", [pCuyAdd], "PAC 002");
       await executeSet(pac, "grantRole", [rng_generator, rngAdd], "PAC 003");
       await executeSet(pac, "grantRole", [money_transfer, ttAdd], "PAC 004");
       await executeSet(pac, "grantRole", [money_transfer, wAdd], "PAC 005");
       await executeSet(pac, "setPachacuyInfoAddress", [pIAdd], "PAC 006");
+      await executeSet(pac, "grantRole", [money_transfer, mswsAdd], "PAC 007");
+      await executeSet(pac, "grantRole", [money_transfer, qwAdd], "PAC 008");
 
       // NFT PRODUCER
       var nftP = nftProducerPachacuy;
@@ -249,9 +360,11 @@ describe("Tesing Pachacuy Game", function () {
       var ttAdd = tatacuy.address;
       var wAd = wiracocha.address;
       var pIAdd = pachacuyInfo.address;
+      var mswsAdd = misayWasi.address;
       await executeSet(nftP, "grantRole", [minter_role, pacAdd], "nftP 001");
       await executeSet(nftP, "setPachacuyInfoaddress", [pIAdd], "nftP 002");
       await executeSet(nftP, "grantRole", [game_manager, pacAdd], "nftP 003");
+      await executeSet(nftP, "grantRole", [game_manager, mswsAdd], "nftP 004");
 
       // Tatacuy
       var tt = tatacuy;
@@ -259,20 +372,22 @@ describe("Tesing Pachacuy Game", function () {
       var nftAdd = nftProducerPachacuy.address;
       var pacAdd = purchaseAssetController.address;
       var rngAdd = randomNumberGenerator.address;
+      var pIAdd = pachacuyInfo.address;
       await executeSet(tt, "grantRole", [game_manager, rel], "tt 001");
       await executeSet(tt, "grantRole", [game_manager, nftAdd], "tt 002");
       await executeSet(tt, "grantRole", [rng_generator, rngAdd], "tt 003");
-      await executeSet(tt, "setAddPAController", [pacAdd], "tt 004");
+      await executeSet(tt, "setPachacuyInfoAddress", [pIAdd], "tt 004");
 
       // Wiracocha
       var wi = wiracocha;
       var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
       var nftAdd = nftProducerPachacuy.address;
       var pacAdd = purchaseAssetController.address;
+      var pIAdd = pachacuyInfo.address;
       await executeSet(wi, "grantRole", [game_manager, rel], "wi 001");
       await executeSet(wi, "grantRole", [game_manager, nftAdd], "wi 002");
-      // await executeSet(wi, "grantRole", [game_manager, pacAdd], "wi 003");
-      await executeSet(wi, "setAddPAController", [pacAdd], "wi 004");
+      await executeSet(wi, "grantRole", [game_manager, pacAdd], "wi 003");
+      await executeSet(wi, "setPachacuyInfoAddress", [pIAdd], "wi 004");
 
       // CHAKRA
       var ck = chakra;
@@ -285,22 +400,70 @@ describe("Tesing Pachacuy Game", function () {
       var hwAdd = hatunWasi.address;
       var wir = wiracocha.address;
       var ttc = tatacuy.address;
+      var pacAdd = purchaseAssetController.address;
+      var pCuyAdd = pachaCuyToken.address;
+      var nftAdd = nftProducerPachacuy.address;
+      var mswsAdd = misayWasi.address;
+      var gpAdd = guineaPig.address;
+      var rngAdd = randomNumberGenerator.address;
+      var pcAdd = pacha.address;
+      var qtwsAdd = qhatuWasi.address;
       await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
       await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
       await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
       await executeSet(pI, "setTatacuyAddress", [ttc], "pI 009");
       await executeSet(pI, "setWiracochaAddress", [wir], "pI 010");
+      await executeSet(pI, "setAddPAController", [pacAdd], "pI 011");
+      await executeSet(pI, "setPachaCuyTokenAddress", [pCuyAdd], "pI 012");
+      await executeSet(pI, "setNftProducerAddress", [nftAdd], "pI 013");
+      await executeSet(pI, "setMisayWasiAddress", [mswsAdd], "pI 014");
+      await executeSet(pI, "setGuineaPigAddress", [gpAdd], "pI 015");
+      await executeSet(pI, "setRandomNumberGAddress", [rngAdd], "pI 016");
+      await executeSet(pI, "setBinarySearchAddress", [rngAdd], "pI 017");
+      await executeSet(pI, "setPachaAddress", [pcAdd], "pI 018");
+      await executeSet(pI, "setQhatuWasiAddress", [qtwsAdd], "pI 019");
 
       // HATUN WASI
       var hw = hatunWasi;
       var nftAdd = nftProducerPachacuy.address;
       await executeSet(hw, "grantRole", [game_manager, nftAdd], "hw 001");
+
+      // GUINEA PIG
+      var gp = guineaPig;
+      var nftAdd = nftProducerPachacuy.address;
+      var pcIAdd = pachacuyInfo.address;
+      await executeSet(gp, "setPachacuyInfoAddress", [pcIAdd], "gp 001");
+      await executeSet(gp, "grantRole", [game_manager, nftAdd], "gp 002");
+
+      // MISAY WASI
+      var msws = misayWasi;
+      var nftAdd = nftProducerPachacuy.address;
+      var pcIadd = pachacuyInfo.address;
+      var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
+      var rngAdd = randomNumberGenerator.address;
+      await executeSet(msws, "setPachacuyInfoAddress", [pcIadd], "msws 001");
+      await executeSet(msws, "grantRole", [game_manager, nftAdd], "msws 002");
+      await executeSet(msws, "grantRole", [game_manager, rel], "msws 003");
+      await executeSet(msws, "grantRole", [rng_generator, rngAdd], "msws 004");
+
+      // BINARY SEARCH
+
+      // PACHA
+      var pc = pacha;
+      var pcIadd = pachacuyInfo.address;
+      var nftAdd = nftProducerPachacuy.address;
+      await executeSet(pc, "setPachacuyInfoAddress", [pcIadd], "pc 001");
+      await executeSet(pc, "grantRole", [game_manager, nftAdd], "pc 002");
+
+      // QHATU WASI
+      var qw = qhatuWasi;
+      var pcIadd = pachacuyInfo.address;
+      var nftAdd = nftProducerPachacuy.address;
+      await executeSet(qw, "setPachacuyInfoAddress", [pcIadd], "qw 001");
+      await executeSet(qw, "grantRole", [game_manager, nftAdd], "qw 002");
     });
 
-    it("Provides tokens", async () => {
-      await pachaCuyToken.mint(alice.address, pe("100000000000000000000000"));
-      await pachaCuyToken.mint(bob.address, pe("100000000000000000000000"));
-
+    xit("Provides tokens", async () => {
       await purchaseAssetController.connect(alice).purchaseGuineaPigWithPcuy(3); // uuid 1
       await randomNumberGenerator.fulfillRandomWords(
         432423,
@@ -367,5 +530,29 @@ describe("Tesing Pachacuy Game", function () {
     });
   });
 
-  describe("Whitelist", () => {});
+  describe("Misay Wasi", () => {
+    it("Alice receives tokens, gets guinea pig, land and misay wasi", async () => {
+      // tokens
+      await pachaCuyToken.mint(alice.address, pe("1000000"));
+
+      // guiena pig
+      await purchaseAssetController.connect(alice).purchaseGuineaPigWithPcuy(3); // uuid 1
+      await randomNumberGenerator.fulfillRandomWords(
+        432423,
+        [2131432235423, 324325234146]
+      );
+
+      // land
+      await purchaseAssetController.connect(alice).purchaseLandWithPcuy(1); // uuid 2
+      // var pachaUuid = 1;
+      // mint misay wasi
+      // var tx = await purchaseAssetController
+      //   .connect(alice)
+      //   .purchaseMisayWasi(pachaUuid);
+      // var res = await tx.wait();
+      // console.log(res);
+    });
+
+    it("", async () => {});
+  });
 });

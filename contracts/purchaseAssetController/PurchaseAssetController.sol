@@ -34,6 +34,7 @@ import "../chakra/IChakra.sol";
 import "../info/IPachacuyInfo.sol";
 import "../misayWasi/IMisayWasi.sol";
 import "../guineapig/IGuineaPig.sol";
+import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract PurchaseAssetController is
@@ -162,9 +163,11 @@ contract PurchaseAssetController is
         address _account,
         uint256[] memory _randomNumbers
     ) external onlyRole(RNG_GENERATOR) {
+        console.log("FULFILL RANDOMNESS");
         Transaction memory _tx = ongoingTransaction[_account];
 
         if (_compareStrings(_tx.transactionType, "PURCHASE_GUINEA_PIG")) {
+            console.log("FULFILL RANDOMNESS 2");
             _finishPurchaseGuineaPig(
                 _tx.ix,
                 _account,
@@ -614,6 +617,8 @@ contract PurchaseAssetController is
         uint256 _randomNumber1,
         uint256 _randomNumber2
     ) internal {
+        console.log("FULFILL RANDOMNESS 3");
+
         (
             uint256 _gender,
             uint256 _race,
@@ -632,15 +637,12 @@ contract PurchaseAssetController is
             address(nftProducerPachacuy) != address(0),
             "PurchaseAC: Guinea Pig Token not set"
         );
+        console.log("FULFILL RANDOMNESS 4");
 
         // Mint Guinea Pigs
-        uint256 _uuid = nftProducerPachacuy.mintGuineaPigNft(
-            _account,
-            _gender,
-            _race,
-            _guineaPigId,
-            ""
-        );
+        uint256 _uuid = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
+            .mintGuineaPigNft(_account, _gender, _race, _guineaPigId);
+        console.log("FULFILL RANDOMNESS 4", _uuid);
 
         uint256 price = pachacuyInfo.getPriceInPcuy(
             abi.encodePacked("GUINEA_PIG_", _ix.toString())

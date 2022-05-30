@@ -40,6 +40,7 @@ import "../misayWasi/IMisayWasi.sol";
 import "../guineapig/IGuineaPig.sol";
 import "../pacha/IPacha.sol";
 import "../qhatuwasi/IQhatuWasi.sol";
+import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract NftProducerPachacuy is
@@ -140,11 +141,11 @@ contract NftProducerPachacuy is
         uint256 _gender, // 0, 1
         uint256 _race, // 1 -> 4
         uint256 _idForJsonFile // 1 -> 8
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(MINTER_ROLE) returns (uint256) {
         // Creates a UUID for each mint
         uint256 uuid = _tokenIdCounter.current();
         _mint(_account, uuid, 1, "");
-
+        console.log("mintGuineaPigNft", uuid);
         // Map owner -> uuid[]
         // save in list of uuids for owner
         _ownerToUuids[_account].push(uuid);
@@ -160,18 +161,22 @@ contract NftProducerPachacuy is
             _idForJsonFile,
             uuid
         );
+        console.log("mintGuineaPigNft 2", uuid);
 
         _setApprovalForAll(_account, address(this), true);
 
         _tokenIdCounter.increment();
         emit Uuid(uuid);
+        console.log("mintGuineaPigNft 3", uuid);
+
+        return uuid;
     }
 
     function mintLandNft(
         address _account,
         uint256 _idForJsonFile, // comes from front-end 1 -> 697
         bytes memory data
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(MINTER_ROLE) returns (uint256) {
         // Veryfies that location is not taken already
         require(
             !IPacha(pachacuyInfo.pachaAddress()).isPachaAlreadyTaken(
@@ -199,6 +204,8 @@ contract NftProducerPachacuy is
 
         _tokenIdCounter.increment();
         emit Uuid(uuid);
+
+        return uuid;
     }
 
     function mintWiracocha(uint256 _pachaUuid) external returns (uint256) {

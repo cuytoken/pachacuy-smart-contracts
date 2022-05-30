@@ -26,6 +26,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../info/IPachacuyInfo.sol";
+import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract GuineaPig is
@@ -122,6 +123,7 @@ contract GuineaPig is
         uint256 _idForJsonFile, // 1 -> 8
         uint256 _guineaPigUuid
     ) external onlyRole(GAME_MANAGER) {
+        console.log("registerGuineaPig", _guineaPigUuid);
         GuineaPigInfo memory _guineaPig = _getGuinieaPigStruct(
             _gender,
             _race,
