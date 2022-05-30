@@ -129,7 +129,8 @@ contract QhatuWasi is
                 _amountPcuyCampaign
             );
 
-        uint256 _tax = (_amountPcuyCampaign * pachacuyInfo.purchaseTax()) / 100;
+        uint256 _tax = (_amountPcuyCampaign * pachacuyInfo.qhatuWasiTax()) /
+            100;
         uint256 _net = _amountPcuyCampaign - _tax;
 
         uint256 _samiPointsToGiveAway = pachacuyInfo.convertPcuyToSami(_net);

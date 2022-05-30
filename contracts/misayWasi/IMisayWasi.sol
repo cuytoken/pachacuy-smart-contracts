@@ -11,11 +11,12 @@ interface IMisayWasi {
         uint256 ticketUuid;
         uint256 misayWasiPrice;
         uint256 rafflePrize;
-        uint256 numberOfParticipants;
+        uint256 numberTicketsPurchased;
         uint256 campaignStartDate;
         uint256 campaignEndDate;
         bool isCampaignActive;
         bool hasMisayWasi;
+        address[] listOfParticipants;
     }
 
     function registerMisayWasi(

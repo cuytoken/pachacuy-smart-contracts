@@ -210,10 +210,8 @@ contract MisayWasi is
         ];
 
         misayWasiInfo.numberTicketsPurchased += _amountOfTickets;
-
         if (newCustomer) {
-            uint256 _l = misayWasiInfo.listOfParticipants.length;
-            misayWasiInfo.listOfParticipants[_l] = _account;
+            misayWasiInfo.listOfParticipants.push(_account);
         }
     }
 
@@ -262,7 +260,9 @@ contract MisayWasi is
             _removeMisayWasiFromActive(_misayWasiUuid);
             return;
         }
-        _randomNumber = _randomNumber % misayWasiInfo.numberTicketsPurchased;
+        _randomNumber =
+            (_randomNumber % misayWasiInfo.numberTicketsPurchased) +
+            1;
         uint256[] memory _accumulative = new uint256[](_lengthP);
         uint256 temp = 0;
         for (uint256 ix = 0; ix < _lengthP; ix++) {

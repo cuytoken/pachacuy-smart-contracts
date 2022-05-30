@@ -40,7 +40,6 @@ import "../misayWasi/IMisayWasi.sol";
 import "../guineapig/IGuineaPig.sol";
 import "../pacha/IPacha.sol";
 import "../qhatuwasi/IQhatuWasi.sol";
-import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract NftProducerPachacuy is
@@ -145,7 +144,6 @@ contract NftProducerPachacuy is
         // Creates a UUID for each mint
         uint256 uuid = _tokenIdCounter.current();
         _mint(_account, uuid, 1, "");
-        console.log("mintGuineaPigNft", uuid);
         // Map owner -> uuid[]
         // save in list of uuids for owner
         _ownerToUuids[_account].push(uuid);
@@ -161,13 +159,11 @@ contract NftProducerPachacuy is
             _idForJsonFile,
             uuid
         );
-        console.log("mintGuineaPigNft 2", uuid);
 
         _setApprovalForAll(_account, address(this), true);
 
         _tokenIdCounter.increment();
         emit Uuid(uuid);
-        console.log("mintGuineaPigNft 3", uuid);
 
         return uuid;
     }
@@ -369,10 +365,10 @@ contract NftProducerPachacuy is
         require(balanceOf(_account, _pachaUuid) > 0, "NFP: No pacha found");
 
         uint256 uuid = _tokenIdCounter.current();
-        _mint(_msgSender(), uuid, 1, "");
+        _mint(_account, uuid, 1, "");
 
         // save in list of uuids for owner
-        _ownerToUuids[_msgSender()].push(uuid);
+        _ownerToUuids[_account].push(uuid);
 
         // save type of uuid minted
         _nftTypes[uuid] = MISAYWASI;
@@ -411,7 +407,7 @@ contract NftProducerPachacuy is
         uint256 _amountOfTickets
     ) external onlyRole(GAME_MANAGER) {
         // has tickets already?
-        bool hasBoughtBefore = balanceOf(_account, _ticketUuid) > 0;
+        bool newCustomer = balanceOf(_account, _ticketUuid) == 0;
 
         // mint the tickets of the raffle
         _mint(_account, _ticketUuid, _amountOfTickets, "");
@@ -423,7 +419,7 @@ contract NftProducerPachacuy is
             _account,
             _misayWasiUuid,
             _amountOfTickets,
-            hasBoughtBefore
+            newCustomer
         );
         emit UuidAndAmount(_ticketUuid, balanceOf(_account, _ticketUuid));
     }

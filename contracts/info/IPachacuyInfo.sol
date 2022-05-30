@@ -42,6 +42,8 @@ interface IPachacuyInfo {
 
     function purchaseTax() external returns (uint256);
 
+    function qhatuWasiTax() external returns (uint256);
+
     //////////////////////////////////////////////////////////////////
     ///                  BUSINESS PRICES (BUSD)                    ///
     //////////////////////////////////////////////////////////////////

@@ -163,11 +163,9 @@ contract PurchaseAssetController is
         address _account,
         uint256[] memory _randomNumbers
     ) external onlyRole(RNG_GENERATOR) {
-        console.log("FULFILL RANDOMNESS");
         Transaction memory _tx = ongoingTransaction[_account];
 
         if (_compareStrings(_tx.transactionType, "PURCHASE_GUINEA_PIG")) {
-            console.log("FULFILL RANDOMNESS 2");
             _finishPurchaseGuineaPig(
                 _tx.ix,
                 _account,
@@ -207,7 +205,7 @@ contract PurchaseAssetController is
 
         uint256 price = pachacuyInfo.getPriceInPcuy(
             abi.encodePacked("GUINEA_PIG_", _ix.toString())
-        );
+        ) * 10**18;
 
         // Make transfer with appropiate token address
         _purchaseAtPriceInPcuyAndToken(price, _tokenAddress);
@@ -245,7 +243,7 @@ contract PurchaseAssetController is
      * @param _location Location of the land from 1 to 697
      */
     function _purchaseLand(uint256 _location, address _tokenAddress) internal {
-        uint256 pachaPrice = pachacuyInfo.getPriceInPcuy("PACHA");
+        uint256 pachaPrice = pachacuyInfo.getPriceInPcuy("PACHA") * 10**18;
 
         // Make transfer with appropiate token address
         _purchaseAtPriceInPcuyAndToken(pachaPrice, _tokenAddress);
@@ -426,7 +424,7 @@ contract PurchaseAssetController is
         external
         returns (uint256 chakraUuid)
     {
-        uint256 _chakraPrice = pachacuyInfo.getPriceInPcuy("CHAKRA");
+        uint256 _chakraPrice = pachacuyInfo.getPriceInPcuy("CHAKRA") * 10**18;
         _purchaseAtPriceInPcuyAndToken(_chakraPrice, address(pachaCuyToken));
 
         // mint a chakra
@@ -513,9 +511,10 @@ contract PurchaseAssetController is
     }
 
     function purchaseMisayWasi(uint256 _pachaUuid) external {
-        uint256 _misayWasiPrice = pachacuyInfo.getPriceInPcuy("MISAY_WASI");
+        uint256 _misayWasiPrice = pachacuyInfo.getPriceInPcuy("MISAY_WASI") *
+            10**18;
         _purchaseAtPriceInPcuyAndToken(_misayWasiPrice, address(pachaCuyToken));
-
+        console.log("_misayWasiPrice", _misayWasiPrice);
         // mint a Misay Wasi
         nftProducerPachacuy.mintMisayWasi(
             _msgSender(),
@@ -525,7 +524,8 @@ contract PurchaseAssetController is
     }
 
     function purchaseQhatuWasi(uint256 _pachaUuid) external {
-        uint256 _qhatuWasiPrice = pachacuyInfo.getPriceInPcuy("QHATU_WASI");
+        uint256 _qhatuWasiPrice = pachacuyInfo.getPriceInPcuy("QHATU_WASI") *
+            10**18;
         _purchaseAtPriceInPcuyAndToken(_qhatuWasiPrice, address(pachaCuyToken));
 
         // mint a Qhatu Wasi
@@ -617,8 +617,6 @@ contract PurchaseAssetController is
         uint256 _randomNumber1,
         uint256 _randomNumber2
     ) internal {
-        console.log("FULFILL RANDOMNESS 3");
-
         (
             uint256 _gender,
             uint256 _race,
@@ -637,16 +635,14 @@ contract PurchaseAssetController is
             address(nftProducerPachacuy) != address(0),
             "PurchaseAC: Guinea Pig Token not set"
         );
-        console.log("FULFILL RANDOMNESS 4");
 
         // Mint Guinea Pigs
         uint256 _uuid = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
             .mintGuineaPigNft(_account, _gender, _race, _guineaPigId);
-        console.log("FULFILL RANDOMNESS 4", _uuid);
 
         uint256 price = pachacuyInfo.getPriceInPcuy(
             abi.encodePacked("GUINEA_PIG_", _ix.toString())
-        );
+        ) * 10**18;
 
         emit GuineaPigPurchaseFinish(
             _account,

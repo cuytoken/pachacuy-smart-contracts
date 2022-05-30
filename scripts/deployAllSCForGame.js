@@ -16,6 +16,8 @@ const {
   pachacuyInfoForGame,
   verify,
   executeSet,
+  businessesPrice,
+  businessesKey,
 } = require("../js-utils/helpers");
 var pe = ethers.utils.parseEther;
 
@@ -49,6 +51,7 @@ async function main() {
    * - pI 017 - setBinarySearchAddress
    * - pI 018 - setPachaAddress
    * - pI 019 - setQhatuWasiAddress
+   * - pI 020 - setBusinessesPrice(_prices, _types)
    */
   var PachacuyInfo = await gcf("PachacuyInfo");
   var pachacuyInfo = await dp(
@@ -377,6 +380,8 @@ async function main() {
   var rngAdd = randomNumberGenerator.address;
   var pcAdd = pacha.address;
   var qtwsAdd = qhatuWasi.address;
+  var Ps = businessesPrice;
+  var Ts = businessesKey;
   await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
   await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
   await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
@@ -388,9 +393,10 @@ async function main() {
   await executeSet(pI, "setMisayWasiAddress", [mswsAdd], "pI 014");
   await executeSet(pI, "setGuineaPigAddress", [gpAdd], "pI 015");
   await executeSet(pI, "setRandomNumberGAddress", [rngAdd], "pI 016");
-  await executeSet(pI, "setBinarySearchAddress", [rngAdd], "pI 017");
-  await executeSet(pI, "setPachaAddress", [pacAdd], "pI 018");
+  await executeSet(pI, "setBinarySearchAddress", [bsAdd], "pI 017");
+  await executeSet(pI, "setPachaAddress", [pcAdd], "pI 018");
   await executeSet(pI, "setQhatuWasiAddress", [qtwsAdd], "pI 019");
+  await executeSet(pI, "setBusinessesPrice", [Ps, Ts], "pI 020");
 
   // HATUN WASI
   var hw = hatunWasi;

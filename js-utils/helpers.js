@@ -1,5 +1,7 @@
 require("dotenv").config();
 const hre = require("hardhat");
+const { ethers, providers, BigNumber } = require("ethers");
+var fe = ethers.utils.formatEther;
 
 async function executeSet(contract, command, args, messageWhenFailed) {
   try {
@@ -20,7 +22,6 @@ async function verify(_implementation, _contractName) {
   }
 }
 
-const { ethers, providers, BigNumber } = require("ethers");
 var bn = (n, d) => {
   var decimals = new Array(d).fill("0").join("");
   return ethers.BigNumber.from(`${String(n)}${decimals}`);
@@ -371,6 +372,13 @@ function infoHelper(net = "") {
   };
 }
 
+function b(token) {
+  return async function (wallet) {
+    var bal = (await token.balanceOf(wallet)).toString();
+    return fe(bal);
+  };
+}
+
 module.exports = {
   ...roles,
   businessesPrice,
@@ -385,4 +393,5 @@ module.exports = {
   mintInBatch,
   verify,
   executeSet,
+  b,
 };

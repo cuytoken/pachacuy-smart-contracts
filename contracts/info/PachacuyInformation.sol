@@ -54,6 +54,7 @@ contract PachacuyInfo is
     // Asset Management
     uint256 public purchaseTax;
     uint256 public raffleTax;
+    uint256 public qhatuWasiTax;
 
     // Magical Boxes
     uint256 public amountOfBoxesPerPachaPerDay;
@@ -144,16 +145,17 @@ contract PachacuyInfo is
         // 18%
         purchaseTax = 18;
         raffleTax = 18;
+        qhatuWasiTax = 8;
 
         // Food at chakra
         totalFood = 12;
-        pricePerFood = 25 * 10e18;
+        pricePerFood = 25 * 10**18;
 
         // business prices en BUSD
-        chakraPrice = 10 * 10e18;
-        pachaPrice = 200 * 10e18;
-        qhatuWasiPrice = 3 * 10e18;
-        misayWasiPrice = 10 * 10e18;
+        chakraPrice = 10 * 10**18;
+        pachaPrice = 200 * 10**18;
+        qhatuWasiPrice = 3 * 10**18;
+        misayWasiPrice = 10 * 10**18;
 
         // rates
         // 1 BUSD = 25 PCUY
@@ -359,18 +361,25 @@ contract PachacuyInfo is
     ///                         TAXES/FEES                         ///
     //////////////////////////////////////////////////////////////////
 
-    function setPurchaseTax(uint256 _purchaseTax)
+    function setPurchaseTax(uint256 _newTax)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        purchaseTax = _purchaseTax;
+        purchaseTax = _newTax;
     }
 
-    function setRaffleTax(uint256 _raffleTax)
+    function setRaffleTax(uint256 _newTax)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        raffleTax = _raffleTax;
+        raffleTax = _newTax;
+    }
+
+    function setQhatuWasiTax(uint256 _newTax)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        qhatuWasiTax = _newTax;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -404,19 +413,19 @@ contract PachacuyInfo is
     }
 
     function convertPcuyToSami(uint256 _pcuyAmount)
-        public
+        external
         view
         returns (uint256 _samiPoints)
     {
-        _samiPoints = (_pcuyAmount / 10e18) * exchangeRatePcuyToSami;
+        _samiPoints = (_pcuyAmount * exchangeRatePcuyToSami) / (10**18);
     }
 
     function convertSamiToPcuy(uint256 _samiAmount)
-        public
+        external
         view
         returns (uint256 _pcuyAmount)
     {
-        _pcuyAmount = (_samiAmount / exchangeRatePcuyToSami) * 10e18;
+        _pcuyAmount = (_samiAmount * 10**18) / exchangeRatePcuyToSami;
     }
 
     ///////////////////////////////////////////////////////////////

@@ -26,7 +26,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../info/IPachacuyInfo.sol";
-import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract GuineaPig is
@@ -64,7 +63,7 @@ contract GuineaPig is
     mapping(uint256 => GuineaPigInfo) internal _uuidToGuineaPigInfo;
 
     // List of Guinea Pigs
-    GuineaPigInfo[] listOfGuineaPigs;
+    uint256[] listOfUuidGuineaPigs;
     // guinea pig uuid => array index
     mapping(uint256 => uint256) internal _guineaPigsIx;
 
@@ -123,7 +122,6 @@ contract GuineaPig is
         uint256 _idForJsonFile, // 1 -> 8
         uint256 _guineaPigUuid
     ) external onlyRole(GAME_MANAGER) {
-        console.log("registerGuineaPig", _guineaPigUuid);
         GuineaPigInfo memory _guineaPig = _getGuinieaPigStruct(
             _gender,
             _race,
@@ -137,7 +135,7 @@ contract GuineaPig is
         _tokenIdCounter.increment();
 
         _guineaPigsIx[_guineaPigUuid] = current;
-        listOfGuineaPigs.push(_guineaPig);
+        listOfUuidGuineaPigs.push(_guineaPigUuid);
     }
 
     function feedGuineaPig(uint256 _guineaPigUuid)
@@ -260,9 +258,14 @@ contract GuineaPig is
     function getListOfGuineaPigs()
         external
         view
-        returns (GuineaPigInfo[] memory)
+        returns (GuineaPigInfo[] memory listOfGuineaPigs)
     {
-        return listOfGuineaPigs;
+        listOfGuineaPigs = new GuineaPigInfo[](listOfUuidGuineaPigs.length);
+        for (uint256 ix = 0; ix < listOfUuidGuineaPigs.length; ix++) {
+            listOfGuineaPigs[ix] = _uuidToGuineaPigInfo[
+                listOfUuidGuineaPigs[ix]
+            ];
+        }
     }
 
     function getGuineaPigWithUuid(uint256 _guineaPigUuid)
