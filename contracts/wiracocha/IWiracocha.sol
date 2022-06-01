@@ -6,9 +6,7 @@ interface IWiracocha {
         bool hasWiracocha;
     }
 
-    function getWiracochaInfoForAccount(address _account, uint256 _pachaUuid)
-        external
-        returns (WiracochaInfo memory);
+    function hasWiracocha(address _account) external view returns (bool);
 
     function registerWiracocha(
         address _account,

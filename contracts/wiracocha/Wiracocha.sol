@@ -24,6 +24,7 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../purchaseAssetController/IPurchaseAssetController.sol";
 import "../info/IPachacuyInfo.sol";
 import "../token/IPachaCuy.sol";
@@ -42,6 +43,9 @@ contract Wiracocha is
     // Pachacuy Information
     IPachacuyInfo pachacuyInfo;
 
+    using CountersUpgradeable for CountersUpgradeable.Counter;
+    CountersUpgradeable.Counter private _tokenIdCounter;
+
     /**
      * @dev Details the information of a Tatacuy. Additional properties attached for its campaign
      * @param owner: Wallet address of the current owner of Wiracocha
@@ -58,8 +62,15 @@ contract Wiracocha is
         uint256 amountPcuyExchanged;
         bool hasWiracocha;
     }
-    // Owner Tatacuy -> Pacha UUID -> Wiracocha UUID  -> Struct of Wiracocha Info
-    mapping(address => mapping(uint256 => WiracochaInfo)) ownerToWiracocha;
+    // Wiracocha UUID  -> Struct of Wiracocha Info
+    mapping(uint256 => WiracochaInfo) uuidToWiracochaInfo;
+
+    // Wiracocha uuid => array index
+    mapping(uint256 => uint256) internal _wiracochaIx;
+    // List of Uuid Wiracochas
+    uint256[] listUuidWiracocha;
+
+    mapping(address => bool) internal _ownerHasWiracocha;
 
     /**
      * @notice Event emitted when a exchange from sami points to PCUY tokens happens
@@ -109,11 +120,11 @@ contract Wiracocha is
         bytes memory
     ) external onlyRole(GAME_MANAGER) {
         require(
-            !ownerToWiracocha[_account][_pachaUuid].hasWiracocha,
+            !_ownerHasWiracocha[_account],
             "Tatacuy: Already exists one for this pacha"
         );
 
-        ownerToWiracocha[_account][_pachaUuid] = WiracochaInfo({
+        uuidToWiracochaInfo[_wiracochaUuid] = WiracochaInfo({
             owner: _account,
             wiracochaUuid: _wiracochaUuid,
             pachaUuid: _pachaUuid,
@@ -121,33 +132,35 @@ contract Wiracocha is
             amountPcuyExchanged: 0,
             hasWiracocha: true
         });
+
+        uint256 current = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+
+        _wiracochaIx[_wiracochaUuid] = current;
+        listUuidWiracocha.push(_wiracochaUuid);
     }
 
     /**
      * @param _exchanger: Wallet address of the user who's exchanging Sami Points to PCUYs
-     * @param _pachaOwner: Wallet address of the pacha owner
-     * @param _pachaUuid: Uuid of the pacha when it was minted
      * @param _samiPoints: Amount of Sami Points to exchange
      * @param _idFromFront: An ID coming from front to keep track of the exchange at Wiracocha
      */
     function exchangeSamiToPcuy(
         address _exchanger,
-        address _pachaOwner,
-        uint256 _pachaUuid,
         uint256 _samiPoints,
-        uint256 _idFromFront
+        uint256 _idFromFront,
+        uint256 _wiracochaUuid
     ) external onlyRole(GAME_MANAGER) {
         uint256 _amountPcuy = pachacuyInfo.convertSamiToPcuy(_samiPoints);
 
         IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
             .transferPcuyFromPoolRewardToUser(_exchanger, _amountPcuy);
-        ownerToWiracocha[_pachaOwner][_pachaUuid]
-            .amountPcuyExchanged += _amountPcuy;
+        uuidToWiracochaInfo[_wiracochaUuid].amountPcuyExchanged += _amountPcuy;
 
         emit WiracochaExchange(
             _exchanger,
-            _pachaOwner,
-            _pachaUuid,
+            uuidToWiracochaInfo[_wiracochaUuid].owner,
+            uuidToWiracochaInfo[_wiracochaUuid].pachaUuid,
             _amountPcuy,
             IPachaCuy(pachacuyInfo.pachaCuyTokenAddress()).balanceOf(
                 _exchanger
@@ -164,16 +177,26 @@ contract Wiracocha is
 
     /**
      * @dev Retrives information about a Wiracocha
-     * @param _account: Wallet address of the user who owns a Wiracocha (hence a Pacha)
-     * @param _pachaUuid: Uuid of the pacha when it was minted
+     * @param _wiracochaUuid: Uuid of the Wiracocha when it was minted
      * @return Gives back an object with the structure of 'WiracochaInfo'
      */
-    function getWiracochaInfoForAccount(address _account, uint256 _pachaUuid)
+    function getWiracochaWithUuid(uint256 _wiracochaUuid)
         external
         view
         returns (WiracochaInfo memory)
     {
-        return ownerToWiracocha[_account][_pachaUuid];
+        return uuidToWiracochaInfo[_wiracochaUuid];
+    }
+
+    function getListOfWiracochas()
+        external
+        view
+        returns (WiracochaInfo[] memory listOfWiracochas)
+    {
+        listOfWiracochas = new WiracochaInfo[](listUuidWiracocha.length);
+        for (uint256 ix = 0; ix < listUuidWiracocha.length; ix++) {
+            listOfWiracochas[ix] = uuidToWiracochaInfo[listUuidWiracocha[ix]];
+        }
     }
 
     function setPachacuyInfoAddress(address _infoAddress)
@@ -181,6 +204,10 @@ contract Wiracocha is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         pachacuyInfo = IPachacuyInfo(_infoAddress);
+    }
+
+    function hasWiracocha(address _account) external view returns (bool) {
+        return _ownerHasWiracocha[_account];
     }
 
     ///////////////////////////////////////////////////////////////

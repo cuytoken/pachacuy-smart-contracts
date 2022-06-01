@@ -62,8 +62,6 @@ contract NftProducerPachacuy is
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _tokenIdCounter;
 
-    using StringsUpgradeable for uint256;
-
     // NFT types
     bytes32 public constant TATACUY = keccak256("TATACUY");
     bytes32 public constant WIRACOCHA = keccak256("WIRACOCHA");
@@ -71,7 +69,6 @@ contract NftProducerPachacuy is
     bytes32 public constant HATUNWASI = keccak256("HATUNWASI");
     bytes32 public constant MISAYWASI = keccak256("MISAYWASI");
     bytes32 public constant QHATUWASI = keccak256("QHATUWASI");
-    bytes32 public constant RAFFLE = keccak256("RAFFLE");
     bytes32 public constant GUINEAPIG = keccak256("GUINEAPIG");
     bytes32 public constant PACHA = keccak256("PACHA");
     bytes32 public constant TICKETRAFFLE = keccak256("TICKETRAFFLE");
@@ -139,7 +136,8 @@ contract NftProducerPachacuy is
         address _account,
         uint256 _gender, // 0, 1
         uint256 _race, // 1 -> 4
-        uint256 _idForJsonFile // 1 -> 8
+        uint256 _idForJsonFile, // 1 -> 8
+        uint256 _price
     ) public onlyRole(MINTER_ROLE) returns (uint256) {
         // Creates a UUID for each mint
         uint256 uuid = _tokenIdCounter.current();
@@ -157,7 +155,8 @@ contract NftProducerPachacuy is
             _gender,
             _race,
             _idForJsonFile,
-            uuid
+            uuid,
+            _price
         );
 
         _setApprovalForAll(_account, address(this), true);
@@ -171,6 +170,7 @@ contract NftProducerPachacuy is
     function mintLandNft(
         address _account,
         uint256 _idForJsonFile, // comes from front-end 1 -> 697
+        uint256 _price,
         bytes memory data
     ) public onlyRole(MINTER_ROLE) returns (uint256) {
         // Veryfies that location is not taken already
@@ -195,7 +195,8 @@ contract NftProducerPachacuy is
         IPacha(pachacuyInfo.pachaAddress()).registerPacha(
             _account,
             _idForJsonFile,
-            uuid
+            uuid,
+            _price
         );
 
         _tokenIdCounter.increment();
@@ -210,9 +211,9 @@ contract NftProducerPachacuy is
 
         // validate that there is not a Wiracocha at this pacha uuid
         require(
-            !IWiracocha(pachacuyInfo.wiracochaAddress())
-                .getWiracochaInfoForAccount(_msgSender(), _pachaUuid)
-                .hasWiracocha,
+            !IWiracocha(pachacuyInfo.wiracochaAddress()).hasWiracocha(
+                _msgSender()
+            ),
             "NFP: Pacha has a Wiracocha already"
         );
 
@@ -243,14 +244,6 @@ contract NftProducerPachacuy is
     function mintTatacuy(uint256 _pachaUuid) external returns (uint256) {
         // validate that _account is an owner of that pacha
         require(balanceOf(_msgSender(), _pachaUuid) > 0, "NFP: No pacha found");
-
-        // validate that there is not a Tatacuy at this pacha uuid
-        require(
-            !ITatacuy(pachacuyInfo.tatacuyAddress())
-                .getTatacuyInfoForAccount(_msgSender(), _pachaUuid)
-                .hasTatacuy,
-            "NFP: Pacha has a Tatacuy already"
-        );
 
         uint256 uuid = _tokenIdCounter.current();
         _mint(_msgSender(), uuid, 1, "");
@@ -332,10 +325,7 @@ contract NftProducerPachacuy is
 
         // validate that there is not a Wiracocha at this pacha uuid
         IHatunWasi hw = IHatunWasi(pachacuyInfo.hatunWasiAddress());
-        require(
-            !hw.getAHatunWasi(_msgSender(), _pachaUuid).hasHatunWasi,
-            "NFP: Hatun Wasi exists"
-        );
+        require(!hw.hasHatunWasi(_msgSender()), "NFP: Hatun Wasi exists");
 
         uint256 uuid = _tokenIdCounter.current();
         _mint(_msgSender(), uuid, 1, "");
@@ -684,25 +674,22 @@ contract NftProducerPachacuy is
     }
 
     function tokenURI(uint256 _uuid) public view returns (string memory) {
-        // require(exists(_uuid), "NFP: Token has not been minted.");
+        require(exists(_uuid), "NFP: Not minted.");
 
-        // uint256 idForJsonFile = _uuidToJsonFile[_uuid];
-
+        bytes32 typeOfNft = _nftTypes[_uuid];
         string memory fileName;
-        // if (_uuidToGuineaPigData[_uuid].isGuineaPig) {
-        //     fileName = string(
-        //         abi.encodePacked(_prefix, idForJsonFile.toString(), ".json")
-        //     );
-        // } else if (_uuidToLandData[_uuid].isLand) {
-        //     fileName = string(
-        //         abi.encodePacked(
-        //             _prefix,
-        //             "PACHA",
-        //             idForJsonFile.toString(),
-        //             ".json"
-        //         )
-        //     );
-        // }
+
+        if (typeOfNft == GUINEAPIG) {
+            fileName = IGuineaPig(pachacuyInfo.guineaPigAddress()).tokenUri(
+                _prefix,
+                _uuid
+            );
+        } else if (typeOfNft == PACHA) {
+            fileName = IPacha(pachacuyInfo.pachaAddress()).tokenUri(
+                _prefix,
+                _uuid
+            );
+        }
         // //  else if (_uuidToPachaPassData[_uuid].isPachaPass) {
         // //     fileName = string(abi.encodePacked(_prefix, "PACHAPASS.json"));
         // // }

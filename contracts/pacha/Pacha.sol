@@ -43,6 +43,7 @@ contract Pacha is
 
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _tokenIdCounter;
+    using StringsUpgradeable for uint256;
 
     // Pachacuy Information
     IPachacuyInfo pachacuyInfo;
@@ -60,6 +61,7 @@ contract Pacha is
         uint256 wasPurchased;
         uint256 location;
         address owner;
+        uint256 price;
     }
     // uuid => Pacha Info
     mapping(uint256 => PachaInfo) internal _uuidToPachaInfo;
@@ -94,7 +96,8 @@ contract Pacha is
     function registerPacha(
         address _account,
         uint256 _idForJsonFile,
-        uint256 _pachaUuid
+        uint256 _pachaUuid,
+        uint256 _price
     ) external onlyRole(GAME_MANAGER) {
         // Mark that space of land as purchased
         isLandAlreadyTaken[_idForJsonFile] = true;
@@ -110,7 +113,8 @@ contract Pacha is
             location: _idForJsonFile,
             idForJsonFile: _idForJsonFile,
             owner: _account,
-            wasPurchased: block.timestamp
+            wasPurchased: block.timestamp,
+            price: _price
         });
 
         uint256 current = _tokenIdCounter.current();
@@ -273,6 +277,22 @@ contract Pacha is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         pachacuyInfo = IPachacuyInfo(_infoAddress);
+    }
+
+    function tokenUri(string memory _prefix, uint256 _pachaUuid)
+        external
+        view
+        returns (string memory)
+    {
+        return
+            string(
+                abi.encodePacked(
+                    _prefix,
+                    "PACHA",
+                    _uuidToPachaInfo[_pachaUuid].idForJsonFile.toString(),
+                    ".json"
+                )
+            );
     }
 
     ///////////////////////////////////////////////////////////////

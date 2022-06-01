@@ -55,13 +55,15 @@ contract HatunWasi is
         uint256 creationDate;
         bool hasHatunWasi;
     }
-    // Owner Hatun Wasi -> Pacha UUID -> Struct of HatunWasi Info
-    mapping(address => mapping(uint256 => HatunWasiInfo)) uuidToHatunWasiInfo;
+    // Hatun Wasi UUID -> Struct of HatunWasi Info
+    mapping(uint256 => HatunWasiInfo) uuidToHatunWasiInfo;
 
     // List of Available Hatun Wasis
-    HatunWasiInfo[] listOfHatunWasis;
+    uint256[] listUuidOfHatunWasi;
     // Hatun Wasi uuid => array index
     mapping(uint256 => uint256) internal _hatunWasiIx;
+
+    mapping(address => bool) public ownerHasHatunWasi;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -88,10 +90,9 @@ contract HatunWasi is
         uint256 _pachaUuid,
         uint256 _hatunWasiUuid
     ) external onlyRole(GAME_MANAGER) {
-        require(
-            !uuidToHatunWasiInfo[_account][_pachaUuid].hasHatunWasi,
-            "Hatun Wasi: It has one Hatun Wasi already"
-        );
+        require(!ownerHasHatunWasi[_account], "Hatun Wasi: Has a HatunWasi");
+
+        ownerHasHatunWasi[_account] = true;
 
         HatunWasiInfo memory hatunWasi = HatunWasiInfo({
             owner: _account,
@@ -100,22 +101,21 @@ contract HatunWasi is
             creationDate: block.timestamp,
             hasHatunWasi: true
         });
-        uuidToHatunWasiInfo[_account][_pachaUuid] = hatunWasi;
+        uuidToHatunWasiInfo[_hatunWasiUuid] = hatunWasi;
 
         uint256 current = _tokenIdCounter.current();
         _tokenIdCounter.increment();
 
         _hatunWasiIx[_hatunWasiUuid] = current;
-        listOfHatunWasis.push(hatunWasi);
+        listUuidOfHatunWasi.push(_hatunWasiUuid);
     }
 
-    function burnHatunWasi(address _account, uint256 _pachaUuid)
+    function burnHatunWasi(uint256 _hatunWasiUuid)
         external
         onlyRole(GAME_MANAGER)
     {
-        uint256 _hatunWasiUuid = uuidToHatunWasiInfo[_account][_pachaUuid]
-            .hatunWasiUuid;
-        delete uuidToHatunWasiInfo[_account][_pachaUuid];
+        ownerHasHatunWasi[uuidToHatunWasiInfo[_hatunWasiUuid].owner] = false;
+        delete uuidToHatunWasiInfo[_hatunWasiUuid];
         _removeHatunWasiWithUuid(_hatunWasiUuid);
     }
 
@@ -124,9 +124,9 @@ contract HatunWasi is
     ///////////////////////////////////////////////////////////////
 
     function _removeHatunWasiWithUuid(uint256 _hatuWasiUuid) internal {
-        uint256 _length = listOfHatunWasis.length;
+        uint256 _length = listUuidOfHatunWasi.length;
         if (_length == 1) {
-            listOfHatunWasis.pop();
+            listUuidOfHatunWasi.pop();
             delete _hatunWasiIx[_hatuWasiUuid];
             _tokenIdCounter.decrement();
         }
@@ -136,22 +136,22 @@ contract HatunWasi is
         delete _hatunWasiIx[_hatuWasiUuid];
 
         // temp of El at last position of array to be removed
-        HatunWasiInfo memory _hatunWasi = listOfHatunWasis[_length - 1];
+        uint256 _hatunWasi = listUuidOfHatunWasi[_length - 1];
 
         // point last El to index to be replaced
-        _hatunWasiIx[_hatunWasi.hatunWasiUuid] = _ix;
+        _hatunWasiIx[_hatuWasiUuid] = _ix;
 
         // swap last El from last position to index to be replaced
-        listOfHatunWasis[_ix] = _hatunWasi;
+        listUuidOfHatunWasi[_ix] = _hatunWasi;
 
         // remove last element
-        listOfHatunWasis.pop();
+        listUuidOfHatunWasi.pop();
 
         // decrease counter since array decreased in one
         _tokenIdCounter.decrement();
     }
 
-    function tokenUri(uint256 _hatuWasiUuid)
+    function tokenUri(uint256 _hatunWasiUuid)
         public
         view
         returns (string memory)
@@ -160,17 +160,24 @@ contract HatunWasi is
     function getListOfHatunWasis()
         external
         view
-        returns (HatunWasiInfo[] memory)
+        returns (HatunWasiInfo[] memory listOfHatunWasis)
     {
-        return listOfHatunWasis;
+        listOfHatunWasis = new HatunWasiInfo[](listUuidOfHatunWasi.length);
+        for (uint256 ix = 0; ix < listUuidOfHatunWasi.length; ix++) {
+            listOfHatunWasis[ix] = uuidToHatunWasiInfo[listUuidOfHatunWasi[ix]];
+        }
     }
 
-    function getAHatunWasi(address _account, uint256 _pachaUuid)
+    function getHatunWasiWithUuid(uint256 _hatunWasiUuid)
         external
         view
         returns (HatunWasiInfo memory)
     {
-        return uuidToHatunWasiInfo[_account][_pachaUuid];
+        return uuidToHatunWasiInfo[_hatunWasiUuid];
+    }
+
+    function hasHatunWasi(address _account) external view returns (bool) {
+        return ownerHasHatunWasi[_account];
     }
 
     ///////////////////////////////////////////////////////////////

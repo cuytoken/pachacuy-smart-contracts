@@ -43,6 +43,8 @@ contract GuineaPig is
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _tokenIdCounter;
 
+    using StringsUpgradeable for uint256;
+
     // Guinea pig data
     struct GuineaPigInfo {
         bool isGuineaPig;
@@ -58,6 +60,7 @@ contract GuineaPig is
         uint256 burningDate;
         uint256 wasBorn;
         address owner;
+        uint256 price;
     }
     // uuid => GuineaPig
     mapping(uint256 => GuineaPigInfo) internal _uuidToGuineaPigInfo;
@@ -120,14 +123,16 @@ contract GuineaPig is
         uint256 _gender, // 0, 1
         uint256 _race, // 1 -> 4
         uint256 _idForJsonFile, // 1 -> 8
-        uint256 _guineaPigUuid
+        uint256 _guineaPigUuid,
+        uint256 _price
     ) external onlyRole(GAME_MANAGER) {
         GuineaPigInfo memory _guineaPig = _getGuinieaPigStruct(
             _gender,
             _race,
             _guineaPigUuid,
             _idForJsonFile,
-            _account
+            _account,
+            _price
         );
         _uuidToGuineaPigInfo[_guineaPigUuid] = _guineaPig;
 
@@ -249,12 +254,6 @@ contract GuineaPig is
         owner = _uuidToGuineaPigInfo[_uuid].owner;
     }
 
-    function tokenUri(uint256 _chakraUuid)
-        public
-        view
-        returns (string memory)
-    {}
-
     function getListOfGuineaPigs()
         external
         view
@@ -288,7 +287,8 @@ contract GuineaPig is
         uint256 _race,
         uint256 _uuid,
         uint256 _tokenId,
-        address _account
+        address _account,
+        uint256 _price
     ) internal view returns (GuineaPigInfo memory) {
         return
             GuineaPigInfo({
@@ -307,8 +307,26 @@ contract GuineaPig is
                     (_daysUntilHungry[_race - 1] * 1 days) +
                     (_daysUntilDeath[_race - 1] * 1 days),
                 wasBorn: block.timestamp,
-                owner: _account
+                owner: _account,
+                price: _price
             });
+    }
+
+    function tokenUri(string memory _prefix, uint256 _guineaPigUuid)
+        external
+        view
+        returns (string memory)
+    {
+        return
+            string(
+                abi.encodePacked(
+                    _prefix,
+                    _uuidToGuineaPigInfo[_guineaPigUuid]
+                        .idForJsonFile
+                        .toString(),
+                    ".json"
+                )
+            );
     }
 
     ///////////////////////////////////////////////////////////////

@@ -475,6 +475,8 @@ describe("Tesing Pachacuy Game", function () {
     });
 
     xit("Provides tokens", async () => {
+      await pachaCuyToken.mint(alice.address, pe("50000"));
+      await pachaCuyToken.mint(bob.address, pe("50000"));
       await purchaseAssetController.connect(alice).purchaseGuineaPigWithPcuy(3); // uuid 1
       await randomNumberGenerator.fulfillRandomWords(
         432423,
@@ -487,56 +489,51 @@ describe("Tesing Pachacuy Game", function () {
       await nftProducerPachacuy.connect(alice).mintWiracocha(currUuid); // uuid 4
       await nftProducerPachacuy.connect(alice).mintHatunWasi(currUuid); // uuid 5
       await purchaseAssetController.connect(alice).purchaseChakra(currUuid); // uuid 6
-      await purchaseAssetController.connect(bob).purchaseFoodFromChakra(6);
+      var uuidGuineaPig = 1;
+      var amountOfFood = 1;
+      await purchaseAssetController
+        .connect(bob)
+        .purchaseFoodFromChakra(6, amountOfFood, uuidGuineaPig);
 
       // Tatacuy
       var _pachaUuid = 2;
       var _tatacuyUuid = 3;
-      var _totalFundsPcuyDeposited = pe("100000000000000000000");
-      var _ratePcuyToSamiPoints = 20;
-      var _totalFundsSamiPoints = pe("2000000000000000000000");
-      var _prizePerWinnerSamiPoints = pe("20000000000000000000");
+      var _totalFundsPcuyDeposited = pe("100");
+      var _prizePerWinnerPcuy = pe("10");
       await tatacuy
         .connect(alice)
         .startTatacuyCampaign(
-          _pachaUuid,
           _tatacuyUuid,
           _totalFundsPcuyDeposited,
-          _ratePcuyToSamiPoints,
-          _totalFundsSamiPoints,
-          _prizePerWinnerSamiPoints
+          _prizePerWinnerPcuy
         );
 
       // try luck
       var _account = bob.address;
-      var _pachaOwner = alice.address;
-      var _pachaUuid = 2;
       var _likelihood = 4;
+      var _idFromFront = 4;
+      var _tatacuyUuid = 3;
       await tatacuy.grantRole(game_manager, owner.address);
       await tatacuy.tryMyLuckTatacuy(
         _account,
-        _pachaOwner,
-        _pachaUuid,
-        _likelihood
+        _likelihood,
+        _idFromFront,
+        _tatacuyUuid
       );
 
       await randomNumberGenerator.fulfillRandomWords(_account, [7]);
 
       // Wiracocha
       var _exchanger = bob.address;
-      var _pachaOwner = alice.address;
-      var _pachaUuid = 2;
       var _samiPoints = 500;
-      var _amountPcuy = 100;
-      var _rateSamiPointsToPcuy = 5;
+      var _idFromFront = 100;
+      var _wiracochaUuid = 4;
       await wiracocha.grantRole(game_manager, owner.address);
       await wiracocha.exchangeSamiToPcuy(
         _exchanger,
-        _pachaOwner,
-        _pachaUuid,
         _samiPoints,
-        _amountPcuy,
-        _rateSamiPointsToPcuy
+        _idFromFront,
+        _wiracochaUuid
       );
     });
   });
@@ -570,7 +567,10 @@ describe("Tesing Pachacuy Game", function () {
 
       // mint misay wasi
       pachaUuid = 2;
-      await purchaseAssetController.connect(alice).purchaseMisayWasi(pachaUuid); // uuid 3
+      var tx = await purchaseAssetController
+        .connect(alice)
+        .purchaseMisayWasi(pachaUuid); // uuid 3
+
       console.log(
         "MWS",
         (await pachaCuyToken.balanceOf(alice.address)).toString()
@@ -627,9 +627,12 @@ describe("Tesing Pachacuy Game", function () {
       );
 
       // purchase ticket
-      await purchaseAssetController
+      var tx = await purchaseAssetController
         .connect(carl)
         .purchaseTicketFromMisayWasi(misayWasiUuid, 1);
+      var res = await tx.wait();
+      console.log("ticket misay wasi", res.events);
+
       console.log("1 Carl", await balanceOf(carl.address));
       console.log("1 alice", await balanceOf(alice.address));
       await purchaseAssetController
@@ -673,14 +676,30 @@ describe("Tesing Pachacuy Game", function () {
       await pachaCuyToken.mint(bob.address, pe("5000"));
       await purchaseAssetController.connect(bob).purchaseLandWithPcuy(2); // uuid 8
       pachaUuid = 8;
-      await purchaseAssetController.connect(bob).purchaseQhatuWasi(pachaUuid); // uuid 9
-      //
+      var tx = await purchaseAssetController
+        .connect(bob)
+        .purchaseQhatuWasi(pachaUuid); // uuid 9
+
       console.log("bobBal", await balanceOf(bob.address));
       var qhatuWasiUuid = 9;
       await qhatuWasi
         .connect(bob)
         .startQhatuWasiCampaign(qhatuWasiUuid, pe("40"));
       console.log("bobBal", await balanceOf(bob.address));
+    });
+  });
+
+  describe("URI", () => {
+    it("Reading uri", async () => {
+      console.log("1", await nftProducerPachacuy.tokenURI(1));
+      console.log("2", await nftProducerPachacuy.tokenURI(2));
+      console.log("3", await nftProducerPachacuy.tokenURI(3));
+      console.log("4", await nftProducerPachacuy.tokenURI(4));
+      console.log("5", await nftProducerPachacuy.tokenURI(5));
+      console.log("6", await nftProducerPachacuy.tokenURI(6));
+      console.log("7", await nftProducerPachacuy.tokenURI(7));
+      console.log("8", await nftProducerPachacuy.tokenURI(8));
+      console.log("9", await nftProducerPachacuy.tokenURI(9));
     });
   });
 });

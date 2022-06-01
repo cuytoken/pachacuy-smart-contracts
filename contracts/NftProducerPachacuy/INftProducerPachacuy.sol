@@ -6,12 +6,14 @@ interface INftProducerPachacuy {
         address account,
         uint256 gender, // 0, 1
         uint256 race, // 1 -> 4
-        uint256 idForJsonFile // 1 -> 8
+        uint256 idForJsonFile, // 1 -> 8
+        uint256 price
     ) external returns (uint256);
 
     function mintLandNft(
         address account,
         uint256 idForJsonFile,
+        uint256 price,
         bytes memory data
     ) external returns (uint256);
 

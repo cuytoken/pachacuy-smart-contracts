@@ -6,9 +6,7 @@ interface IHatunWasi {
         bool hasHatunWasi;
     }
 
-    function getAHatunWasi(address _account, uint256 _pachaUuid)
-        external
-        returns (HatunWasiInfo memory);
+    function hasHatunWasi(address _account) external view returns (bool);
 
     function registerHatunWasi(
         address _account,

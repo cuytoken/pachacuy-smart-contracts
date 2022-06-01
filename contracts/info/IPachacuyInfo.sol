@@ -6,33 +6,33 @@ interface IPachacuyInfo {
 
     function pricePerFood() external returns (uint256);
 
-    function chakraAddress() external returns (address);
+    function chakraAddress() external view returns (address);
 
-    function wiracochaAddress() external returns (address);
+    function wiracochaAddress() external view returns (address);
 
-    function tatacuyAddress() external returns (address);
+    function tatacuyAddress() external view returns (address);
 
-    function poolRewardAddress() external returns (address);
+    function poolRewardAddress() external view returns (address);
 
-    function hatunWasiAddress() external returns (address);
+    function hatunWasiAddress() external view returns (address);
 
-    function purchaseACAddress() external returns (address);
+    function purchaseACAddress() external view returns (address);
 
-    function pachaCuyTokenAddress() external returns (address);
+    function pachaCuyTokenAddress() external view returns (address);
 
-    function misayWasiAddress() external returns (address);
+    function misayWasiAddress() external view returns (address);
 
-    function nftProducerAddress() external returns (address);
+    function nftProducerAddress() external view returns (address);
 
-    function guineaPigAddress() external returns (address);
+    function guineaPigAddress() external view returns (address);
 
-    function randomNumberGAddress() external returns (address);
+    function randomNumberGAddress() external view returns (address);
 
-    function binarySearchAddress() external returns (address);
+    function binarySearchAddress() external view returns (address);
 
-    function pachaAddress() external returns (address);
+    function pachaAddress() external view returns (address);
 
-    function qhatuWasiAddress() external returns (address);
+    function qhatuWasiAddress() external view returns (address);
 
     //////////////////////////////////////////////////////////////////
     ///                          TAXES/FEES                        ///

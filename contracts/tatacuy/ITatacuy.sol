@@ -12,8 +12,4 @@ interface ITatacuy {
         uint256 _uuid,
         bytes memory data
     ) external;
-
-    function getTatacuyInfoForAccount(address _account, uint256 _pachaUuid)
-        external
-        returns (TatacuyInfo memory);
 }

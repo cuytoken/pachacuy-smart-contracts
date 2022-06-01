@@ -97,6 +97,13 @@ contract MisayWasi is
     // list misay wasis to raffle at once
     uint256[] misayWasiUuids;
 
+    /**
+     * @param winner: Wallet address of the winner of this raffle contest
+     * @param misayWasiUuid: Uuid of the Misay Wasi where the raffle contest took place
+     * @param rafflePrize: Net prize (minus fee) of the Misay Wasi allocated by the Misay Wasi's owner
+     * @param raffleTax: Tax applied to the prize
+     * @param ticketUuid: Uuid of the ticket purchased at this Misay Wasi
+     */
     event RaffleContestFinished(
         address winner,
         uint256 misayWasiUuid,
@@ -151,6 +158,13 @@ contract MisayWasi is
         uuidToMisayWasiInfo[_misayWasiUuid] = misayWasiInfo;
     }
 
+    /**
+     * @notice initiated by the owner of the misay wasi who deposits funds
+     * @param _misayWasiUuid: Uuid of the Misay Wasi where the owner is creating a raffle
+     * @param _rafflePrize: Prize of the raffle to be given by the owner
+     * @param _ticketPrice: Price to pay by a participant of the raffle
+     * @param _campaignEndDate: Timestamp ending date where the raffle will finish
+     */
     function startMisayWasiRaffle(
         uint256 _misayWasiUuid,
         uint256 _rafflePrize,
@@ -215,6 +229,12 @@ contract MisayWasi is
         }
     }
 
+    /**
+     * @notice Initiated by the backend
+     * @param _misayWasiUuids Array of Uuid of the Misay Wasis that will start the raffle
+     * @dev Called only by the cloud using an access role
+     * @dev Called every day at 10 AM UTC-5
+     */
     function startRaffleContest(uint256[] memory _misayWasiUuids)
         external
         onlyRole(GAME_MANAGER)

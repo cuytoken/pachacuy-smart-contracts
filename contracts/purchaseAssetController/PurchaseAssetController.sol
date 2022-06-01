@@ -252,6 +252,7 @@ contract PurchaseAssetController is
         uint256 uuid = nftProducerPachacuy.mintLandNft(
             _msgSender(),
             _location,
+            pachaPrice,
             ""
         );
 
@@ -636,13 +637,13 @@ contract PurchaseAssetController is
             "PurchaseAC: Guinea Pig Token not set"
         );
 
-        // Mint Guinea Pigs
-        uint256 _uuid = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
-            .mintGuineaPigNft(_account, _gender, _race, _guineaPigId);
-
         uint256 price = pachacuyInfo.getPriceInPcuy(
             abi.encodePacked("GUINEA_PIG_", _ix.toString())
         ) * 10**18;
+
+        // Mint Guinea Pigs
+        uint256 _uuid = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
+            .mintGuineaPigNft(_account, _gender, _race, _guineaPigId, price);
 
         emit GuineaPigPurchaseFinish(
             _account,

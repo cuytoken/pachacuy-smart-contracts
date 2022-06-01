@@ -380,6 +380,7 @@ async function main() {
   var rngAdd = randomNumberGenerator.address;
   var pcAdd = pacha.address;
   var qtwsAdd = qhatuWasi.address;
+  var bsAdd = binarySearch.address;
   var Ps = businessesPrice;
   var Ts = businessesKey;
   await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
@@ -473,9 +474,21 @@ async function upgrade() {
   // const PurchaseAssetController = await gcf("PurchaseAssetController");
   // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
 
-  var NFTPAddress = "0x867Cd9A1D6636094B87ABD1100688DEdd1E42C71";
-  const NftProducerPachacuy = await gcf("NftProducerPachacuy");
-  await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
+  // var GuineaPigAddress = "0xbB528C3ba24647D710b667B439d5e84D7e35B7bc";
+  // const GuineaPig = await gcf("GuineaPig");
+  // await upgrades.upgradeProxy(GuineaPigAddress, GuineaPig);
+
+  // var PachaAddress = "0x34Df8bA6C7cE58708aDfd2e9137b573FD4Cd7d76";
+  // const Pacha = await gcf("Pacha");
+  // await upgrades.upgradeProxy(PachaAddress, Pacha);
+
+  var TatacuyAddress = "0xD6cDFb590364E478AB3151Edc0180ebf82Bb456F";
+  const Tatacuy = await gcf("Tatacuy");
+  await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
+
+  // var NFTPAddress = "0x27B5733C942B20457371c1B6bbcaD2F8B5d07576";
+  // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
+  // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
 
   // var WiracochaAddress = "0xA5100bE10f9e9da4cD1bA33553Fe119861E11a27";
   // const Wiracocha = await gcf("Wiracocha");
@@ -513,9 +526,9 @@ async function upgrade() {
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-upgrade()
-  // resetOngoingTransaction()
-  // main()
+// upgrade()
+// resetOngoingTransaction()
+main()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

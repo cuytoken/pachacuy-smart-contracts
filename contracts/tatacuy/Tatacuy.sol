@@ -93,14 +93,14 @@ contract Tatacuy is
         bool hasTatacuy;
         bool isCampaignActive;
     }
-    // Owner Tatacuy -> Pacha UUID -> Tatacuy UUID  -> Struct of Tatacuy Info
-    mapping(address => mapping(uint256 => TatacuyInfo)) ownerToTatacuy;
+    // Pacha UUID -> Tatacuy UUID  -> Struct of Tatacuy Info
+    mapping(uint256 => TatacuyInfo) uuidToTatacuyInfo;
 
-    // List of all active campaigns at any given time
-    TatacuyInfo[] internal listActiveCampaigns;
+    // List of all Uuid active campaigns at any given time
+    uint256[] internal listUuidActiveCampaigns;
 
-    // Owner => tatacuy UUID => array index of 'listActiveCampaigns'
-    mapping(address => mapping(uint256 => uint256)) internal _campaignIx;
+    // Owner => tatacuy UUID => array index of 'listUuidActiveCampaigns'
+    mapping(uint256 => uint256) internal _campaignIx;
 
     event TatacuyCampaignStarted(
         address account,
@@ -176,12 +176,7 @@ contract Tatacuy is
         uint256 _tatacuyUuid,
         bytes memory
     ) external onlyRole(GAME_MANAGER) {
-        require(
-            !ownerToTatacuy[_account][_pachaUuid].hasTatacuy,
-            "Tatacuy: Already exists one for this pacha"
-        );
-
-        ownerToTatacuy[_account][_pachaUuid] = TatacuyInfo({
+        uuidToTatacuyInfo[_tatacuyUuid] = TatacuyInfo({
             owner: _account,
             tatacuyUuid: _tatacuyUuid,
             pachaUuid: _pachaUuid,
@@ -201,20 +196,16 @@ contract Tatacuy is
     /**
      * @dev Starts a Tatacuy Campaign for a particular account and saves its info
      * @dev A user can create as many campaigns as Tatacuys he has
-     * @param _pachaUuid: Uuid of the Pacha that will received a Tatacuy
      * @param _tatacuyUuid: Uuid assigned when a Tatacuy was minted
      * @param _totalFundsPcuyDeposited: Total funds (in PCUY) to be distributed in a Tatacuy campaign
      * @param _prizePerWinnerPcuy: Prize to be given (in PCUY) to each winner at tatacuy
      */
     function startTatacuyCampaign(
-        uint256 _pachaUuid,
         uint256 _tatacuyUuid,
         uint256 _totalFundsPcuyDeposited,
         uint256 _prizePerWinnerPcuy
     ) external {
-        TatacuyInfo storage tatacuyInfo = ownerToTatacuy[_msgSender()][
-            _pachaUuid
-        ];
+        TatacuyInfo storage tatacuyInfo = uuidToTatacuyInfo[_tatacuyUuid];
         require(
             tatacuyInfo.owner == _msgSender(),
             "Tatacuy: only owner starts campaign"
@@ -240,8 +231,8 @@ contract Tatacuy is
         uint256 current = _tokenIdCounter.current();
         _tokenIdCounter.increment();
 
-        listActiveCampaigns.push(tatacuyInfo);
-        _campaignIx[_msgSender()][_tatacuyUuid] = current;
+        listUuidActiveCampaigns.push(current);
+        _campaignIx[_tatacuyUuid] = current;
 
         emit TatacuyCampaignStarted(
             _msgSender(),
@@ -256,10 +247,8 @@ contract Tatacuy is
             );
     }
 
-    function finishTatacuyCampaign(uint256 _pachaUuid) external {
-        TatacuyInfo storage tatacuyInfo = ownerToTatacuy[_msgSender()][
-            _pachaUuid
-        ];
+    function finishTatacuyCampaign(uint256 _tatacuyUuid) external {
+        TatacuyInfo storage tatacuyInfo = uuidToTatacuyInfo[_tatacuyUuid];
 
         require(tatacuyInfo.hasTatacuy, "Tatacuy: There is not a Tatacuy");
 
@@ -290,21 +279,21 @@ contract Tatacuy is
         );
 
         // 2 - delete from list of campaigns
-        uint256 _ix = _campaignIx[_msgSender()][tatacuyInfo.tatacuyUuid];
-        delete _campaignIx[_msgSender()][tatacuyInfo.tatacuyUuid];
+        uint256 _ix = _campaignIx[tatacuyInfo.tatacuyUuid];
+        delete _campaignIx[tatacuyInfo.tatacuyUuid];
 
-        if (listActiveCampaigns.length == 1) {
-            listActiveCampaigns.pop();
+        if (listUuidActiveCampaigns.length == 1) {
+            listUuidActiveCampaigns.pop();
             _tokenIdCounter.decrement();
             return;
         }
 
-        TatacuyInfo memory _last = listActiveCampaigns[
-            listActiveCampaigns.length - 1
+        uint256 _last = listUuidActiveCampaigns[
+            listUuidActiveCampaigns.length - 1
         ];
-        listActiveCampaigns[_ix] = _last;
-        listActiveCampaigns.pop();
-        _campaignIx[_last.owner][_last.tatacuyUuid] = _ix;
+        listUuidActiveCampaigns[_ix] = _last;
+        listUuidActiveCampaigns.pop();
+        _campaignIx[_last] = _ix;
         _tokenIdCounter.decrement();
     }
 
@@ -313,21 +302,16 @@ contract Tatacuy is
      * @notice It's executed by a relayer in the cloud upon signature from the user
      * @dev It uses a Random Number Generator by Chainlink and the `_likelihood`
      * @param _account: The address for which random number request has been made
-     * @param _pachaOwner: Wallet address of the pacha at which this Tatacuy is placed
-     * @param _pachaUuid: Uuid of the pacha received when it was minted
      * @param _likelihood: A number between 1 and 10 in inclusive that represents tha chances of winning
      * @param _idFromFront: An ID coming from front to keep track of the winner at Tatacuy
      */
     function tryMyLuckTatacuy(
         address _account,
-        address _pachaOwner,
-        uint256 _pachaUuid,
         uint256 _likelihood,
-        uint256 _idFromFront
+        uint256 _idFromFront,
+        uint256 _tatacuyUuid
     ) external onlyRole(GAME_MANAGER) {
-        TatacuyInfo storage tatacuyInfo = ownerToTatacuy[_pachaOwner][
-            _pachaUuid
-        ];
+        TatacuyInfo storage tatacuyInfo = uuidToTatacuyInfo[_tatacuyUuid];
 
         require(
             tatacuyInfo.isCampaignActive,
@@ -347,8 +331,8 @@ contract Tatacuy is
         );
 
         _randomTxs[_account] = RandomTx({
-            pachaOwner: _pachaOwner,
-            pachaUuid: _pachaUuid,
+            pachaOwner: tatacuyInfo.owner,
+            pachaUuid: tatacuyInfo.pachaUuid,
             tatacuyUuid: tatacuyInfo.tatacuyUuid,
             prizeWinner: tatacuyInfo.prizePerWinnerSamiPoints,
             account: _account,
@@ -385,7 +369,7 @@ contract Tatacuy is
         } else {
             emit TatacuyTryMyLuckResult(
                 _account,
-                true,
+                false,
                 randomTx.likelihood,
                 0,
                 randomTx.pachaUuid,
@@ -405,29 +389,33 @@ contract Tatacuy is
     /**
      * @dev Retrives the list of all active Tatacuy campaigns
      * @notice A campaign is when a Tatacuy is giving away prizes to Guinea Pigs
-     * @param _account: Wallet address of the user who owns a Tatacuy (hence a Pacha)
-     * @param _pachaUuid: Uuid of the pacha when it was minted
+     * @param _tatacuyUuid: Uuid of the Tatacuy when it was minted
      * @return Gives back an object with the structure of 'TatacuyInfo'
      */
-    function getTatacuyInfoForAccount(address _account, uint256 _pachaUuid)
+    function getTatacuyWithUuid(uint256 _tatacuyUuid)
         external
         view
         returns (TatacuyInfo memory)
     {
-        return ownerToTatacuy[_account][_pachaUuid];
+        return uuidToTatacuyInfo[_tatacuyUuid];
     }
 
     /**
      * @dev Retrives the list of all active Tatacuy campaigns
      * @notice A campaign is when a Tatacuy is giving away prizes to Guinea Pigs
-     * @return Gives back an array of objectes with the structure of 'TatacuyInfo'
+     * @return listActiveCampaigns Gives back an array of objectes with the structure of 'TatacuyInfo'
      */
     function getListOfTatacuyCampaigns()
         external
         view
-        returns (TatacuyInfo[] memory)
+        returns (TatacuyInfo[] memory listActiveCampaigns)
     {
-        return listActiveCampaigns;
+        listActiveCampaigns = new TatacuyInfo[](listUuidActiveCampaigns.length);
+        for (uint256 ix = 0; ix < listUuidActiveCampaigns.length; ix++) {
+            listActiveCampaigns[ix] = uuidToTatacuyInfo[
+                listUuidActiveCampaigns[ix]
+            ];
+        }
     }
 
     function setPachacuyInfoAddress(address _infoAddress)

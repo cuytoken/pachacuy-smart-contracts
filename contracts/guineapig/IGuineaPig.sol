@@ -7,7 +7,8 @@ interface IGuineaPig {
         uint256 _gender,
         uint256 _race,
         uint256 _idForJsonFile,
-        uint256 _guineaPigUuid
+        uint256 _guineaPigUuid,
+        uint256 _price
     ) external;
 
     function getRaceGenderGuineaPig(
@@ -24,4 +25,9 @@ interface IGuineaPig {
         );
 
     function feedGuineaPig(uint256 _guineaPigUuid) external;
+
+    function tokenUri(string memory _prefix, uint256 _guineaPigUuid)
+        external
+        view
+        returns (string memory);
 }

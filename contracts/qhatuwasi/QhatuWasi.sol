@@ -111,6 +111,11 @@ contract QhatuWasi is
         listUuidQhatuWasis.push(_qhatuWasiUuid);
     }
 
+    /**
+     *
+     * @param _qhatuWasiUuid: Uuid of the Qhatu Wasi when it was minted
+     * @param _amountPcuyCampaign: Amount in PCUY to be deposited by the campaign
+     */
     function startQhatuWasiCampaign(
         uint256 _qhatuWasiUuid,
         uint256 _amountPcuyCampaign
