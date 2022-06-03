@@ -92,7 +92,7 @@ contract HatunWasi is
     ) external onlyRole(GAME_MANAGER) {
         require(!ownerHasHatunWasi[_account], "Hatun Wasi: Has a HatunWasi");
 
-        ownerHasHatunWasi[_account] = true;
+        // ownerHasHatunWasi[_account] = true;
 
         HatunWasiInfo memory hatunWasi = HatunWasiInfo({
             owner: _account,

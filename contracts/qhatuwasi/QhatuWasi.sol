@@ -52,6 +52,7 @@ contract QhatuWasi is
         uint256 pcuyForCurrentCampaign;
         uint256 samiPointsToGiveAway;
         uint256 qhatuWasiPrice;
+        uint256 prizePerView;
     }
     // uuid => Qhatu Wasi
     mapping(uint256 => QhatuWasiInfo) internal _uuidToQhatuWasiInfo;
@@ -66,7 +67,8 @@ contract QhatuWasi is
         uint256 netPcuyDeposited,
         uint256 samiPointsToGiveAway,
         uint256 qhatuWasiuuid,
-        address owner
+        address owner,
+        uint256 _prizePerView
     );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -100,7 +102,8 @@ contract QhatuWasi is
             totalPcuyDeposited: 0,
             pcuyForCurrentCampaign: 0,
             samiPointsToGiveAway: 0,
-            qhatuWasiPrice: _qhatuWasiPrice
+            qhatuWasiPrice: _qhatuWasiPrice,
+            prizePerView: 0
         });
         _uuidToQhatuWasiInfo[_qhatuWasiUuid] = _qhatuWasiInfo;
 
@@ -115,10 +118,12 @@ contract QhatuWasi is
      *
      * @param _qhatuWasiUuid: Uuid of the Qhatu Wasi when it was minted
      * @param _amountPcuyCampaign: Amount in PCUY to be deposited by the campaign
+     * @param _prizePerView: Amount in PCUY to be paid when someone sees the add until the end
      */
     function startQhatuWasiCampaign(
         uint256 _qhatuWasiUuid,
-        uint256 _amountPcuyCampaign
+        uint256 _amountPcuyCampaign,
+        uint256 _prizePerView
     ) external {
         QhatuWasiInfo storage _qhatuWasiInfo = _uuidToQhatuWasiInfo[
             _qhatuWasiUuid
@@ -143,13 +148,18 @@ contract QhatuWasi is
         _qhatuWasiInfo.totalPcuyDeposited += _net;
         _qhatuWasiInfo.pcuyForCurrentCampaign = _net;
         _qhatuWasiInfo.samiPointsToGiveAway = _samiPointsToGiveAway;
+        uint256 _prizePerViewSami = pachacuyInfo.convertPcuyToSami(
+            _prizePerView
+        );
+        _qhatuWasiInfo.prizePerView = _prizePerViewSami;
 
         emit QhatuWasiCampaignStarted(
             _tax,
             _net,
             _samiPointsToGiveAway,
             _qhatuWasiUuid,
-            _qhatuWasiInfo.owner
+            _qhatuWasiInfo.owner,
+            _prizePerViewSami
         );
     }
 

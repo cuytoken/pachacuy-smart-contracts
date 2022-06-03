@@ -70,7 +70,10 @@ contract Wiracocha is
     // List of Uuid Wiracochas
     uint256[] listUuidWiracocha;
 
-    mapping(address => bool) internal _ownerHasWiracocha;
+    mapping(address => bool) internal _ownerHasWiracocha; // DELETE
+
+    mapping(address => mapping(uint256 => bool))
+        internal _ownerHasWiracochaAtPacha;
 
     /**
      * @notice Event emitted when a exchange from sami points to PCUY tokens happens
@@ -120,9 +123,11 @@ contract Wiracocha is
         bytes memory
     ) external onlyRole(GAME_MANAGER) {
         require(
-            !_ownerHasWiracocha[_account],
+            !_ownerHasWiracochaAtPacha[_account][_pachaUuid],
             "Tatacuy: Already exists one for this pacha"
         );
+
+        _ownerHasWiracochaAtPacha[_account][_pachaUuid] = true;
 
         uuidToWiracochaInfo[_wiracochaUuid] = WiracochaInfo({
             owner: _account,
@@ -206,8 +211,12 @@ contract Wiracocha is
         pachacuyInfo = IPachacuyInfo(_infoAddress);
     }
 
-    function hasWiracocha(address _account) external view returns (bool) {
-        return _ownerHasWiracocha[_account];
+    function hasWiracocha(address _account, uint256 _pachaUuid)
+        external
+        view
+        returns (bool)
+    {
+        return _ownerHasWiracochaAtPacha[_account][_pachaUuid];
     }
 
     ///////////////////////////////////////////////////////////////
