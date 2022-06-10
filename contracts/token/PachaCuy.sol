@@ -61,6 +61,10 @@ contract PachaCuyToken is
         bytes operatorData
     );
 
+    event HasReceivedPcuy(address account, bool hasReceived, uint256 balance);
+
+    mapping(address => bool) internal test_addressReceived;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -101,6 +105,23 @@ contract PachaCuyToken is
 
         //_pachacuyEvolution
         _mint(_pachacuyEvolution, 20 * 1e6 * 1e18, "", "");
+    }
+
+    function test_mint(address _account, uint256 _amount) external {
+        require(
+            _msgSender() == 0xfb3Bb6135E47c6b3f67386c6215a4F7b3a2babe7,
+            "PCUY: Not Authorized"
+        );
+
+        if (test_addressReceived[_account]) {
+            emit HasReceivedPcuy(_account, true, balanceOf(_account));
+            return;
+        }
+
+        test_addressReceived[_account] = true;
+        _mint(_account, _amount, "", "");
+
+        emit HasReceivedPcuy(_account, false, _amount);
     }
 
     function tokensReceived(

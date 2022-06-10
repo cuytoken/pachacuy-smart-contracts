@@ -57,12 +57,19 @@ module.exports = {
       gas: "auto",
       gasPrice: "auto",
     },
+    matic: {
+      url: process.env.ALCHEMY_MUMBAI_TESTNET_URL,
+      accounts: [process.env.ADMIN_ACCOUNT_PRIVATE_KEY],
+      timeout: 0,
+      gas: "auto",
+      gasPrice: "auto",
+    },
     bsctestnet: {
-      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      url: "https://data-seed-prebsc-2-s3.binance.org:8545/",
       chainId: 97,
       accounts: [process.env.ADMIN_ACCOUNT_PRIVATE_KEY],
       gas: "auto",
-      gasPrice: "auto",
+      gasPrice: 35000000000,
       timeout: 0,
     },
     bscmainnet: {
@@ -74,5 +81,6 @@ module.exports = {
       timeout: 800000,
     },
   },
-  etherscan: { apiKey: process.env.PACHACUY_BSCSCAN_API_KEY },
+  // etherscan: { apiKey: process.env.PACHACUY_BSCSCAN_API_KEY },
+  etherscan: { apiKey: process.env.PACHACUY_POLYGON_SCAN },
 };
