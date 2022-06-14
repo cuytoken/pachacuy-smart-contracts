@@ -212,7 +212,8 @@ contract NftProducerPachacuy is
         // validate that there is not a Wiracocha at this pacha uuid
         require(
             !IWiracocha(pachacuyInfo.wiracochaAddress()).hasWiracocha(
-                _msgSender()
+                _msgSender(),
+                _pachaUuid
             ),
             "NFP: Pacha has a Wiracocha already"
         );

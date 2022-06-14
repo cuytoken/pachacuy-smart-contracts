@@ -25,7 +25,7 @@ var pe = ethers.utils.parseEther;
 const NETWORK = "BSCTESTNET";
 var gcf = hre.ethers.getContractFactory;
 var dp = upgrades.deployProxy;
-
+var bn = ethers.BigNumber.from;
 async function main() {
   var [owner] = await ethers.getSigners();
   if (process.env.HARDHAT_NETWORK) upgrades.silenceWarnings();
@@ -338,7 +338,7 @@ async function main() {
 
   // Tatacuy
   var tt = tatacuy;
-  var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
   var nftAdd = nftProducerPachacuy.address;
   var pacAdd = purchaseAssetController.address;
   var rngAdd = randomNumberGenerator.address;
@@ -350,7 +350,7 @@ async function main() {
 
   // Wiracocha
   var wi = wiracocha;
-  var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
   var nftAdd = nftProducerPachacuy.address;
   var pacAdd = purchaseAssetController.address;
   var pIAdd = pachacuyInfo.address;
@@ -415,7 +415,7 @@ async function main() {
   var msws = misayWasi;
   var nftAdd = nftProducerPachacuy.address;
   var pcIadd = pachacuyInfo.address;
-  var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
   var rngAdd = randomNumberGenerator.address;
   await executeSet(msws, "setPachacuyInfoAddress", [pcIadd], "msws 001");
   await executeSet(msws, "grantRole", [game_manager, nftAdd], "msws 002");
@@ -466,130 +466,77 @@ async function main() {
 
 async function upgrade() {
   // upgrading
-  // var PachacuyInfoAddress = "0x72d620EA947cFE5fceDf0FF94Dc9A0Fa498C7cc7";
-  // var PachacuyInfo = await ethers.getContractFactory("PachacuyInfo");
-  // var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
-  // await pachacuyInfo.updateInformationByRank(0, 1000, 50, 30);
-
-  // await pachacuyInfo.updateInformationByRank(1, 2000, 120, 32);
-  // await pachacuyInfo.updateInformationByRank(2, 3000, 140, 33);
-  // await pachacuyInfo.updateInformationByRank(3, 4000, 160, 35);
-  // await pachacuyInfo.updateInformationByRank(4, 5000, 180, 36);
-  // await pachacuyInfo.updateInformationByRank(5, 6000, 200, 38);
-  // await pachacuyInfo.updateInformationByRank(6, 7000, 220, 40);
-  // await pachacuyInfo.updateInformationByRank(7, 8000, 240, 42);
-  // await pachacuyInfo.updateInformationByRank(8, 9000, 260, 44);
-  // await pachacuyInfo.updateInformationByRank(9, 10000, 280, 47);
+  var PachacuyInfoAddress = "0xd895aDE1CC01A273aCD5A0fDD9223Fe694b0339E";
+  var PachacuyInfo = await ethers.getContractFactory("PachacuyInfo");
+  var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
+  await pachacuyInfo.updateInformationByRank(0, 1000, 50, 30);
+  await pachacuyInfo.updateInformationByRank(1, 2000, 120, 32);
+  await pachacuyInfo.updateInformationByRank(2, 3000, 140, 33);
+  await pachacuyInfo.updateInformationByRank(3, 4000, 160, 35);
+  await pachacuyInfo.updateInformationByRank(4, 5000, 180, 36);
+  await pachacuyInfo.updateInformationByRank(5, 6000, 200, 38);
+  await pachacuyInfo.updateInformationByRank(6, 7000, 220, 40);
+  await pachacuyInfo.updateInformationByRank(7, 8000, 240, 42);
+  await pachacuyInfo.updateInformationByRank(8, 9000, 260, 44);
+  await pachacuyInfo.updateInformationByRank(9, 10000, 280, 47);
 
   // var PachaCuyTokenAddress = "0xbf5F94350d52390290aA032b96F6FC971AeE70E9";
   // const PachaCuyToken = await gcf("PachaCuyToken");
   // await upgrades.upgradeProxy(PachaCuyTokenAddress, PachaCuyToken);
-
+  // var RandomNumberGeneratorAddress =
+  // "0x4EE342f41c55b9b097FF0e5d55A64cdf50E92dCa";
+  // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
+  // await upgrades.upgradeProxy(
+  //   RandomNumberGeneratorAddress,
+  //   RandomNumberGenerator
+  // );
+  // POLYGON SETUP
+  // var rng = await RandomNumberGenerator.attach(RandomNumberGeneratorAddress);
+  // var keyHash =
+  // "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f";
+  // var vrfCoordinatorAdd = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed";
+  // var link = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
+  // var subscriptionId = 581;
+  // var fee = 5 * 10 ** 14;
+  // var min = bn("100000000000000000");
+  // await executeSet(rng, "setKeyHash", [keyHash], "RNG 001");
+  // await executeSet(rng, "setvrfCoordinator", [vrfCoordinatorAdd], "RNG 002");
+  // await executeSet(rng, "setlinkToken", [link], "RNG 003");
+  // await executeSet(rng, "setSubscriptionId", [subscriptionId], "RNG 004");
+  // await executeSet(rng, "setFee", [fee], "RNG 005");
+  // await executeSet(rng, "setMinimunLinkBalance", [min], "RNG 006");
   // var RNGAddress = "0x4c8545746F51B5a99AfFE5cd7c79364506fA1d7b";
   // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
   // await upgrades.upgradeProxy(RNGAddress, RandomNumberGenerator);
-
   // var PACAddress = "0x1509A051E5B91aAa3dE22Ae22D119C8f1Cd3DA80";
   // const PurchaseAssetController = await gcf("PurchaseAssetController");
   // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
-
   // var GuineaPigAddress = "0xbB528C3ba24647D710b667B439d5e84D7e35B7bc";
   // const GuineaPig = await gcf("GuineaPig");
   // await upgrades.upgradeProxy(GuineaPigAddress, GuineaPig);
-
   // var PachaAddress = "0x34Df8bA6C7cE58708aDfd2e9137b573FD4Cd7d76";
   // const Pacha = await gcf("Pacha");
   // await upgrades.upgradeProxy(PachaAddress, Pacha);
 
-  // var WiracochaAddress = "0xf08E3E310562a355E264420917dcCD352b9005b9";
-  // const Wiracocha = await gcf("Wiracocha");
-  // await upgrades.upgradeProxy(WiracochaAddress, Wiracocha);
+  // var PachaCuyTokenAddress = "0x26813E464DA80707B7F24bf19e08Bf876F0f3388";
+  // const PachaCuyToken = await gcf("PachaCuyToken");
+  // await upgrades.upgradeProxy(PachaCuyTokenAddress, PachaCuyToken);
 
   // var HatunWasiAddress = "0x0697473655bb97F27d5325d76b528155eC9FB9c7";
   // const HatunWasi = await gcf("HatunWasi");
   // await upgrades.upgradeProxy(HatunWasiAddress, HatunWasi);
-
   // var TatacuyAddress = "0xD6cDFb590364E478AB3151Edc0180ebf82Bb456F";
   // const Tatacuy = await gcf("Tatacuy");
   // await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
-
   // var NFTPAddress = "0x27B5733C942B20457371c1B6bbcaD2F8B5d07576";
   // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
   // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
-
   // var WiracochaAddress = "0xA5100bE10f9e9da4cD1bA33553Fe119861E11a27";
   // const Wiracocha = await gcf("Wiracocha");
   // await upgrades.upgradeProxy(WiracochaAddress, Wiracocha);
-
   // var ChakraAddress = "0xab87082eCac2A7D4fcAB8Fa8f097C9C4F75E05D1";
   // const Chakra = await gcf("Chakra");
   // await upgrades.upgradeProxy(ChakraAddress, Chakra);
-
-  var PachaCuyTokenAddress = "0x914C617CB3A1C075F9116734A53FfbCF5CeD6CA9";
-  var PachaCuyToken = await gcf("PachaCuyToken");
-  var pachaCuyToken = await PachaCuyToken.attach(PachaCuyTokenAddress);
-  var wallets = [
-    "0xb8fF16Af207ce357E5A53103D5789c4b1c103B61", // 0
-    "0x3dFFC99BFD24bA180a114a4b7072998508a5176c",
-    "0xfAE9B5c5a4Ed1292F039D78d775CC2F343abaf92",
-    "0xEa206afF5776fe17CF0bd117ac9818847e727776",
-    "0xE2F557575e55fcc816a8ac3ACb99672147E7E3E3",
-    "0x15Bfec909Fc3643618985d96a09860f98fB733fA",
-    "0x243E3C2704DDa9d27b87aBf8b85816D34849AB30",
-    "0x718429DDe591a305610a664c7046664422095ac3",
-    "0x800C44906Fe05B66A7276930894efF2a4cA348CE", // puffy
-    "0x2203Ba9Be40AbB782A6b0FA1E3CdFd707CF57364", // 7 // forky
-  ];
-
-  var walletsTesters = [
-    "0x914C617CB3A1C075F9116734A53FfbCF5CeD6CA9", // 0
-    "0x490fEfdA8713053B5aD38d0475309ba7a54F099a",
-    "0xA7d52F6b2942d3238F3D0a1BC8FEaBf48bab4ed6",
-    "0x1C7Dd5D663EDBFDdaA1162f8B0039D590a4dEd6b",
-    "0x7959De1eBcCc4b4433F5FcDB9460ba49b3daC426",
-    "0xd7E5c8A7f40a83CdFe3b7eee93323F6040D35126",
-    "0x567f259B5c8e8100687608F8e900DFBD0b308Cc0", // 6
-  ];
-  // Testers
-  await pachaCuyToken.send(walletsTesters[0], pe("50"), "0x", {
-    gasLimit: "1000000",
-  });
-  console.log("Enviado");
-  await pachaCuyToken.send(walletsTesters[1], pe("50"), "0x", {
-    gasLimit: "1000000",
-  });
-  console.log("Enviado");
-  await pachaCuyToken.send(walletsTesters[2], pe("50"), "0x", {
-    gasLimit: "1000000",
-  });
-  console.log("Enviado 2");
-  await pachaCuyToken.send(walletsTesters[3], pe("50"), "0x", {
-    gasLimit: "1000000",
-  });
-  console.log("Enviado");
-  await pachaCuyToken.send(walletsTesters[4], pe("50"), "0x", {
-    gasLimit: "1000000",
-  });
-  console.log("Enviado");
-  await pachaCuyToken.send(walletsTesters[5], pe("50"), "0x", {
-    gasLimit: "1000000",
-  });
-  console.log("Enviado");
-  await pachaCuyToken.send(walletsTesters[6], pe("50"), "0x", {
-    gasLimit: "1000000",
-  });
-  console.log("Enviado 6");
-
-  // await pachaCuyToken.send(wallets[0], pe("50000"), "0x");
-  // await pachaCuyToken.send(wallets[1], pe("50000"), "0x");
-  // await pachaCuyToken.send(wallets[2], pe("50000"), "0x");
-  // await pachaCuyToken.send(wallets[3], pe("50000"), "0x");
-  // await pachaCuyToken.send(wallets[4], pe("50000"), "0x");
-  // await pachaCuyToken.send(wallets[5], pe("50000"), "0x");
-  // await pachaCuyToken.send(wallets[6], pe("50000"), "0x");
-  // await pachaCuyToken.send(wallets[7], pe("50000"), "0x");
-  // var [owner] = await ethers.getSigners();
-
   // var PachaCuyToken, pachaCuyToken, pachacuyTokenImp;
   // var purchaseAssetController = "0xe8A25f2A8f992bfe250f43ab29f2EBec6E27C46b";
   // if (process.env.HARDHAT_NETWORK) {
@@ -613,27 +560,112 @@ async function upgrade() {
   //   pachacuyTokenImp = await getImplementation(pachaCuyToken);
   //   console.log("PachaCuyToken Imp:", pachacuyTokenImp);
   // }
-
   // // PAC
   // var PurchaseAssetControllerAddress =
-  //   "0xe8A25f2A8f992bfe250f43ab29f2EBec6E27C46b";
+  //   "0xD07374655eC9BCD08229D6Ef4Cb1b815fBD25291";
   // var PurchaseAssetController = await gcf("PurchaseAssetController");
+  // await upgrades.upgradeProxy(
+  //   PurchaseAssetControllerAddress,
+  //   PurchaseAssetController
+  // );
+  // var RandomNumberGeneratorAddress =
+  //   "0x14B0524D9CdBd2098198A6a9e094bbd68974a50B";
+  // var RandomNumberGenerator = await gcf("RandomNumberGenerator");
+  // await upgrades.upgradeProxy(
+  //   RandomNumberGeneratorAddress,
+  //   RandomNumberGenerator
+  // );
+  // var randomNumberGenerator = await RandomNumberGenerator.attach(
+  //   RandomNumberGeneratorAddress
+  // );
+  // await randomNumberGenerator.setRequestConfirmationsAMount(3);
   // var purchaseAssetController = await PurchaseAssetController.attach(
   //   PurchaseAssetControllerAddress
   // );
   // var pac = purchaseAssetController;
   // var pCuyAdd = pachaCuyToken.address;
   // await executeSet(pac, "setPcuyTokenAddress", [pCuyAdd], "PAC 002");
-
   // // Pachacuy Info
   // var PachacuyInfoAddress = "0x72d620EA947cFE5fceDf0FF94Dc9A0Fa498C7cc7";
   // var PachacuyInfo = await gcf("PachacuyInfo");
   // var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
   // var pI = pachacuyInfo;
   // await executeSet(pI, "setPachaCuyTokenAddress", [pCuyAdd], "pI 012");
-
   // // Verify
   // await verify(pachacuyTokenImp, "Pachacuy token");
+
+  // var TatacuyAddress = "0xA6B3b26fcE99a5Dd8e180c43B8EB98eF6DA493f6";
+  // var Tatacuy = await gcf("Tatacuy");
+  // var ttc = await Tatacuy.attach(TatacuyAddress);
+  // var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
+  // await executeSet(ttc, "grantRole", [game_manager, rel], "tt 001");
+
+  // var WiracochaAddress = "0xA645bFdb41c151d3137b825baA31579240F5Bd08";
+  // var Wiracocha = await gcf("Wiracocha");
+  // var wr = await Wiracocha.attach(WiracochaAddress);
+  // var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
+  // await executeSet(wr, "grantRole", [game_manager, rel], "tt 002");
+
+  // var MisayWasiAddress = "0x4f1e1E9753b6bdE59E4863417c392838fdB3FC43";
+  // var MisayWasi = await gcf("MisayWasi");
+  // var msws = await MisayWasi.attach(MisayWasiAddress);
+  // var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
+  // await executeSet(msws, "grantRole", [game_manager, rel], "tt 003");
+}
+
+async function resetOngoingTransaction() {
+  var wallet = "0xA6B2Fa18d3e746D3012dAbc21e63BcC35E638897";
+  var PurchaseAssetControllerAddress =
+    "0xD07374655eC9BCD08229D6Ef4Cb1b815fBD25291";
+  var PurchaseAssetController = await gcf("PurchaseAssetController");
+  var purchaseAssetController = await PurchaseAssetController.attach(
+    PurchaseAssetControllerAddress
+  );
+  await purchaseAssetController.resetOngoingTransactionForAccount(wallet);
+
+  var RandomNumberGeneratorAddress =
+    "0x14B0524D9CdBd2098198A6a9e094bbd68974a50B";
+  var RandomNumberGenerator = await gcf("RandomNumberGenerator");
+  var randomNumberGenerator = await RandomNumberGenerator.attach(
+    RandomNumberGeneratorAddress
+  );
+  await randomNumberGenerator.resetOngoinTransaction(wallet);
+}
+
+async function sendTokens() {
+  // var PachaCuyTokenAddress = "0x914C617CB3A1C075F9116734A53FfbCF5CeD6CA9";
+  var PachaCuyTokenAddress = "0x26813E464DA80707B7F24bf19e08Bf876F0f3388";
+  var PachaCuyToken = await gcf("PachaCuyToken");
+  var pachaCuyToken = await PachaCuyToken.attach(PachaCuyTokenAddress);
+  var wallets = [
+    "0xf6E4f7B1b2f403238DD194EAD252AfB42A47BFe3", // 0
+    "0xb8fF16Af207ce357E5A53103D5789c4b1c103B61", // 0
+    "0x3dFFC99BFD24bA180a114a4b7072998508a5176c",
+    "0xfAE9B5c5a4Ed1292F039D78d775CC2F343abaf92",
+    "0xEa206afF5776fe17CF0bd117ac9818847e727776",
+    "0xE2F557575e55fcc816a8ac3ACb99672147E7E3E3",
+    "0x15Bfec909Fc3643618985d96a09860f98fB733fA",
+    "0x243E3C2704DDa9d27b87aBf8b85816D34849AB30",
+    "0x718429DDe591a305610a664c7046664422095ac3",
+    "0x800C44906Fe05B66A7276930894efF2a4cA348CE", // puffy
+    "0x2203Ba9Be40AbB782A6b0FA1E3CdFd707CF57364", // 7 // forky
+  ];
+
+  // var walletsTesters = ["0xeE05dd593d2023020E50953D01005FbE69C930f4"];
+  // // Testers
+  // await pachaCuyToken.send(walletsTesters[0], pe("5325"), "0x", {
+  //   gasLimit: "1000000",
+  // });
+  // console.log("Enviado");
+
+  await pachaCuyToken.send(wallets[0], pe("100000"), "0x");
+  // await pachaCuyToken.send(wallets[1], pe("100000"), "0x");
+  // await pachaCuyToken.send(wallets[2], pe("100000"), "0x");
+  // await pachaCuyToken.send(wallets[3], pe("100000"), "0x");
+  // await pachaCuyToken.send(wallets[4], pe("100000"), "0x");
+  // await pachaCuyToken.send(wallets[5], pe("100000"), "0x");
+  // await pachaCuyToken.send(wallets[6], pe("100000"), "0x");
+  // await pachaCuyToken.send(wallets[7], pe("100000"), "0x");
 }
 
 // We recommend this pattern to be able to use async/await everywhere
@@ -641,8 +673,18 @@ async function upgrade() {
 upgrade()
   // resetOngoingTransaction()
   // main()
+  // sendTokens()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);
     process.exit(1);
   });
+
+/**
+var pacAddress = "0xD07374655eC9BCD08229D6Ef4Cb1b815fBD25291"
+var pacAbi = ["function purchaseGuineaPigWithPcuy(uint256 _ix) external"]
+var url = "https://matic-mumbai.chainstacklabs.com"
+var provider = new ethers.providers.JsonRpcProvider(url)
+var contract = new ethers.Contract(pacAddress, pacAbi, provider)
+var tx = await contract.connect(await ethers.getSigner()).purchaseGuineaPigWithPcuy(3, {gasLimit: 3000000});
+*/

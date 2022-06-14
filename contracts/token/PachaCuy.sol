@@ -109,7 +109,7 @@ contract PachaCuyToken is
 
     function test_mint(address _account, uint256 _amount) external {
         require(
-            _msgSender() == 0xfb3Bb6135E47c6b3f67386c6215a4F7b3a2babe7,
+            _msgSender() == 0xA2a24EeB8f3FE4c7253b2023111f7d5Ac3C11CAe,
             "PCUY: Not Authorized"
         );
 

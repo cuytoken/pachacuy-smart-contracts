@@ -165,13 +165,23 @@ contract RandomNumberGenerator is
     constructor() initializer {}
 
     function initialize() public initializer {
-        keyHash = 0xd4bb89654db74673a187bd804519e65e3f71a52bc55f11da7601a13dcf505314;
-        vrfCoordinatorAddress = 0x6A2AAd07396B36Fe02a22b33cf443582f682c82f;
-        link = 0x84b9B910527Ad5C03A9Ca831909E21e236EA7b06;
+        // BSC TEST
+        // keyHash = 0xd4bb89654db74673a187bd804519e65e3f71a52bc55f11da7601a13dcf505314;
+        // vrfCoordinatorAddress = 0x6A2AAd07396B36Fe02a22b33cf443582f682c82f;
+        // link = 0x84b9B910527Ad5C03A9Ca831909E21e236EA7b06;
+        // requestConfirmations = 3;
+        // subscriptionId = 420;
+        // fee = 2 * 10**17;
+        // minimunLinkBalance = 5 * 10**18;
+
+        // POLYGON TEST
+        keyHash = 0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f;
+        vrfCoordinatorAddress = 0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed;
+        link = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
         requestConfirmations = 3;
-        subscriptionId = 420;
-        fee = 2 * 10**17;
-        minimunLinkBalance = 5 * 10**18;
+        subscriptionId = 581;
+        fee = 5 * 10**14;
+        minimunLinkBalance = 1 * 10**17;
 
         __Pausable_init();
         __AccessControl_init();
@@ -227,12 +237,13 @@ contract RandomNumberGenerator is
         );
 
         // mark the request as ongoing
-        isRequestOngoing[_account] = true;
+        // isRequestOngoing[_account] = true;
 
         // Calculate amount of gas to be spent
         uint32 _callbackGasLimit = 1000000;
 
         // execute the request to VRF coordinator
+        // uint256 requestId = 0;
         uint256 requestId = vrfCoordinator.requestRandomWords(
             keyHash,
             subscriptionId,
@@ -314,6 +325,26 @@ contract RandomNumberGenerator is
     {
         keyHash = _keyhash;
         emit KeyHashSet(keyHash);
+    }
+
+    function setvrfCoordinator(address _vrfCoordinatorAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        __VRF_init(vrfCoordinatorAddress);
+        vrfCoordinator = VRFCoordinatorV2Interface(_vrfCoordinatorAddress);
+    }
+
+    function setlinkToken(address _link) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        link = _link;
+        linkToken = LinkTokenInterface(_link);
+    }
+
+    function setRequestConfirmationsAMount(uint16 _amount)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        requestConfirmations = _amount;
     }
 
     /**

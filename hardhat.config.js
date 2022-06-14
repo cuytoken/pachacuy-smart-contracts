@@ -58,14 +58,16 @@ module.exports = {
       gasPrice: "auto",
     },
     matic: {
-      url: process.env.ALCHEMY_MUMBAI_TESTNET_URL,
+      // url: process.env.ALCHEMY_MUMBAI_TESTNET_URL,
+      url: "https://matic-mumbai.chainstacklabs.com",
       accounts: [process.env.ADMIN_ACCOUNT_PRIVATE_KEY],
       timeout: 0,
       gas: "auto",
       gasPrice: "auto",
     },
     bsctestnet: {
-      url: "https://data-seed-prebsc-2-s3.binance.org:8545/",
+      url: "https://data-seed-prebsc-2-s1.binance.org:8545/",
+      // url: "https://apis-sj.ankr.com/5fd853a4c9234579bcddd80bd1bce488/09fcd9583de58e60f81cc495f9be95bb/binance/full/test",
       chainId: 97,
       accounts: [process.env.ADMIN_ACCOUNT_PRIVATE_KEY],
       gas: "auto",
