@@ -31,6 +31,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "../vrf/IRandomNumberGenerator.sol";
 import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 import "../chakra/IChakra.sol";
+import "../pacha/IPacha.sol";
 import "../info/IPachacuyInfo.sol";
 import "../misayWasi/IMisayWasi.sol";
 import "../guineapig/IGuineaPig.sol";
@@ -116,12 +117,12 @@ contract PurchaseAssetController is
 
     // Purhcase of PachaPass event
     event PurchasePachaPass(
-        address _account,
-        uint256 uuid,
-        uint256 landUuid,
+        address account,
+        uint256 pachaUuid,
+        uint256 pachaPassUuid,
         uint256 price,
-        address tokenAddress,
-        address poolRewardsAddress
+        uint256 pcuyReceived,
+        uint256 pcuyTaxed
     );
 
     event PurchaseFoodChakra(
@@ -305,122 +306,6 @@ contract PurchaseAssetController is
         }
     }
 
-    function purchasePachaPassWithPcuy(uint256 _landUuid)
-        external
-        returns (uint256)
-    {
-        return _purchasePachaPass(_landUuid, address(pachaCuyToken));
-    }
-
-    function purchasePachaPassWithBusd(uint256 _landUuid)
-        external
-        returns (uint256)
-    {
-        return _purchasePachaPass(_landUuid, address(busdToken));
-    }
-
-    /**
-     * @notice Buy a Pacha Pass for a land that exist. It's purchase with PCUY only
-     * @notice To sell a Pacha Pass, a land must have been converted to private first
-     * @notice Type of distribution must be 2 for the Land
-     * @param _landUuid an existant uuid for the land whose PachaPass will be minted
-     * @param _tokenAddress token address to use for the purchase
-     */
-    function _purchasePachaPass(uint256 _landUuid, address _tokenAddress)
-        internal
-        returns (uint256)
-    {
-        (
-            ,
-            bool isPublic,
-            ,
-            uint256 pachaPassUuid,
-            uint256 pachaPassPrice,
-            uint256 typeOfDistribution,
-            ,
-            ,
-            ,
-            address owner
-        ) = nftProducerPachacuy.getLandData(_landUuid);
-
-        require(!isPublic, "PurchaseAC: Land must be private");
-        require(pachaPassUuid > 0, "PurchaseAC: PachaPass uuid does not exist");
-        require(typeOfDistribution == 2, "PurchaseAC: Distribution non-public");
-        require(pachaPassPrice > 0, "PurchaseAC: Price must be greater than 0");
-
-        // Fee is calculated in PCUY only. 'pachaPassPrice' is in PCUY
-        uint256 _fee = (pachaPassPrice * 18) / 100;
-        uint256 _net = pachaPassPrice - _fee;
-
-        // Purchase with PCUY
-        if (_tokenAddress == address(pachaCuyToken)) {
-            require(
-                pachaCuyToken.balanceOf(_msgSender()) >= pachaPassPrice,
-                "PurchaseAC: Not enough PCUY"
-            );
-
-            // No need to verify allowance
-
-            // SC transfers PCUY from purchaser to pool rewards
-            pachaCuyToken.operatorSend(
-                _msgSender(),
-                poolRewardsAddress,
-                _fee,
-                "",
-                ""
-            );
-
-            // SC transfers PCUY from purchaser to pacha owner
-            pachaCuyToken.operatorSend(_msgSender(), owner, _net, "", "");
-        } else if (_tokenAddress == address(busdToken)) {
-            pachaPassPrice = _fromPcuyToBusd(pachaPassPrice);
-            _fee = _fromPcuyToBusd(_fee);
-            _net = _fromPcuyToBusd(_net);
-
-            require(
-                busdToken.balanceOf(_msgSender()) >= pachaPassPrice,
-                "PurchaseAC: Not enough BUSD"
-            );
-
-            // Verify that customer has given allowance to the PurchaseAC contract
-            require(
-                busdToken.allowance(_msgSender(), address(this)) >=
-                    pachaPassPrice,
-                "PurchaseAC: Allowance not given"
-            );
-
-            // SC transfers BUSD from purchaser to pool rewards
-            busdToken.safeTransferFrom(_msgSender(), poolRewardsAddress, _fee);
-
-            // SC transfers BUSD from purchaser to pacha owner
-            busdToken.safeTransferFrom(_msgSender(), owner, _net);
-        } else {
-            revert("PurchaseAC: Token address invalid");
-        }
-
-        // Mint a pachapass
-        nftProducerPachacuy.mintPachaPassNft(
-            _msgSender(),
-            _landUuid,
-            pachaPassUuid,
-            typeOfDistribution,
-            pachaPassPrice,
-            "purchased"
-        );
-
-        // Emit event
-        emit PurchasePachaPass(
-            _msgSender(),
-            pachaPassUuid,
-            _landUuid,
-            pachaPassPrice,
-            _tokenAddress,
-            poolRewardsAddress
-        );
-
-        return pachaPassUuid;
-    }
-
     function purchaseChakra(uint256 _pachaUuid)
         external
         returns (uint256 chakraUuid)
@@ -534,6 +419,47 @@ contract PurchaseAssetController is
             _pachaUuid,
             _msgSender(),
             _qhatuWasiPrice
+        );
+    }
+
+    function purchasePachaPass(uint256 _pachaUuid) external {
+        IPacha.PachaInfo memory pacha = IPacha(pachacuyInfo.pachaAddress())
+            .getPachaWithUuid(_pachaUuid);
+
+        // pacha exists
+        require(pacha.isPacha, "PAC: do not exist");
+
+        // pacha is private
+        require(!pacha.isPublic, "PAC: not public");
+
+        // typeOfDistribution = 1 => price = 0
+        // typeOfDistribution = 2 => price > 0
+        require(pacha.typeOfDistribution == 2, "PAC: not for purchase");
+
+        // Pacha pass exists
+        require(pacha.pachaPassUuid > 0, "NFP: PachaPass do not exist");
+
+        // mint NFT
+        nftProducerPachacuy.mintPachaPass(
+            _msgSender(),
+            pacha.uuid,
+            pacha.pachaPassUuid
+        );
+
+        // puchase
+        (uint256 _net, uint256 _fee) = _transferPcuyWithTax(
+            _msgSender(),
+            pacha.owner,
+            pacha.pachaPassPrice
+        );
+
+        emit PurchasePachaPass(
+            _msgSender(),
+            pacha.uuid,
+            pacha.pachaPassUuid,
+            pacha.pachaPassPrice,
+            _net,
+            _fee
         );
     }
 

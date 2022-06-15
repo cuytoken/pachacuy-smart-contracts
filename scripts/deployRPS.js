@@ -26,8 +26,8 @@ async function upgrade() {
   await upgrades.upgradeProxy(RockPaperScissorsAddress, RockPaperScissors);
 }
 
-// main()
-upgrade()
+main()
+  // upgrade()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

@@ -72,22 +72,10 @@ contract NftProducerPachacuy is
     bytes32 public constant GUINEAPIG = keccak256("GUINEAPIG");
     bytes32 public constant PACHA = keccak256("PACHA");
     bytes32 public constant TICKETRAFFLE = keccak256("TICKETRAFFLE");
+    bytes32 public constant PACHAPASS = keccak256("PACHAPASS");
 
     event Uuid(uint256 uuid);
     event UuidAndAmount(uint256 uuid, uint256 amount);
-
-    // transferMode: purchased | transferred
-    // Pacha data
-    // struct PachaPassdata {
-    //     bool isPachaPass;
-    //     uint256 pachaUuid;
-    //     uint256 typeOfDistribution;
-    //     uint256 uuid;
-    //     uint256 cost;
-    //     string transferMode;
-    // }
-    // // uuid => Pacha Pass
-    // mapping(uint256 => PachaPassdata) internal _uuidToPachaPassData;
 
     // Map owner -> uuid[]
     mapping(address => uint256[]) internal _ownerToUuids;
@@ -391,6 +379,79 @@ contract NftProducerPachacuy is
         return uuid;
     }
 
+    function createPachaPassId()
+        external
+        onlyRole(GAME_MANAGER)
+        returns (uint256 _pachaPassUuid)
+    {
+        uint256 uuid = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+
+        // save type of uuid minted
+        _nftTypes[uuid] = PACHAPASS;
+
+        return uuid;
+    }
+
+    /**
+     * @notice Used when someone is purchasing a pacha pass
+     * @notice Only callable by Purchase Asset Controller
+     */
+    function mintPachaPass(
+        address _account,
+        uint256 _pachaUuid,
+        uint256 _pachaPassUuid
+    ) external onlyRole(GAME_MANAGER) {
+        require(balanceOf(_account, _pachaPassUuid) == 0, "NFP: has one");
+
+        _mint(_account, _pachaPassUuid, 1, "");
+
+        // save in list of uuids for owner
+        _ownerToUuids[_account].push(_pachaPassUuid);
+
+        IPacha(pachacuyInfo.pachaAddress()).registerPachaPass(
+            _account,
+            _pachaUuid,
+            _pachaPassUuid,
+            "puchased"
+        );
+
+        emit Uuid(_pachaPassUuid);
+    }
+
+    /**
+     * @notice Mints a Pacha Pass when the Pacha has chose typeDistribution = 1 (no public sale)
+     * @param _accounts: list of wallet address that will receive a pacha pass
+     * @param _pachaUuid: uuid of the Pacha from where the Pacha Passes will be minted
+     */
+    function mintPachaPassAsOwner(
+        address[] memory _accounts,
+        uint256 _pachaUuid
+    ) external {
+        IPacha.PachaInfo memory pacha = IPacha(pachacuyInfo.pachaAddress())
+            .getPachaWithUuid(_pachaUuid);
+
+        require(pacha.owner == _msgSender(), "NFP: Not the owner");
+        require(pacha.isPacha, "NFP: Not a pacha");
+        require(!pacha.isPublic, "NFP: Land must be private");
+        require(pacha.pachaPassUuid > 0, "NFP: PachaPass do not exist");
+
+        uint256 _pachaPassUuid = pacha.pachaPassUuid;
+        address pachaSCAddress = pachacuyInfo.pachaAddress();
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            _mint(_accounts[i], _pachaPassUuid, 1, "");
+
+            IPacha(pachaSCAddress).registerPachaPass(
+                _accounts[i],
+                _pachaUuid,
+                _pachaPassUuid,
+                "transferred"
+            );
+        }
+
+        emit Uuid(_pachaPassUuid);
+    }
+
     function purchaseTicketRaffle(
         address _account,
         uint256 _ticketUuid,
@@ -441,46 +502,6 @@ contract NftProducerPachacuy is
         emit Uuid(uuid);
         _tokenIdCounter.increment();
     }
-
-    // function mintPachaPassNft(
-    //     address _account,
-    //     uint256 _landUuid,
-    //     uint256 _uuidPachaPass,
-    //     uint256 _typeOfDistribution,
-    //     uint256 _price,
-    //     string memory _transferMode
-    // ) public onlyRole(MINTER_ROLE) {
-    //     _mintPachaPassNft(
-    //         _account,
-    //         _landUuid,
-    //         _uuidPachaPass,
-    //         _typeOfDistribution,
-    //         _price,
-    //         _transferMode
-    //     );
-    // }
-
-    // function mintPachaPassNftAsOwner(
-    //     address[] memory _accounts,
-    //     uint256 _landUuid
-    // ) external {
-    //     LandData memory landData = _uuidToLandData[_landUuid];
-    //     require(landData.owner == _msgSender(), "Nft P: Not the owner");
-    //     require(landData.isLand, "Nft P: Not a land");
-    //     require(!landData.isPublic, "Nft P: Land must be private");
-    //     require(landData.pachaPassUuid > 0, "Nft P: PachaPass do not exist");
-
-    //     for (uint256 i = 0; i < _accounts.length; i++) {
-    //         _mintPachaPassNft(
-    //             _accounts[i],
-    //             _landUuid,
-    //             landData.pachaPassUuid,
-    //             landData.typeOfDistribution,
-    //             landData.pachaPassPrice,
-    //             "transferred"
-    //         );
-    //     }
-    // }
 
     // function safeTransferFrom(
     //     address from,
@@ -538,79 +559,30 @@ contract NftProducerPachacuy is
     ///////////////////////////////////////////////////////////////
     ////                   HELPERS FUNCTIONS                   ////
     ///////////////////////////////////////////////////////////////
-    // function isGuineaPigAllowedInPacha(address _account, uint256 _landUuid)
-    //     external
-    //     view
-    //     returns (bool)
-    // {
-    //     LandData memory landData = _uuidToLandData[_landUuid];
+    /**
+     * @notice Indicates whether a Guinea Pig is allows to enter a Pacha
+     * @param _account Wallet to be validated against the Pacha
+     * @param _pachaUuid Uuid of the pacha to check the access of _account
+     */
+    function isGuineaPigAllowedInPacha(address _account, uint256 _pachaUuid)
+        external
+        view
+        returns (bool)
+    {
+        IPacha.PachaInfo memory pacha = IPacha(pachacuyInfo.pachaAddress())
+            .getPachaWithUuid(_pachaUuid);
 
-    //     if (!landData.isLand) return false;
-    //     if (landData.isPublic) return true;
+        // pacha do not exist
+        if (!pacha.isPacha) return false;
+        // pacha is public
+        if (pacha.isPublic) return true;
 
-    //     // All private land must have a uuid for its pachapass
-    //     require(landData.pachaPassUuid != 0, "NFP: Uuid's pachapass missing");
-    //     if (balanceOf(_account, landData.pachaPassUuid) > 0) {
-    //         return true;
-    //     } else return false;
-    // }
-
-    // function getListOfNftsPerAccount(address _account)
-    //     external
-    //     view
-    //     returns (
-    //         uint256[] memory guineaPigs,
-    //         uint256[] memory lands,
-    //         uint256[] memory pachaPasses
-    //     )
-    // {
-    //     {
-    //         uint256[] memory _uuidsList = _ownerToUuids[_account];
-    //         uint256 length = _uuidsList.length;
-
-    //         guineaPigs = new uint256[](length);
-    //         lands = new uint256[](length);
-    //         pachaPasses = new uint256[](length);
-
-    //         uint256 g = 0;
-    //         uint256 l = 0;
-    //         uint256 h = 0;
-
-    //         for (uint256 i = 0; i < length; i++) {
-    //             if (_uuidToGuineaPigData[_uuidsList[i]].isGuineaPig) {
-    //                 guineaPigs[g] = _uuidsList[i];
-    //                 ++g;
-    //             } else if (_uuidToLandData[_uuidsList[i]].isLand) {
-    //                 lands[l] = _uuidsList[i];
-    //                 ++l;
-    //             }
-    //             // else if (_uuidToPachaPassData[_uuidsList[i]].isPachaPass) {
-    //             //     pachaPasses[h] = _uuidsList[i];
-    //             //     ++h;
-    //             // }
-    //         }
-    //     }
-    // }
-
-    // function getPachaPassData(uint256 _uuid)
-    //     external
-    //     view
-    //     returns (
-    //         bool isPachaPass,
-    //         uint256 pachaUuid,
-    //         uint256 typeOfDistribution,
-    //         uint256 uuid,
-    //         uint256 cost,
-    //         string memory transferMode
-    //     )
-    // {
-    //     isPachaPass = _uuidToPachaPassData[_uuid].isPachaPass;
-    //     pachaUuid = _uuidToPachaPassData[_uuid].pachaUuid;
-    //     typeOfDistribution = _uuidToPachaPassData[_uuid].typeOfDistribution;
-    //     uuid = _uuidToPachaPassData[_uuid].uuid;
-    //     cost = _uuidToPachaPassData[_uuid].cost;
-    //     transferMode = _uuidToPachaPassData[_uuid].transferMode;
-    // }
+        // All private land must have a uuid for its pachapass
+        require(pacha.pachaPassUuid > 0, "NFP: Uuid's pachapass missing");
+        if (balanceOf(_account, pacha.pachaPassUuid) > 0) {
+            return true;
+        } else return false;
+    }
 
     function _compareStrings(string memory a, string memory b)
         internal

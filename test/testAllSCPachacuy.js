@@ -368,10 +368,12 @@ describe("Tesing Pachacuy Game", function () {
       var wAd = wiracocha.address;
       var pIAdd = pachacuyInfo.address;
       var mswsAdd = misayWasi.address;
+      var pachaAdd = pacha.address;
       await executeSet(nftP, "grantRole", [minter_role, pacAdd], "nftP 001");
       await executeSet(nftP, "setPachacuyInfoaddress", [pIAdd], "nftP 002");
       await executeSet(nftP, "grantRole", [game_manager, pacAdd], "nftP 003");
       await executeSet(nftP, "grantRole", [game_manager, mswsAdd], "nftP 004");
+      await executeSet(nftP, "grantRole", [game_manager, pachaAdd], "nftP 005");
 
       // Tatacuy
       var tt = tatacuy;

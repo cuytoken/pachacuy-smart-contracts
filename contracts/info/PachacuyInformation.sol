@@ -163,7 +163,7 @@ contract PachacuyInfo is
         // 100 sami points = 1 BUSD
         // 1 BUSD = 25 PCUY
         // 1 PCUY = 4 sami points
-        exchangeRatePcuyToSami = 4;
+        exchangeRatePcuyToSami = 100;
     }
 
     function setBusinessesPrice(

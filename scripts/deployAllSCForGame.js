@@ -119,6 +119,7 @@ async function main() {
    * nftP 002 - set setPachacuyInfoaddress
    * nftP 003 - grant game_role to PurchaseAssetController
    * nftP 004 - grant game_role to Misay Wasi
+   * nftP 005 - grant game_role to Pacha
    */
   var name = "In-game NFT Pachacuy";
   var symbol = "NFTGAMEPCUY";
@@ -331,10 +332,12 @@ async function main() {
   var wAd = wiracocha.address;
   var pIAdd = pachacuyInfo.address;
   var mswsAdd = misayWasi.address;
+  var pachaAdd = pacha.address;
   await executeSet(nftP, "grantRole", [minter_role, pacAdd], "nftP 001");
   await executeSet(nftP, "setPachacuyInfoaddress", [pIAdd], "nftP 002");
   await executeSet(nftP, "grantRole", [game_manager, pacAdd], "nftP 003");
   await executeSet(nftP, "grantRole", [game_manager, mswsAdd], "nftP 004");
+  await executeSet(nftP, "grantRole", [game_manager, pachaAdd], "nftP 005");
 
   // Tatacuy
   var tt = tatacuy;
@@ -633,13 +636,12 @@ async function resetOngoingTransaction() {
 }
 
 async function sendTokens() {
-  // var PachaCuyTokenAddress = "0x914C617CB3A1C075F9116734A53FfbCF5CeD6CA9";
-  var PachaCuyTokenAddress = "0x26813E464DA80707B7F24bf19e08Bf876F0f3388";
+  var PachaCuyTokenAddress = "0x3D89b5BC94f286Dbd0478Cf215Cb56DF9D83c4D6";
   var PachaCuyToken = await gcf("PachaCuyToken");
   var pachaCuyToken = await PachaCuyToken.attach(PachaCuyTokenAddress);
   var wallets = [
     "0xf6E4f7B1b2f403238DD194EAD252AfB42A47BFe3", // 0
-    "0xb8fF16Af207ce357E5A53103D5789c4b1c103B61", // 0
+    "0xb8fF16Af207ce357E5A53103D5789c4b1c103B61", // 1
     "0x3dFFC99BFD24bA180a114a4b7072998508a5176c",
     "0xfAE9B5c5a4Ed1292F039D78d775CC2F343abaf92",
     "0xEa206afF5776fe17CF0bd117ac9818847e727776",
@@ -659,21 +661,24 @@ async function sendTokens() {
   // console.log("Enviado");
 
   await pachaCuyToken.send(wallets[0], pe("100000"), "0x");
-  // await pachaCuyToken.send(wallets[1], pe("100000"), "0x");
-  // await pachaCuyToken.send(wallets[2], pe("100000"), "0x");
-  // await pachaCuyToken.send(wallets[3], pe("100000"), "0x");
-  // await pachaCuyToken.send(wallets[4], pe("100000"), "0x");
-  // await pachaCuyToken.send(wallets[5], pe("100000"), "0x");
-  // await pachaCuyToken.send(wallets[6], pe("100000"), "0x");
-  // await pachaCuyToken.send(wallets[7], pe("100000"), "0x");
+  await pachaCuyToken.send(wallets[1], pe("100000"), "0x");
+  await pachaCuyToken.send(wallets[2], pe("100000"), "0x");
+  await pachaCuyToken.send(wallets[3], pe("100000"), "0x");
+  await pachaCuyToken.send(wallets[4], pe("100000"), "0x");
+  await pachaCuyToken.send(wallets[5], pe("100000"), "0x");
+  await pachaCuyToken.send(wallets[6], pe("100000"), "0x");
+  await pachaCuyToken.send(wallets[7], pe("100000"), "0x");
+  await pachaCuyToken.send(wallets[8], pe("100000"), "0x");
+  await pachaCuyToken.send(wallets[9], pe("100000"), "0x");
+  await pachaCuyToken.send(wallets[10], pe("100000"), "0x");
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-upgrade()
-  // resetOngoingTransaction()
-  // main()
-  // sendTokens()
+// upgrade()
+// resetOngoingTransaction()
+// main()
+sendTokens()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

@@ -26,21 +26,6 @@ interface INftProducerPachacuy {
         string memory _transferMode
     ) external;
 
-    function getLandData(uint256 _uuid)
-        external
-        returns (
-            bool isLand,
-            bool isPublic,
-            uint256 uuid,
-            uint256 pachaPassUuid,
-            uint256 pachaPassPrice,
-            uint256 typeOfDistribution,
-            uint256 location,
-            uint256 idForJsonFile,
-            uint256 wasPurchased,
-            address owner
-        );
-
     function mintChakra(
         address _account,
         uint256 _pachaUuid,
@@ -61,6 +46,8 @@ interface INftProducerPachacuy {
 
     function createTicketIdRaffle() external returns (uint256 _raffleUuid);
 
+    function createPachaPassId() external returns (uint256 _pachaPassUuid);
+
     function purchaseTicketRaffle(
         address _account,
         uint256 _ticketUuid,
@@ -72,5 +59,11 @@ interface INftProducerPachacuy {
         uint256 _pachaUuid,
         address _account,
         uint256 _qhatuWasiPrice
+    ) external;
+
+    function mintPachaPass(
+        address _account,
+        uint256 _pachaUuid,
+        uint256 _pachaPassUuid
     ) external;
 }
