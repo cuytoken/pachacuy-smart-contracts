@@ -58,8 +58,8 @@ module.exports = {
       gasPrice: "auto",
     },
     matic: {
-      // url: process.env.ALCHEMY_MUMBAI_TESTNET_URL,
-      url: "https://matic-mumbai.chainstacklabs.com",
+      url: process.env.ALCHEMY_MUMBAI_TESTNET_URL,
+      // url: "https://matic-mumbai.chainstacklabs.com",
       accounts: [process.env.ADMIN_ACCOUNT_PRIVATE_KEY],
       timeout: 0,
       gas: "auto",

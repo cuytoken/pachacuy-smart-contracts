@@ -559,30 +559,30 @@ contract NftProducerPachacuy is
     ///////////////////////////////////////////////////////////////
     ////                   HELPERS FUNCTIONS                   ////
     ///////////////////////////////////////////////////////////////
-    /**
-     * @notice Indicates whether a Guinea Pig is allows to enter a Pacha
-     * @param _account Wallet to be validated against the Pacha
-     * @param _pachaUuid Uuid of the pacha to check the access of _account
-     */
-    function isGuineaPigAllowedInPacha(address _account, uint256 _pachaUuid)
-        external
-        view
-        returns (bool)
-    {
-        IPacha.PachaInfo memory pacha = IPacha(pachacuyInfo.pachaAddress())
-            .getPachaWithUuid(_pachaUuid);
+    // /**
+    //  * @notice Indicates whether a Guinea Pig is allows to enter a Pacha
+    //  * @param _account Wallet to be validated against the Pacha
+    //  * @param _pachaUuid Uuid of the pacha to check the access of _account
+    //  */
+    // function isGuineaPigAllowedInPacha(address _account, uint256 _pachaUuid)
+    //     external
+    //     view
+    //     returns (bool)
+    // {
+    //     IPacha.PachaInfo memory pacha = IPacha(pachacuyInfo.pachaAddress())
+    //         .getPachaWithUuid(_pachaUuid);
 
-        // pacha do not exist
-        if (!pacha.isPacha) return false;
-        // pacha is public
-        if (pacha.isPublic) return true;
+    //     // pacha do not exist
+    //     if (!pacha.isPacha) return false;
+    //     // pacha is public
+    //     if (pacha.isPublic) return true;
 
-        // All private land must have a uuid for its pachapass
-        require(pacha.pachaPassUuid > 0, "NFP: Uuid's pachapass missing");
-        if (balanceOf(_account, pacha.pachaPassUuid) > 0) {
-            return true;
-        } else return false;
-    }
+    //     // All private land must have a uuid for its pachapass
+    //     require(pacha.pachaPassUuid > 0, "NFP: Uuid's pachapass missing");
+    //     if (balanceOf(_account, pacha.pachaPassUuid) > 0) {
+    //         return true;
+    //     } else return false;
+    // }
 
     function _compareStrings(string memory a, string memory b)
         internal

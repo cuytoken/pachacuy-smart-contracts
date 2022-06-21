@@ -69,9 +69,29 @@ contract RandomNumberV2Mock {
     }
 
     // Callback function for the VRF request
+    function requestRandomNumberBouncing(
+        address _account,
+        uint32 _amountNumbers
+    ) external returns (uint256[] memory) {
+        _smartc = msg.sender;
+        account = _account;
+        uint256[] memory randomWords = new uint256[](_amountNumbers);
+        randomWords[0] = 123432525;
+        randomWords[1] = 123432523254365465;
+        // _fulfillRandomWords(232423423, randomWords);
+        return randomWords;
+    }
+
     function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords)
         external
     {
+        _fulfillRandomWords(requestId, randomWords);
+    }
+
+    function _fulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) internal {
         emit RandomNumberDelivered(requestId, _smartc, account, randomWords);
         try
             CallbackInterface(_smartc).fulfillRandomness(account, randomWords)

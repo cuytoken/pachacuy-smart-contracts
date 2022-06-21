@@ -14,6 +14,7 @@ interface IPacha {
         uint256 location;
         address owner;
         uint256 price;
+        address[] listPachaPassOwners;
     }
 
     function registerPacha(

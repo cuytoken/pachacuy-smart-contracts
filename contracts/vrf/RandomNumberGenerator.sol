@@ -41,6 +41,12 @@ contract RandomNumberGenerator is
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
+    // Random numbers for bouncing
+    uint256 randomNumberOne;
+    uint256 randomNumberTwo;
+    uint256 constant idReqBounce = 101010101;
+    bool ongoinBouncingRN;
+
     /**
      * @dev Interface for VRF Coordinator
      */
@@ -94,10 +100,12 @@ contract RandomNumberGenerator is
     /**
      * @param walletAddress Address for which the random number is generated
      * @param smartCAddress Smart Contract that is requesting the random number
+     * @param bouncing Whether VRF requests are delayed (callback response) or sync
      */
     struct Caller {
         address walletAddress;
         address smartCAddress;
+        bool bouncing;
     }
     /**
      * @dev A mapping from Chainlink request id to address for which the request has been made
@@ -165,15 +173,6 @@ contract RandomNumberGenerator is
     constructor() initializer {}
 
     function initialize() public initializer {
-        // BSC TEST
-        // keyHash = 0xd4bb89654db74673a187bd804519e65e3f71a52bc55f11da7601a13dcf505314;
-        // vrfCoordinatorAddress = 0x6A2AAd07396B36Fe02a22b33cf443582f682c82f;
-        // link = 0x84b9B910527Ad5C03A9Ca831909E21e236EA7b06;
-        // requestConfirmations = 3;
-        // subscriptionId = 420;
-        // fee = 2 * 10**17;
-        // minimunLinkBalance = 5 * 10**18;
-
         // POLYGON TEST
         keyHash = 0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f;
         vrfCoordinatorAddress = 0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed;
@@ -196,6 +195,10 @@ contract RandomNumberGenerator is
         // VRF Coordinator set up
         vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorAddress);
         linkToken = LinkTokenInterface(link);
+
+        // Random number for bouncing
+        randomNumberOne = _getRadomNumberOne(block.timestamp, _msgSender());
+        randomNumberTwo = _getRandomNumberTwo(block.timestamp, _msgSender());
     }
 
     /**
@@ -237,7 +240,7 @@ contract RandomNumberGenerator is
         );
 
         // mark the request as ongoing
-        // isRequestOngoing[_account] = true;
+        isRequestOngoing[_account] = true;
 
         // Calculate amount of gas to be spent
         uint32 _callbackGasLimit = 1000000;
@@ -254,7 +257,11 @@ contract RandomNumberGenerator is
 
         // store the request id for the account and smart contract caller
         // *** Emit an event before receiving the random number
-        chainlinkRequestForAccount[requestId] = Caller(_account, _msgSender());
+        chainlinkRequestForAccount[requestId] = Caller(
+            _account,
+            _msgSender(),
+            false
+        );
     }
 
     /**
@@ -275,6 +282,25 @@ contract RandomNumberGenerator is
         // Wallet address and SC for which the request was made
         address _account = chainlinkRequestForAccount[requestId].walletAddress;
         address _smartc = chainlinkRequestForAccount[requestId].smartCAddress;
+        bool _bouncing = chainlinkRequestForAccount[requestId].bouncing;
+        if (_bouncing) {
+            if (randomWords.length == 1) {
+                randomNumberOne = randomWords[0];
+            } else if (randomWords.length == 2) {
+                randomNumberOne = randomWords[0];
+                randomNumberTwo = randomWords[1];
+            }
+
+            ongoinBouncingRN = false;
+
+            emit RandomNumberDelivered(
+                requestId,
+                _smartc,
+                _account,
+                randomWords
+            );
+            return;
+        }
 
         // mark the request as completed
         isRequestOngoing[_account] = false;
@@ -284,13 +310,112 @@ contract RandomNumberGenerator is
 
         emit RandomNumberDelivered(requestId, _smartc, _account, randomWords);
 
+        _executeCallBack(_smartc, _account, requestId, randomWords);
+    }
+
+    function _executeCallBack(
+        address _scAddress,
+        address _account,
+        uint256 _requestId,
+        uint256[] memory randomWords
+    ) internal {
         try
-            CallbackInterface(_smartc).fulfillRandomness(_account, randomWords)
+            CallbackInterface(_scAddress).fulfillRandomness(
+                _account,
+                randomWords
+            )
         {} catch Error(string memory reason) {
-            emit ErrorFromVrfCallback(reason, requestId, _smartc, _account);
+            emit ErrorFromVrfCallback(reason, _requestId, _scAddress, _account);
         } catch (bytes memory reason) {
-            emit ErrorNotHandled(reason, requestId, _smartc, _account);
+            emit ErrorNotHandled(reason, _requestId, _scAddress, _account);
         }
+    }
+
+    function requestRandomNumberBouncing(
+        address _account,
+        uint32 _amountNumbers
+    ) external returns (uint256[] memory) {
+        // verify that this function is called by an accepted address
+        require(
+            whiteListSmartContract[_msgSender()],
+            "RNG: Request from unauthorized address"
+        );
+
+        // check if the subscription has enough link to make the request
+        (uint96 balance, , , ) = vrfCoordinator.getSubscription(subscriptionId);
+        require(balance >= fee, "RNG: Not enough LINK to pay the request fee!");
+
+        if (balance < minimunLinkBalance) {
+            emit LinkBalanceIsLow(minimunLinkBalance, balance);
+        }
+
+        // respondes inmediately the random numbers
+        uint256[] memory randomWords = new uint256[](_amountNumbers);
+        if (_amountNumbers == 1) {
+            randomWords[0] = _getRadomNumberOne(randomNumberOne, _account);
+        } else {
+            randomWords[0] = _getRadomNumberOne(randomNumberOne, _account);
+            randomWords[1] = _getRandomNumberTwo(randomNumberTwo, _account);
+        }
+
+        // updates with VRF
+        if (!ongoinBouncingRN) {
+            // Calculate amount of gas to be spent
+            uint32 _callbackGasLimit = 1000000;
+            // execute the request to VRF coordinator
+            uint256 requestId = vrfCoordinator.requestRandomWords(
+                keyHash,
+                subscriptionId,
+                requestConfirmations,
+                _callbackGasLimit,
+                _amountNumbers
+            );
+            chainlinkRequestForAccount[requestId] = Caller(
+                _account,
+                _msgSender(),
+                true
+            );
+            ongoinBouncingRN = true;
+        }
+
+        return randomWords;
+    }
+
+    function _getRadomNumberOne(uint256 _random, address _account)
+        internal
+        view
+        returns (uint256)
+    {
+        return
+            uint256(
+                keccak256(
+                    abi.encodePacked(
+                        block.timestamp,
+                        _msgSender(),
+                        _random,
+                        _account
+                    )
+                )
+            );
+    }
+
+    function _getRandomNumberTwo(uint256 _random, address _account)
+        internal
+        view
+        returns (uint256)
+    {
+        return
+            uint256(
+                keccak256(
+                    abi.encodePacked(
+                        block.timestamp,
+                        _msgSender(),
+                        _random,
+                        _random,
+                        _account
+                    )
+                )
+            );
     }
 
     function addToWhiteList(address _smartContractAddress)

@@ -6,4 +6,9 @@ interface IRandomNumberGenerator {
 
     function requestRandomNumber(address _account, uint32 _amountNumbers)
         external;
+
+    function requestRandomNumberBouncing(
+        address _account,
+        uint32 _amountNumbers
+    ) external returns (uint256[] memory);
 }

@@ -377,7 +377,7 @@ describe("Tesing Pachacuy Game", function () {
 
       // Tatacuy
       var tt = tatacuy;
-      var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
+      var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
       var nftAdd = nftProducerPachacuy.address;
       var pacAdd = purchaseAssetController.address;
       var rngAdd = randomNumberGenerator.address;
@@ -389,7 +389,7 @@ describe("Tesing Pachacuy Game", function () {
 
       // Wiracocha
       var wi = wiracocha;
-      var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
+      var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
       var nftAdd = nftProducerPachacuy.address;
       var pacAdd = purchaseAssetController.address;
       var pIAdd = pachacuyInfo.address;
@@ -452,7 +452,7 @@ describe("Tesing Pachacuy Game", function () {
       var msws = misayWasi;
       var nftAdd = nftProducerPachacuy.address;
       var pcIadd = pachacuyInfo.address;
-      var rel = process.env.RELAYER_ADDRESS_BSC_TESTNET;
+      var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
       var rngAdd = randomNumberGenerator.address;
       await executeSet(msws, "setPachacuyInfoAddress", [pcIadd], "msws 001");
       await executeSet(msws, "grantRole", [game_manager, nftAdd], "msws 002");
@@ -546,7 +546,7 @@ describe("Tesing Pachacuy Game", function () {
     var campaignEndDate = async () =>
       (await ethers.provider.getBlock()).timestamp + 200;
 
-    it("Alice receives tokens, gets guinea pig, land and misay wasi", async () => {
+    xit("Alice receives tokens, gets guinea pig, land and misay wasi", async () => {
       // tokens
       await pachaCuyToken.mint(alice.address, pe("5725"));
 
@@ -595,7 +595,7 @@ describe("Tesing Pachacuy Game", function () {
        */
     });
 
-    it("Bob, Carl & Deysi play at Alice's Miwasaysi", async () => {
+    xit("Bob, Carl & Deysi play at Alice's Miwasaysi", async () => {
       // tokens
       await pachaCuyToken.mint(bob.address, pe("500"));
       await pachaCuyToken.mint(carl.address, pe("500"));
@@ -674,7 +674,7 @@ describe("Tesing Pachacuy Game", function () {
   });
 
   describe("Qhatu Wasi", () => {
-    it("Bob purchases a Qhatuy Wasi", async () => {
+    xit("Bob purchases a Qhatuy Wasi", async () => {
       await pachaCuyToken.mint(bob.address, pe("5000"));
       await purchaseAssetController.connect(bob).purchaseLandWithPcuy(2); // uuid 8
       pachaUuid = 8;
@@ -692,7 +692,7 @@ describe("Tesing Pachacuy Game", function () {
   });
 
   describe("URI", () => {
-    it("Reading uri", async () => {
+    xit("Reading uri", async () => {
       console.log("1", await nftProducerPachacuy.tokenURI(1));
       console.log("2", await nftProducerPachacuy.tokenURI(2));
       console.log("3", await nftProducerPachacuy.tokenURI(3));
@@ -702,6 +702,21 @@ describe("Tesing Pachacuy Game", function () {
       console.log("7", await nftProducerPachacuy.tokenURI(7));
       console.log("8", await nftProducerPachacuy.tokenURI(8));
       console.log("9", await nftProducerPachacuy.tokenURI(9));
+    });
+  });
+
+  describe("Purchasing pachapass", () => {
+    it("pachapass", async () => {
+      await pachaCuyToken.mint(alice.address, pe("50000"));
+      await pachaCuyToken.mint(bob.address, pe("50000"));
+      await purchaseAssetController.connect(alice).purchaseGuineaPigWithPcuy(3); // uuid 1
+      // await randomNumberGenerator.fulfillRandomWords(
+      //   432423,
+      //   [2131432235423, 324325234146]
+      // );
+      await purchaseAssetController.connect(alice).purchaseLandWithPcuy(100); // uuid 2
+      await pacha.connect(alice).setPachaPrivacyAndDistribution(2, pe("15"), 2); // uuid 3
+      await purchaseAssetController.connect(bob).purchasePachaPass(2);
     });
   });
 });

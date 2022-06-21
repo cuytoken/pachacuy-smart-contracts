@@ -1,4 +1,4 @@
-const { upgrades, ethers } = require("hardhat");
+const { upgrades, ethers, hardhatArguments } = require("hardhat");
 const hre = require("hardhat");
 
 const {
@@ -65,7 +65,6 @@ async function main() {
       kind: "uups",
     }
   );
-
   await pachacuyInfo.deployed();
   console.log("PachacuyInfo Proxy:", pachacuyInfo.address);
   var pachacuyInfoImp = await getImplementation(pachacuyInfo);
@@ -441,6 +440,15 @@ async function main() {
   await executeSet(qw, "setPachacuyInfoAddress", [pcIadd], "qw 001");
   await executeSet(qw, "grantRole", [game_manager, nftAdd], "qw 002");
 
+  // VRF
+  var url = "https://matic-mumbai.chainstacklabs.com";
+  var provider = new ethers.providers.JsonRpcProvider(url);
+  var vrfAddress = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed";
+  var abiVrf = ["function addConsumer(uint64 subId, address consumer)"];
+  var vrfC = new ethers.Contract(vrfAddress, abiVrf, provider);
+  var rngA = randomNumberGenerator.address;
+  await executeSet(vrfC, "addConsumer", [581, rngA], "VRF 001");
+
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Final setting finished!");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
@@ -469,19 +477,19 @@ async function main() {
 
 async function upgrade() {
   // upgrading
-  var PachacuyInfoAddress = "0xd895aDE1CC01A273aCD5A0fDD9223Fe694b0339E";
-  var PachacuyInfo = await ethers.getContractFactory("PachacuyInfo");
-  var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
-  await pachacuyInfo.updateInformationByRank(0, 1000, 50, 30);
-  await pachacuyInfo.updateInformationByRank(1, 2000, 120, 32);
-  await pachacuyInfo.updateInformationByRank(2, 3000, 140, 33);
-  await pachacuyInfo.updateInformationByRank(3, 4000, 160, 35);
-  await pachacuyInfo.updateInformationByRank(4, 5000, 180, 36);
-  await pachacuyInfo.updateInformationByRank(5, 6000, 200, 38);
-  await pachacuyInfo.updateInformationByRank(6, 7000, 220, 40);
-  await pachacuyInfo.updateInformationByRank(7, 8000, 240, 42);
-  await pachacuyInfo.updateInformationByRank(8, 9000, 260, 44);
-  await pachacuyInfo.updateInformationByRank(9, 10000, 280, 47);
+  // var PachacuyInfoAddress = "0xd895aDE1CC01A273aCD5A0fDD9223Fe694b0339E";
+  // var PachacuyInfo = await ethers.getContractFactory("PachacuyInfo");
+  // var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
+  // await pachacuyInfo.updateInformationByRank(0, 1000, 50, 30);
+  // await pachacuyInfo.updateInformationByRank(1, 2000, 120, 32);
+  // await pachacuyInfo.updateInformationByRank(2, 3000, 140, 33);
+  // await pachacuyInfo.updateInformationByRank(3, 4000, 160, 35);
+  // await pachacuyInfo.updateInformationByRank(4, 5000, 180, 36);
+  // await pachacuyInfo.updateInformationByRank(5, 6000, 200, 38);
+  // await pachacuyInfo.updateInformationByRank(6, 7000, 220, 40);
+  // await pachacuyInfo.updateInformationByRank(7, 8000, 240, 42);
+  // await pachacuyInfo.updateInformationByRank(8, 9000, 260, 44);
+  // await pachacuyInfo.updateInformationByRank(9, 10000, 280, 47);
 
   // var PachaCuyTokenAddress = "0xbf5F94350d52390290aA032b96F6FC971AeE70E9";
   // const PachaCuyToken = await gcf("PachaCuyToken");
@@ -511,9 +519,11 @@ async function upgrade() {
   // var RNGAddress = "0x4c8545746F51B5a99AfFE5cd7c79364506fA1d7b";
   // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
   // await upgrades.upgradeProxy(RNGAddress, RandomNumberGenerator);
-  // var PACAddress = "0x1509A051E5B91aAa3dE22Ae22D119C8f1Cd3DA80";
+
+  // var PACAddress = "0x34718A17ae015F3d2aBE38bD7222A9EDF6cDbEB6";
   // const PurchaseAssetController = await gcf("PurchaseAssetController");
   // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
+
   // var GuineaPigAddress = "0xbB528C3ba24647D710b667B439d5e84D7e35B7bc";
   // const GuineaPig = await gcf("GuineaPig");
   // await upgrades.upgradeProxy(GuineaPigAddress, GuineaPig);
@@ -531,9 +541,9 @@ async function upgrade() {
   // var TatacuyAddress = "0xD6cDFb590364E478AB3151Edc0180ebf82Bb456F";
   // const Tatacuy = await gcf("Tatacuy");
   // await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
-  // var NFTPAddress = "0x27B5733C942B20457371c1B6bbcaD2F8B5d07576";
-  // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
-  // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
+  var NFTPAddress = "0x5c6767459c363B51aFB67F9f68E16F5FE6E910Fc";
+  const NftProducerPachacuy = await gcf("NftProducerPachacuy");
+  await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
   // var WiracochaAddress = "0xA5100bE10f9e9da4cD1bA33553Fe119861E11a27";
   // const Wiracocha = await gcf("Wiracocha");
   // await upgrades.upgradeProxy(WiracochaAddress, Wiracocha);
@@ -636,10 +646,13 @@ async function resetOngoingTransaction() {
 }
 
 async function sendTokens() {
-  var PachaCuyTokenAddress = "0x3D89b5BC94f286Dbd0478Cf215Cb56DF9D83c4D6";
+  // var PachaCuyTokenAddress = "0x26813E464DA80707B7F24bf19e08Bf876F0f3388"; // alpha
+  var PachaCuyTokenAddress = "0x3D89b5BC94f286Dbd0478Cf215Cb56DF9D83c4D6"; // dev
   var PachaCuyToken = await gcf("PachaCuyToken");
   var pachaCuyToken = await PachaCuyToken.attach(PachaCuyTokenAddress);
   var wallets = [
+    "0x3d28c70749aF3F7F7Ebaeb12387748f3ed1F9Faa", // 0
+    "0x7F0B14862FD8755f2956450464a773F7A8Bf3166", // 0
     "0xf6E4f7B1b2f403238DD194EAD252AfB42A47BFe3", // 0
     "0xb8fF16Af207ce357E5A53103D5789c4b1c103B61", // 1
     "0x3dFFC99BFD24bA180a114a4b7072998508a5176c",
@@ -649,8 +662,7 @@ async function sendTokens() {
     "0x15Bfec909Fc3643618985d96a09860f98fB733fA",
     "0x243E3C2704DDa9d27b87aBf8b85816D34849AB30",
     "0x718429DDe591a305610a664c7046664422095ac3",
-    "0x800C44906Fe05B66A7276930894efF2a4cA348CE", // puffy
-    "0x2203Ba9Be40AbB782A6b0FA1E3CdFd707CF57364", // 7 // forky
+    "0x2D1d94D7941E7e17D7108D3D488399d9858Dff65", // puffy
   ];
 
   // var walletsTesters = ["0xeE05dd593d2023020E50953D01005FbE69C930f4"];
@@ -659,26 +671,140 @@ async function sendTokens() {
   //   gasLimit: "1000000",
   // });
   // console.log("Enviado");
-
-  await pachaCuyToken.send(wallets[0], pe("100000"), "0x");
-  await pachaCuyToken.send(wallets[1], pe("100000"), "0x");
-  await pachaCuyToken.send(wallets[2], pe("100000"), "0x");
-  await pachaCuyToken.send(wallets[3], pe("100000"), "0x");
-  await pachaCuyToken.send(wallets[4], pe("100000"), "0x");
-  await pachaCuyToken.send(wallets[5], pe("100000"), "0x");
-  await pachaCuyToken.send(wallets[6], pe("100000"), "0x");
-  await pachaCuyToken.send(wallets[7], pe("100000"), "0x");
-  await pachaCuyToken.send(wallets[8], pe("100000"), "0x");
-  await pachaCuyToken.send(wallets[9], pe("100000"), "0x");
-  await pachaCuyToken.send(wallets[10], pe("100000"), "0x");
+  var pc = pachaCuyToken;
+  var g = { gasLimit: 1000000 };
+  var args = [wallets[0], pe("100000"), "0x", g];
+  var t = await executeSet(pc, "send", args, "1");
+  var r = await t.wait(1);
+  // await executeSet(pcuy, "send", [wallets[1], pe("100000"), "0x", g], "2");
+  // await executeSet(pcuy, "send", [wallets[2], pe("100000"), "0x", g], "3");
+  // await executeSet(pcuy, "send", [wallets[3], pe("100000"), "0x", g], "4");
+  // await executeSet(pcuy, "send", [wallets[4], pe("100000"), "0x", g], "5");
+  // await executeSet(pcuy, "send", [wallets[5], pe("100000"), "0x", g], "6");
+  // await executeSet(pcuy, "send", [wallets[6], pe("100000"), "0x", g], "7");
+  // await executeSet(pcuy, "send", [wallets[7], pe("100000"), "0x", g], "8");
+  // await executeSet(pcuy, "send", [wallets[8], pe("100000"), "0x", g], "9");
+  // await executeSet(pcuy, "send", [wallets[9], pe("100000"), "0x", g], "10");
+  // await executeSet(pcuy, "send", [wallets[10], pe("100000"), "0x", g], "11");
 }
 
+function co(address) {
+  return { address };
+}
+
+async function fixDeployment() {
+  var pachacuyInfo = co("0xf2719944395F9Bb18Ec5ba44A4aD4c3De9Ceef30");
+  var randomNumberGenerator = co("0x2CCB6bDeA0cEb206D06082E5410D2380dD0e90CC");
+  var purchaseAssetController = co(
+    "0x470133768f065D39cb8e1393a3E5e40ECf7624Be"
+  );
+  var nftProducerPachacuy = co("0x38f1BF35F6C40E61411080Ae78bDC1Acb6b4aa24");
+  var tatacuy = co("0x7D828E9B4ABa8D5116BcCe9C2752355992B5bB26");
+  var wiracocha = co("0xE4e7a8eD6c8c3f3f10f9988EbF03F8504E361884");
+  var PachaCuyToken = co("0xe9B20573f51C6B5b38193a044Aa755A81CAcf12c");
+  var Chakra = co("0x64CA1bC7AD930f71021B0bE1fC1a9C4e6FcF9736");
+  var Hatun = co("0x312fd1D9d42CaB291414705614b5eB24fc8B7Fb4");
+  var misayWasi = co("0xc5fb5E474d8D37e3A8B728979113507c35Ad0151");
+  var GuineaPig = co("0x957B46Dc236ba40fb2A567AEDc1f8b6EB583A356");
+  var BinarySearch = co("0x87dF88Ed85400Af52d06F0bF1B9a91b3094d6dAf");
+  var pacha = co("0xFb145B38DCE1feEEe0106326c1BC7c70BB415e98");
+  var Qhatu = co("0x06A2e3120581C5935741fA003841C5bCE16E1652");
+
+  var PurchaseAssetControllerAddress =
+    "0x470133768f065D39cb8e1393a3E5e40ECf7624Be";
+  var PurchaseAssetController = await gcf("PurchaseAssetController");
+  var purchaseAssetController = await PurchaseAssetController.attach(
+    PurchaseAssetControllerAddress
+  );
+
+  var tx = await purchaseAssetController.purchaseLandWithPcuy(3, {
+    gasPrice: 100,
+    gasLimit: 1000000,
+  });
+  console.log("sent");
+  var res = await tx.wait();
+  console.log(res);
+
+  // var NftProducerPachacuyAddress = "0x38f1BF35F6C40E61411080Ae78bDC1Acb6b4aa24";
+  // var NftProducerPachacuy = await gcf("NftProducerPachacuy");
+  // var nftP = await NftProducerPachacuy.attach(NftProducerPachacuyAddress);
+  // var pacAdd = purchaseAssetController.address;
+  // var ttAdd = tatacuy.address;
+  // var wAd = wiracocha.address;
+  // var pIAdd = pachacuyInfo.address;
+  // var mswsAdd = misayWasi.address;
+  // var pachaAdd = pacha.address;
+  // // await executeSet(nftP, "setPachacuyInfoaddress", [pIAdd], "nftP 002");
+  // // await executeSet(nftP, "grantRole", [game_manager, pacAdd], "nftP 003");
+  // // await executeSet(nftP, "grantRole", [game_manager, mswsAdd], "nftP 004");
+  // // await executeSet(nftP, "grantRole", [game_manager, pachaAdd], "nftP 005");
+  // var TatacuyAddress = "0x7D828E9B4ABa8D5116BcCe9C2752355992B5bB26";
+  // var Tatacuy = await gcf("Tatacuy");
+  // var tt = await Tatacuy.attach(TatacuyAddress);
+  // var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
+  // // await executeSet(tt, "grantRole", [game_manager, rel], "tt 001");
+
+  // var GuineaPigAddress = "0x957B46Dc236ba40fb2A567AEDc1f8b6EB583A356";
+  // var GuineaPig = await gcf("GuineaPig");
+  // var gp = await GuineaPig.attach(GuineaPigAddress);
+  // var nftAdd = nftProducerPachacuy.address;
+  // var pcIAdd = pachacuyInfo.address;
+  // // await executeSet(gp, "setPachacuyInfoAddress", [pcIAdd], "gp 001");
+
+  // var MisayWasiAddress = "0xc5fb5E474d8D37e3A8B728979113507c35Ad0151";
+  // var MisayWasi = await gcf("MisayWasi");
+  // var msws = await MisayWasi.attach(MisayWasiAddress);
+  // var nftAdd = nftProducerPachacuy.address;
+  // var pcIadd = pachacuyInfo.address;
+  // var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
+  // var rngAdd = randomNumberGenerator.address;
+  // // await executeSet(msws, "grantRole", [rng_generator, rngAdd], "msws 004");
+
+  // var PachaAddress = "0xFb145B38DCE1feEEe0106326c1BC7c70BB415e98";
+  // var Pacha = await gcf("Pacha");
+  // var pc = await Pacha.attach(PachaAddress);
+  // var pcIadd = pachacuyInfo.address;
+  // var nftAdd = nftProducerPachacuy.address;
+  // // await executeSet(pc, "setPachacuyInfoAddress", [pcIadd], "pc 001");
+  // // await executeSet(pc, "grantRole", [game_manager, nftAdd], "pc 002");
+
+  // var QhatuWasiAddress = "0x06A2e3120581C5935741fA003841C5bCE16E1652";
+  // var QhatuWasi = await gcf("QhatuWasi");
+  // var qw = await QhatuWasi.attach(QhatuWasiAddress);
+  // var pcIadd = pachacuyInfo.address;
+  // var nftAdd = nftProducerPachacuy.address;
+  // await executeSet(qw, "grantRole", [game_manager, nftAdd], "qw 002");
+  console.log("finished qws");
+  return;
+}
+
+async function fixRelayer() {
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
+
+  var TatacuyAddress = "0xA6B3b26fcE99a5Dd8e180c43B8EB98eF6DA493f6";
+  var Tatacuy = await gcf("Tatacuy");
+  var tt = await Tatacuy.attach(TatacuyAddress);
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
+  await executeSet(tt, "grantRole", [game_manager, rel], "tt 001");
+
+  var WiracochaAddress = "0xA645bFdb41c151d3137b825baA31579240F5Bd08";
+  var Wiracocha = await gcf("Wiracocha");
+  var wi = await Wiracocha.attach(WiracochaAddress);
+  await executeSet(wi, "grantRole", [game_manager, rel], "wi 001");
+
+  var MisayWasiAddress = "0x4f1e1E9753b6bdE59E4863417c392838fdB3FC43";
+  var MisayWasi = await gcf("MisayWasi");
+  var msws = await MisayWasi.attach(MisayWasiAddress);
+  await executeSet(msws, "grantRole", [game_manager, rel], "msws 003");
+}
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 // upgrade()
 // resetOngoingTransaction()
-// main()
-sendTokens()
+// fixDeployment()
+main()
+  // sendTokens()
+  // fixRelayer()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

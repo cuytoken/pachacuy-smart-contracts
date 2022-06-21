@@ -46,6 +46,22 @@ contract GuineaPig is
     using StringsUpgradeable for uint256;
 
     // Guinea pig data
+    /**
+     * @param isGuineaPig: indicates whether the Uuid is a guinea pig or not
+     * @param race: indicates the race of the guinea pig: "PERU", "INTI", "ANDINO", "SINTETICO"
+     * @param gender: MALE or FEMALE
+     * @param speed:
+     * @param daysUntilHungry:
+     * @param daysUntilDeath:
+     * @param samiPoints:
+     * @param uuid:
+     * @param idForJsonFile:
+     * @param feedingDate:
+     * @param burningDate:
+     * @param wasBorn:
+     * @param owner:
+     * @param price:
+     */
     struct GuineaPigInfo {
         bool isGuineaPig;
         string race;

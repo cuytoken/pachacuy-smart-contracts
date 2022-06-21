@@ -73,23 +73,7 @@ contract PurchaseAssetController is
     // pool rewards for busd
     address public poolRewardsAddress;
 
-    // Verifies that customer has one transaction at a time
-    /**
-     * @dev Transaction objects that indicates type of the current transaction
-     * @param transactionType - Type of the current transaction: PURCHASE_GUINEA_PIG
-     * @param account - The wallet address caller of the customer
-     * @param ongoing - Indicates whether the customer has an ongoing transaction
-     * @param ix - Indicates the price range (1, 2 or 3) of the current transaction
-     */
-    struct Transaction {
-        string transactionType;
-        address account;
-        bool ongoing;
-        uint256 ix;
-    }
-    mapping(address => Transaction) ongoingTransaction;
-
-    // Marks the beginning of a guinea pig purchase
+    // Marks the end of a guinea pig purchase
     event GuineaPigPurchaseFinish(
         address _account,
         uint256 price,
@@ -98,7 +82,7 @@ contract PurchaseAssetController is
         string _raceAndGender
     );
 
-    // Marks the end of a guinea pig purchase
+    // Marks the beginning of a guinea pig purchase
     event GuineaPigPurchaseInit(
         address _account,
         uint256 price,
@@ -160,24 +144,6 @@ contract PurchaseAssetController is
         _grantRole(GAME_MANAGER, _msgSender());
     }
 
-    function fulfillRandomness(
-        address _account,
-        uint256[] memory _randomNumbers
-    ) external onlyRole(RNG_GENERATOR) {
-        Transaction memory _tx = ongoingTransaction[_account];
-
-        if (_compareStrings(_tx.transactionType, "PURCHASE_GUINEA_PIG")) {
-            _finishPurchaseGuineaPig(
-                _tx.ix,
-                _account,
-                _randomNumbers[0],
-                _randomNumbers[1]
-            );
-            delete ongoingTransaction[_account];
-            return;
-        }
-    }
-
     function purchaseGuineaPigWithBusd(uint256 _ix) external {
         _purchaseGuineaPig(_ix, address(busdToken));
     }
@@ -198,12 +164,6 @@ contract PurchaseAssetController is
             "PurchaseAC: Index must be 1, 2 or 3"
         );
 
-        // Verify that customer does not have an ongoing transaction
-        require(
-            !ongoingTransaction[_msgSender()].ongoing,
-            "PurchaseAC: Multiple ongoing transactions"
-        );
-
         uint256 price = pachacuyInfo.getPriceInPcuy(
             abi.encodePacked("GUINEA_PIG_", _ix.toString())
         ) * 10**18;
@@ -211,16 +171,9 @@ contract PurchaseAssetController is
         // Make transfer with appropiate token address
         _purchaseAtPriceInPcuyAndToken(price, _tokenAddress);
 
-        // Mark as ongoing transaction for a customer
-        ongoingTransaction[_msgSender()] = Transaction({
-            transactionType: "PURCHASE_GUINEA_PIG",
-            account: _msgSender(),
-            ongoing: true,
-            ix: _ix
-        });
-
         // Ask for two random numbers
-        randomNumberGenerator.requestRandomNumber(_msgSender(), 2);
+        uint256[] memory _randomNumbers = randomNumberGenerator
+            .requestRandomNumberBouncing(_msgSender(), 2);
 
         // Emit event
         emit GuineaPigPurchaseInit(
@@ -228,6 +181,13 @@ contract PurchaseAssetController is
             price,
             _ix,
             poolRewardsAddress
+        );
+
+        _finishPurchaseGuineaPig(
+            _ix,
+            _msgSender(),
+            _randomNumbers[0],
+            _randomNumbers[1]
         );
     }
 
@@ -555,9 +515,6 @@ contract PurchaseAssetController is
                 _randomNumber2 % 2
             );
 
-        // Mark ongoing transaction as finished
-        ongoingTransaction[_account].ongoing = false;
-
         require(
             address(nftProducerPachacuy) != address(0),
             "PurchaseAC: Guinea Pig Token not set"
@@ -602,31 +559,6 @@ contract PurchaseAssetController is
         onlyRole(GAME_MANAGER)
     {
         nftProducerPachacuy = INftProducerPachacuy(_NftProducerPachacuy);
-    }
-
-    function resetOngoingTransactionForAccount(address _account)
-        public
-        onlyRole(GAME_MANAGER)
-    {
-        if (ongoingTransaction[_account].ongoing) {
-            ongoingTransaction[_account].ongoing = false;
-        }
-    }
-
-    function getTransactionData(address _account)
-        external
-        view
-        returns (
-            string memory transactionType,
-            address account,
-            bool ongoing,
-            uint256 ix
-        )
-    {
-        transactionType = ongoingTransaction[_account].transactionType;
-        account = ongoingTransaction[_account].account;
-        ongoing = ongoingTransaction[_account].ongoing;
-        ix = ongoingTransaction[_account].ix;
     }
 
     function setPcuyTokenAddress(address _pachaCuyTokenAddress)
