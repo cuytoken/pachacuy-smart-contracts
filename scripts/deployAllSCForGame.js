@@ -647,12 +647,12 @@ async function resetOngoingTransaction() {
 
 async function sendTokens() {
   // var PachaCuyTokenAddress = "0x26813E464DA80707B7F24bf19e08Bf876F0f3388"; // alpha
-  var PachaCuyTokenAddress = "0x3D89b5BC94f286Dbd0478Cf215Cb56DF9D83c4D6"; // dev
+  var PachaCuyTokenAddress = "0xF712AbC0011871B822b421451f3FBA860B1bDfA0"; // dev
   var PachaCuyToken = await gcf("PachaCuyToken");
   var pachaCuyToken = await PachaCuyToken.attach(PachaCuyTokenAddress);
   var wallets = [
+    "0x77a033E62057eE1F818f75F703427c07D4A7c1E4", // 0
     "0x3d28c70749aF3F7F7Ebaeb12387748f3ed1F9Faa", // 0
-    "0x7F0B14862FD8755f2956450464a773F7A8Bf3166", // 0
     "0xf6E4f7B1b2f403238DD194EAD252AfB42A47BFe3", // 0
     "0xb8fF16Af207ce357E5A53103D5789c4b1c103B61", // 1
     "0x3dFFC99BFD24bA180a114a4b7072998508a5176c",
@@ -665,15 +665,12 @@ async function sendTokens() {
     "0x2D1d94D7941E7e17D7108D3D488399d9858Dff65", // puffy
   ];
 
-  // var walletsTesters = ["0xeE05dd593d2023020E50953D01005FbE69C930f4"];
-  // // Testers
-  // await pachaCuyToken.send(walletsTesters[0], pe("5325"), "0x", {
-  //   gasLimit: "1000000",
-  // });
-  // console.log("Enviado");
   var pc = pachaCuyToken;
   var g = { gasLimit: 1000000 };
   var args = [wallets[0], pe("100000"), "0x", g];
+  var t = await executeSet(pc, "send", args, "1");
+  var r = await t.wait(1);
+  var args = [wallets[1], pe("100000"), "0x", g];
   var t = await executeSet(pc, "send", args, "1");
   var r = await t.wait(1);
   // await executeSet(pcuy, "send", [wallets[1], pe("100000"), "0x", g], "2");
@@ -802,8 +799,8 @@ async function fixRelayer() {
 // upgrade()
 // resetOngoingTransaction()
 // fixDeployment()
-main()
-  // sendTokens()
+// main()
+sendTokens()
   // fixRelayer()
   .then(() => process.exit(0))
   .catch((error) => {

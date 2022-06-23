@@ -35,7 +35,6 @@ import "../pacha/IPacha.sol";
 import "../info/IPachacuyInfo.sol";
 import "../misayWasi/IMisayWasi.sol";
 import "../guineapig/IGuineaPig.sol";
-import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract PurchaseAssetController is
@@ -360,7 +359,6 @@ contract PurchaseAssetController is
         uint256 _misayWasiPrice = pachacuyInfo.getPriceInPcuy("MISAY_WASI") *
             10**18;
         _purchaseAtPriceInPcuyAndToken(_misayWasiPrice, address(pachaCuyToken));
-        console.log("_misayWasiPrice", _misayWasiPrice);
         // mint a Misay Wasi
         nftProducerPachacuy.mintMisayWasi(
             _msgSender(),

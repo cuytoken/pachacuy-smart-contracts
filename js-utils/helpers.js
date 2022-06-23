@@ -2,7 +2,7 @@ require("dotenv").config();
 const hre = require("hardhat");
 const { ethers, providers, BigNumber } = require("ethers");
 var fe = ethers.utils.formatEther;
-
+var i = ethers.utils.Interface;
 async function executeSet(contract, command, args, messageWhenFailed) {
   try {
     return await contract[command](...args);
@@ -105,6 +105,56 @@ var pachacuyInfoForGame = {
   boxes: [50, 120, 140, 160, 180, 200, 220, 240, 260, 280],
   affectation: [30, 32, 33, 35, 36, 38, 40, 42, 44, 47],
 };
+/**
+ * GPP = GUINEA_PIG_PURCHASE
+ * PP = PACHA PURCHASE
+ */
+function mapTopic(eventName) {
+  var listEvents = ["GPP", "PP", "CHKR", "MSWS", "PCHPSS"];
+  if (!listEvents.includes(eventName)) throw new Error("Not an event Name");
+
+  var tUuid = new i(["event Uuid(uint256 uuid)"]).getEventTopic("Uuid");
+
+  var map = {
+    GPP: {
+      topic: tUuid,
+      params: ["uint256"],
+    },
+    PP: {
+      topic: tUuid,
+      params: ["uint256"],
+    },
+    CHKR: {
+      topic: tUuid,
+      params: ["uint256"],
+    },
+    MSWS: {
+      topic: tUuid,
+      params: ["uint256"],
+    },
+    PCHPSS: {
+      topic: tUuid,
+      params: ["uint256"],
+    },
+  };
+
+  return map[eventName];
+}
+
+async function getDataFromEvent(tx, eventName) {
+  var { topic, params } = mapTopic(eventName);
+
+  var res = await tx.wait();
+  var data;
+  for (var ev of res.events) {
+    if (ev.topics.includes(topic)) {
+      data = ev.data;
+      break;
+    }
+  }
+  if (data == undefined) throw new Error("Data not found for event");
+  return ethers.utils.defaultAbiCoder.decode(params, data);
+}
 
 var roles = {
   updater_role,
@@ -394,4 +444,5 @@ module.exports = {
   verify,
   executeSet,
   b,
+  getDataFromEvent,
 };

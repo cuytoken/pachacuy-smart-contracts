@@ -17,6 +17,7 @@ const {
   businessesPrice,
   businessesKey,
   b,
+  getDataFromEvent,
 } = require("../js-utils/helpers");
 // const NETWORK = "BSCNET";
 const NETWORK = "BSCTESTNET";
@@ -475,219 +476,307 @@ describe("Tesing Pachacuy Game", function () {
       await executeSet(qw, "setPachacuyInfoAddress", [pcIadd], "qw 001");
       await executeSet(qw, "grantRole", [game_manager, nftAdd], "qw 002");
     });
+  });
 
-    xit("Provides tokens", async () => {
+  describe("Guinea Pigs", () => {
+    it("Purchase", async () => {
       await pachaCuyToken.mint(alice.address, pe("50000"));
       await pachaCuyToken.mint(bob.address, pe("50000"));
-      await purchaseAssetController.connect(alice).purchaseGuineaPigWithPcuy(3); // uuid 1
-      await randomNumberGenerator.fulfillRandomWords(
-        432423,
-        [2131432235423, 324325234146]
+      await pachaCuyToken.mint(carl.address, pe("50000"));
+      await pachaCuyToken.mint(deysi.address, pe("50000"));
+      await pachaCuyToken.mint(earl.address, pe("50000"));
+
+      var pac = purchaseAssetController;
+      var tx1 = await pac.connect(alice).purchaseGuineaPigWithPcuy(3);
+      var tx2 = await pac.connect(bob).purchaseGuineaPigWithPcuy(3);
+      var tx3 = await pac.connect(carl).purchaseGuineaPigWithPcuy(3);
+      var tx4 = await pac.connect(deysi).purchaseGuineaPigWithPcuy(3);
+      var tx5 = await pac.connect(earl).purchaseGuineaPigWithPcuy(3);
+
+      var res1 = (await getDataFromEvent(tx1, "GPP")).toString();
+      var res2 = (await getDataFromEvent(tx2, "GPP")).toString();
+      var res3 = (await getDataFromEvent(tx3, "GPP")).toString();
+      var res4 = (await getDataFromEvent(tx4, "GPP")).toString();
+      var res5 = (await getDataFromEvent(tx5, "GPP")).toString();
+
+      expect(res1).to.equal("1", "Incorrect Guinea Pig Uuid 1");
+      expect(res2).to.equal("2", "Incorrect Guinea Pig Uuid 2");
+      expect(res3).to.equal("3", "Incorrect Guinea Pig Uuid 3");
+      expect(res4).to.equal("4", "Incorrect Guinea Pig Uuid 4");
+      expect(res5).to.equal("5", "Incorrect Guinea Pig Uuid 5");
+
+      await expect(tx1).to.emit(pac, "GuineaPigPurchaseFinish");
+      await expect(tx2).to.emit(pac, "GuineaPigPurchaseFinish");
+      await expect(tx3).to.emit(pac, "GuineaPigPurchaseFinish");
+      await expect(tx4).to.emit(pac, "GuineaPigPurchaseFinish");
+      await expect(tx5).to.emit(pac, "GuineaPigPurchaseFinish");
+    });
+  });
+
+  describe("Pachas", () => {
+    it("Purchase", async () => {
+      var businesses = [
+        "CHAKRA",
+        "PACHA",
+        "QHATU_WASI",
+        "MISAY_WASI",
+        "GUINEA_PIG_1",
+        "GUINEA_PIG_2",
+        "GUINEA_PIG_3",
+      ];
+      var PACHA = "PACHA";
+      var pachaPrice = await pachacuyInfo.getPriceInPcuy(
+        ethers.utils.toUtf8Bytes(PACHA)
       );
-      await purchaseAssetController.connect(alice).purchaseLandWithPcuy(100); // uuid 2
+      var poolRewardAddress = await pachacuyInfo.poolRewardAddress();
 
-      var currUuid = 2;
-      await nftProducerPachacuy.connect(alice).mintTatacuy(currUuid); // uuid 3
-      await nftProducerPachacuy.connect(alice).mintWiracocha(currUuid); // uuid 4
-      await nftProducerPachacuy.connect(alice).mintHatunWasi(currUuid); // uuid 5
-      await purchaseAssetController.connect(alice).purchaseChakra(currUuid); // uuid 6
-      var uuidGuineaPig = 1;
-      var amountOfFood = 1;
-      await purchaseAssetController
-        .connect(bob)
-        .purchaseFoodFromChakra(6, amountOfFood, uuidGuineaPig);
+      var pac = purchaseAssetController;
+      var tx1 = await pac.connect(alice).purchaseLandWithPcuy(1);
+      var tx2 = await pac.connect(bob).purchaseLandWithPcuy(2);
+      var tx3 = await pac.connect(carl).purchaseLandWithPcuy(3);
+      var tx4 = await pac.connect(deysi).purchaseLandWithPcuy(4);
+      var tx5 = await pac.connect(earl).purchaseLandWithPcuy(5);
+      var txs = [tx1, tx2, tx3, tx4, tx5];
 
-      // Tatacuy
-      var _pachaUuid = 2;
-      var _tatacuyUuid = 3;
-      var _totalFundsPcuyDeposited = pe("100");
-      var _prizePerWinnerPcuy = pe("10");
-      await tatacuy
-        .connect(alice)
-        .startTatacuyCampaign(
-          _tatacuyUuid,
-          _totalFundsPcuyDeposited,
-          _prizePerWinnerPcuy
-        );
+      var res1 = (await getDataFromEvent(tx1, "PP")).toString();
+      var res2 = (await getDataFromEvent(tx2, "PP")).toString();
+      var res3 = (await getDataFromEvent(tx3, "PP")).toString();
+      var res4 = (await getDataFromEvent(tx4, "PP")).toString();
+      var res5 = (await getDataFromEvent(tx5, "PP")).toString();
 
-      // try luck
-      var _account = bob.address;
-      var _likelihood = 4;
-      var _idFromFront = 4;
-      var _tatacuyUuid = 3;
-      await tatacuy.grantRole(game_manager, owner.address);
-      await tatacuy.tryMyLuckTatacuy(
-        _account,
-        _likelihood,
-        _idFromFront,
-        _tatacuyUuid
+      expect(res1).to.equal("6", "Incorrect Pacha Uuid 6");
+      expect(res2).to.equal("7", "Incorrect Pacha Uuid 7");
+      expect(res3).to.equal("8", "Incorrect Pacha Uuid 8");
+      expect(res4).to.equal("9", "Incorrect Pacha Uuid 9");
+      expect(res5).to.equal("10", "Incorrect Pacha Uuid 10");
+
+      var pr = poolRewardAddress;
+      var args1 = [alice.address, res1, pe(pachaPrice.toString()), 1, pr];
+      var args2 = [bob.address, res2, pe(pachaPrice.toString()), 2, pr];
+      var args3 = [carl.address, res3, pe(pachaPrice.toString()), 3, pr];
+      var args4 = [deysi.address, res4, pe(pachaPrice.toString()), 4, pr];
+      var args5 = [earl.address, res5, pe(pachaPrice.toString()), 5, pr];
+      var addresses = [args1, args2, args3, args4, args5];
+      var promises = addresses.map((args, ix) =>
+        expect(txs[ix])
+          .to.emit(pac, "PurchaseLand")
+          .withArgs(...args)
       );
+      await Promise.all(promises);
+    });
+  });
 
-      await randomNumberGenerator.fulfillRandomWords(_account, [7]);
+  describe("Chakra", () => {
+    it("Purchase chakra", async () => {
+      var pac = purchaseAssetController;
+      var tx1 = await pac.connect(alice).purchaseChakra(6);
+      var tx2 = await pac.connect(bob).purchaseChakra(7);
+      var tx3 = await pac.connect(carl).purchaseChakra(8);
+      var tx4 = await pac.connect(deysi).purchaseChakra(9);
+      var tx5 = await pac.connect(earl).purchaseChakra(10);
+      var txs = [tx1, tx2, tx3, tx4, tx5];
 
-      // Wiracocha
-      var _exchanger = bob.address;
-      var _samiPoints = 500;
-      var _idFromFront = 100;
-      var _wiracochaUuid = 4;
-      await wiracocha.grantRole(game_manager, owner.address);
-      await wiracocha.exchangeSamiToPcuy(
-        _exchanger,
-        _samiPoints,
-        _idFromFront,
-        _wiracochaUuid
-      );
+      var res1 = (await getDataFromEvent(tx1, "CHKR")).toString();
+      var res2 = (await getDataFromEvent(tx2, "CHKR")).toString();
+      var res3 = (await getDataFromEvent(tx3, "CHKR")).toString();
+      var res4 = (await getDataFromEvent(tx4, "CHKR")).toString();
+      var res5 = (await getDataFromEvent(tx5, "CHKR")).toString();
+
+      expect(res1).to.equal("11", "Incorrect Chakra Uuid 11");
+      expect(res2).to.equal("12", "Incorrect Chakra Uuid 12");
+      expect(res3).to.equal("13", "Incorrect Chakra Uuid 13");
+      expect(res4).to.equal("14", "Incorrect Chakra Uuid 14");
+      expect(res5).to.equal("15", "Incorrect Chakra Uuid 15");
+    });
+
+    it("Set up food price", async () => {
+      var p1 = pe("15");
+      var p2 = pe("25");
+      var p3 = pe("35");
+      var p4 = pe("45");
+      var p5 = pe("55");
+      var tx1 = await chakra.connect(alice).updateFoodPriceAtChakra(11, p1);
+      var tx2 = await chakra.connect(bob).updateFoodPriceAtChakra(12, p2);
+      var tx3 = await chakra.connect(carl).updateFoodPriceAtChakra(13, p3);
+      var tx4 = await chakra.connect(deysi).updateFoodPriceAtChakra(14, p4);
+      var tx5 = await chakra.connect(earl).updateFoodPriceAtChakra(15, p5);
+      var txs = [tx1, tx2, tx3, tx4, tx5];
+    });
+
+    it("Purchase food", async () => {
+      var pac = purchaseAssetController;
+      await pachaCuyToken.mint(fephe.address, pe("50000"));
+      await pachaCuyToken.mint(gary.address, pe("50000"));
+      await pachaCuyToken.mint(huidobro.address, pe("50000"));
+
+      var tx1 = await pac.connect(fephe).purchaseGuineaPigWithPcuy(3); // 16
+      var tx2 = await pac.connect(gary).purchaseGuineaPigWithPcuy(3); // 17
+      var tx3 = await pac.connect(huidobro).purchaseGuineaPigWithPcuy(3); // 18
+
+      var res1 = (await getDataFromEvent(tx1, "GPP")).toString();
+      var res2 = (await getDataFromEvent(tx2, "GPP")).toString();
+      var res3 = (await getDataFromEvent(tx3, "GPP")).toString();
+
+      var tx1 = await pac.connect(fephe).purchaseFoodFromChakra(11, 1, res1);
+      var tx2 = await pac.connect(gary).purchaseFoodFromChakra(12, 2, res2);
+      var tx3 = await pac.connect(huidobro).purchaseFoodFromChakra(13, 2, res3);
+      var tx1 = await pac.connect(fephe).purchaseFoodFromChakra(13, 3, res1);
+      var tx2 = await pac.connect(gary).purchaseFoodFromChakra(14, 4, res2);
+      var tx3 = await pac.connect(huidobro).purchaseFoodFromChakra(15, 5, res3);
     });
   });
 
   describe("Misay Wasi", () => {
-    var pachaUuid;
-    var misayWasiUuid;
     var campaignEndDate = async () =>
       (await ethers.provider.getBlock()).timestamp + 200;
 
-    xit("Alice receives tokens, gets guinea pig, land and misay wasi", async () => {
-      // tokens
-      await pachaCuyToken.mint(alice.address, pe("5725"));
-
-      // guiena pig
-      await purchaseAssetController.connect(alice).purchaseGuineaPigWithPcuy(3); // uuid 1
-      await randomNumberGenerator.fulfillRandomWords(
-        432423,
-        [2131432235423, 324325234146]
-      );
-      console.log(
-        "GP",
-        (await pachaCuyToken.balanceOf(alice.address)).toString()
-      );
-      // land
-      await purchaseAssetController.connect(alice).purchaseLandWithPcuy(1); // uuid 2
-      console.log(
-        "L",
-        (await pachaCuyToken.balanceOf(alice.address)).toString()
-      );
-
+    it("Purchase Misaywasi", async () => {
       // mint misay wasi
-      pachaUuid = 2;
-      var tx = await purchaseAssetController
-        .connect(alice)
-        .purchaseMisayWasi(pachaUuid); // uuid 3
+      var pac = purchaseAssetController;
+      var tx1 = await pac.connect(alice).purchaseMisayWasi(6);
+      var tx2 = await pac.connect(bob).purchaseMisayWasi(7);
+      var tx3 = await pac.connect(carl).purchaseMisayWasi(8);
+      var tx4 = await pac.connect(deysi).purchaseMisayWasi(9);
+      var tx5 = await pac.connect(earl).purchaseMisayWasi(10);
+      var txs = [tx1, tx2, tx3, tx4, tx5];
 
-      console.log(
-        "MWS",
-        (await pachaCuyToken.balanceOf(alice.address)).toString()
-      );
+      var res1 = (await getDataFromEvent(tx1, "MSWS")).toString();
+      var res2 = (await getDataFromEvent(tx2, "MSWS")).toString();
+      var res3 = (await getDataFromEvent(tx3, "MSWS")).toString();
+      var res4 = (await getDataFromEvent(tx4, "MSWS")).toString();
+      var res5 = (await getDataFromEvent(tx5, "MSWS")).toString();
 
-      misayWasiUuid = 3;
-      await misayWasi.connect(alice).startMisayWasiRaffle(
-        // uuid 5
-        misayWasiUuid,
-        pe("100"),
-        pe("10"),
-        campaignEndDate()
-      );
-      /** ALICE           UUID
-       *  - guinea pig ->   1
-       *  - land ->         2
-       *  - misay wasi ->   3
-       *  - misay wasi ticket ->   4
-       *  - misay wai prize 100
-       */
+      expect(res1).to.equal("19", "Incorrect MSWS Uuid 16");
+      expect(res2).to.equal("20", "Incorrect MSWS Uuid 17");
+      expect(res3).to.equal("21", "Incorrect MSWS Uuid 18");
+      expect(res4).to.equal("22", "Incorrect MSWS Uuid 19");
+      expect(res5).to.equal("23", "Incorrect MSWS Uuid 20");
     });
 
-    xit("Bob, Carl & Deysi play at Alice's Miwasaysi", async () => {
-      // tokens
-      await pachaCuyToken.mint(bob.address, pe("500"));
-      await pachaCuyToken.mint(carl.address, pe("500"));
-      await pachaCuyToken.mint(deysi.address, pe("500"));
+    it("Alice starts raffle", async () => {
+      var mswsUuid = 19;
+      var prize = pe("100");
+      await misayWasi
+        .connect(alice)
+        .startMisayWasiRaffle(mswsUuid, prize, pe("10"), campaignEndDate()); // uuid 24
+    });
 
-      var alicePrevBalance = await balanceOf(alice.address);
-      var bobPrevBalance = await balanceOf(bob.address);
-      var carlPrevBalance = await balanceOf(carl.address);
-      var deysiPrevBalance = await balanceOf(deysi.address);
-
-      console.log("alice Prev", alicePrevBalance);
-      console.log("bob Prev", bobPrevBalance);
-      console.log("carl Prev", carlPrevBalance);
-      console.log("deysi Prev", deysiPrevBalance);
-
-      // guinea pig
-      await purchaseAssetController.connect(bob).purchaseGuineaPigWithPcuy(3); // uuid 5
-      await randomNumberGenerator.fulfillRandomWords(
-        432423,
-        [2131432235423, 324325234146]
+    it("Purchase Alice's raffle", async () => {
+      var mswsUuid = 19;
+      var pac = purchaseAssetController;
+      var buyers = [bob, carl, earl, deysi];
+      var promises = buyers.map((buyer, ix) =>
+        pac.connect(buyer).purchaseTicketFromMisayWasi(mswsUuid, ix + 1)
       );
-      await purchaseAssetController.connect(carl).purchaseGuineaPigWithPcuy(3); // uuid 6
-      await randomNumberGenerator.fulfillRandomWords(
-        432423,
-        [2131432235423, 324325234146]
-      );
-      await purchaseAssetController.connect(deysi).purchaseGuineaPigWithPcuy(3); // uuid 7
-      await randomNumberGenerator.fulfillRandomWords(
-        432423,
-        [2131432235423, 324325234146]
-      );
+      await Promise.all(promises);
+    });
 
-      // purchase ticket
-      var tx = await purchaseAssetController
-        .connect(carl)
-        .purchaseTicketFromMisayWasi(misayWasiUuid, 1);
-      var res = await tx.wait();
-      console.log("ticket misay wasi", res.events);
-
-      console.log("1 Carl", await balanceOf(carl.address));
-      console.log("1 alice", await balanceOf(alice.address));
-      await purchaseAssetController
-        .connect(bob)
-        .purchaseTicketFromMisayWasi(misayWasiUuid, 1);
-      console.log("2 bob", await balanceOf(bob.address));
-      console.log("2 alice", await balanceOf(alice.address));
-      await purchaseAssetController
-        .connect(carl)
-        .purchaseTicketFromMisayWasi(misayWasiUuid, 2);
-      console.log("3 carl", await balanceOf(carl.address));
-      console.log("3 alice", await balanceOf(alice.address));
-      await purchaseAssetController
-        .connect(deysi)
-        .purchaseTicketFromMisayWasi(misayWasiUuid, 1);
-      console.log("4 deysi", await balanceOf(deysi.address));
-      console.log("4 alice", await balanceOf(alice.address));
-      await purchaseAssetController
-        .connect(carl)
-        .purchaseTicketFromMisayWasi(misayWasiUuid, 1);
-      console.log("5 carl", await balanceOf(carl.address));
-      console.log("5 alice", await balanceOf(alice.address));
-
-      await misayWasi.startRaffleContest([misayWasiUuid]);
-      await randomNumberGenerator.fulfillRandomWords(432423, [2]);
-
-      var aliceAfterBalance = await balanceOf(alice.address);
-      var bobAfterBalance = await balanceOf(bob.address);
-      var carlAfterBalance = await balanceOf(carl.address);
-      var deysiAfterBalance = await balanceOf(deysi.address);
-
-      console.log("alice AfterBalance", aliceAfterBalance);
-      console.log("bob AfterBalance", bobAfterBalance);
-      console.log("carl AfterBalance", carlAfterBalance);
-      console.log("deysi AfterBalance", deysiAfterBalance);
+    it("Starts raffle", async () => {
+      var mswsUuid = 19;
+      await misayWasi.grantRole(game_manager, owner.address);
+      await misayWasi.connect(owner).startRaffleContest([mswsUuid]);
+      var buyers = [bob, carl, earl, deysi];
+      var accumulative = [1, 3, 6, 10];
+      var tickets = accumulative[accumulative.length - 1];
+      var rn = 123;
+      var finalRn = (rn % tickets) + 1; // 4
+      var ixWinner = 3;
+      var winner = buyers[ixWinner - 1].address;
+      var tx = await randomNumberGenerator.fulfillRandomWords(1234324, [rn]);
+      var prize = pe("100");
+      var tMsws = 24;
+      var tax = await pachacuyInfo.raffleTax();
+      var fee = prize.mul(tax).div(100);
+      var net = prize.sub(fee);
+      var args = [winner, mswsUuid, net, fee, tMsws];
+      await expect(tx)
+        .to.emit(misayWasi, "RaffleContestFinished")
+        .withArgs(...args);
     });
   });
 
   describe("Qhatu Wasi", () => {
-    xit("Bob purchases a Qhatuy Wasi", async () => {
-      await pachaCuyToken.mint(bob.address, pe("5000"));
-      await purchaseAssetController.connect(bob).purchaseLandWithPcuy(2); // uuid 8
-      pachaUuid = 8;
-      var tx = await purchaseAssetController
-        .connect(bob)
-        .purchaseQhatuWasi(pachaUuid); // uuid 9
+    it("Purchase", async () => {
+      var pac = purchaseAssetController;
+      var tx1 = await pac.connect(alice).purchaseQhatuWasi(6);
+      var tx2 = await pac.connect(bob).purchaseQhatuWasi(7);
+      var tx3 = await pac.connect(carl).purchaseQhatuWasi(8);
+      var tx4 = await pac.connect(deysi).purchaseQhatuWasi(9);
+      var tx5 = await pac.connect(earl).purchaseQhatuWasi(10);
+      var txs = [tx1, tx2, tx3, tx4, tx5];
 
-      console.log("bobBal", await balanceOf(bob.address));
-      var qhatuWasiUuid = 9;
-      await qhatuWasi
+      var res1 = (await getDataFromEvent(tx1, "CHKR")).toString();
+      var res2 = (await getDataFromEvent(tx2, "CHKR")).toString();
+      var res3 = (await getDataFromEvent(tx3, "CHKR")).toString();
+      var res4 = (await getDataFromEvent(tx4, "CHKR")).toString();
+      var res5 = (await getDataFromEvent(tx5, "CHKR")).toString();
+
+      expect(res1).to.equal("25", "Incorrect QhatuWasi Uuid 25");
+      expect(res2).to.equal("26", "Incorrect QhatuWasi Uuid 26");
+      expect(res3).to.equal("27", "Incorrect QhatuWasi Uuid 27");
+      expect(res4).to.equal("28", "Incorrect QhatuWasi Uuid 28");
+      expect(res5).to.equal("29", "Incorrect QhatuWasi Uuid 29");
+    });
+
+    it("Alice starts campaign", async () => {
+      var qhatuWasiUuid = 25;
+      var qtTax = await pachacuyInfo.qhatuWasiTax();
+      var qt = qhatuWasi;
+      var amountCmp = pe("40");
+      var prizePerView = pe("4");
+      var sami = await pachacuyInfo.convertPcuyToSami(prizePerView);
+      var tax = amountCmp.mul(qtTax).div(100);
+      var net = amountCmp.sub(tax);
+      var samiGive = await pachacuyInfo.convertPcuyToSami(net);
+      var tx = await qhatuWasi
+        .connect(alice)
+        .startQhatuWasiCampaign(qhatuWasiUuid, amountCmp, prizePerView);
+      var args = [tax, net, samiGive, qhatuWasiUuid, alice.address, sami];
+      expect(tx)
+        .to.emit(qt, "QhatuWasiCampaignStarted")
+        .withArgs(...args);
+    });
+  });
+
+  describe("Pachapass", () => {
+    it("Set Pacha to private - type 1", async () => {
+      var pachaUuid = 6;
+      var price = pe("0");
+      await pacha
+        .connect(alice)
+        .setPachaPrivacyAndDistribution(pachaUuid, price, 1);
+    });
+
+    it("Distribute - type 1", async () => {
+      var pachaUuid = 6;
+      var accounts = [earl, fephe, gary, huidobro].map((el) => el.address);
+      await nftProducerPachacuy
+        .connect(alice)
+        .mintPachaPassAsOwner(accounts, pachaUuid);
+    });
+
+    it("Set Pacha to private - type 2", async () => {
+      var pachaUuid = 7;
+      var price = pe("10");
+      await pacha
         .connect(bob)
-        .startQhatuWasiCampaign(qhatuWasiUuid, pe("40"));
-      console.log("bobBal", await balanceOf(bob.address));
+        .setPachaPrivacyAndDistribution(pachaUuid, price, 2);
+    });
+
+    it("Purchase type 2", async () => {
+      var pac = purchaseAssetController;
+      var pachaUuid = 7;
+      var tx1 = await pac.connect(fephe).purchasePachaPass(pachaUuid);
+      var tx2 = await pac.connect(gary).purchasePachaPass(pachaUuid);
+      var tx3 = await pac.connect(huidobro).purchasePachaPass(pachaUuid);
+
+      var res1 = (await getDataFromEvent(tx1, "PCHPSS")).toString();
+      var res2 = (await getDataFromEvent(tx2, "PCHPSS")).toString();
+      var res3 = (await getDataFromEvent(tx3, "PCHPSS")).toString();
+
+      expect(res1).to.equal("31", "Incorrect Pacha Pass Uuid 31");
+      expect(res2).to.equal("31", "Incorrect Pacha Pass Uuid 31");
+      expect(res3).to.equal("31", "Incorrect Pacha Pass Uuid 31");
     });
   });
 
@@ -702,21 +791,6 @@ describe("Tesing Pachacuy Game", function () {
       console.log("7", await nftProducerPachacuy.tokenURI(7));
       console.log("8", await nftProducerPachacuy.tokenURI(8));
       console.log("9", await nftProducerPachacuy.tokenURI(9));
-    });
-  });
-
-  describe("Purchasing pachapass", () => {
-    it("pachapass", async () => {
-      await pachaCuyToken.mint(alice.address, pe("50000"));
-      await pachaCuyToken.mint(bob.address, pe("50000"));
-      await purchaseAssetController.connect(alice).purchaseGuineaPigWithPcuy(3); // uuid 1
-      // await randomNumberGenerator.fulfillRandomWords(
-      //   432423,
-      //   [2131432235423, 324325234146]
-      // );
-      await purchaseAssetController.connect(alice).purchaseLandWithPcuy(100); // uuid 2
-      await pacha.connect(alice).setPachaPrivacyAndDistribution(2, pe("15"), 2); // uuid 3
-      await purchaseAssetController.connect(bob).purchasePachaPass(2);
     });
   });
 });
