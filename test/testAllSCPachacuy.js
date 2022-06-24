@@ -19,8 +19,11 @@ const {
   b,
   getDataFromEvent,
 } = require("../js-utils/helpers");
+const { init } = require("../js-utils/helpterTesting");
 // const NETWORK = "BSCNET";
 const NETWORK = "BSCTESTNET";
+var _prefix = "ipfs://QmbbGgo93M6yr5WSUMj53SWN2vC7L6aMS1GZSPNkVRY8e4/";
+var testing;
 
 describe("Tesing Pachacuy Game", function () {
   var owner,
@@ -475,6 +478,9 @@ describe("Tesing Pachacuy Game", function () {
       var nftAdd = nftProducerPachacuy.address;
       await executeSet(qw, "setPachacuyInfoAddress", [pcIadd], "qw 001");
       await executeSet(qw, "grantRole", [game_manager, nftAdd], "qw 002");
+
+      // init helper
+      testing = init(purchaseAssetController, pachaCuyToken, pachacuyInfo);
     });
   });
 
@@ -485,84 +491,56 @@ describe("Tesing Pachacuy Game", function () {
       await pachaCuyToken.mint(carl.address, pe("50000"));
       await pachaCuyToken.mint(deysi.address, pe("50000"));
       await pachaCuyToken.mint(earl.address, pe("50000"));
-
-      var pac = purchaseAssetController;
-      var tx1 = await pac.connect(alice).purchaseGuineaPigWithPcuy(3);
-      var tx2 = await pac.connect(bob).purchaseGuineaPigWithPcuy(3);
-      var tx3 = await pac.connect(carl).purchaseGuineaPigWithPcuy(3);
-      var tx4 = await pac.connect(deysi).purchaseGuineaPigWithPcuy(3);
-      var tx5 = await pac.connect(earl).purchaseGuineaPigWithPcuy(3);
-
-      var res1 = (await getDataFromEvent(tx1, "GPP")).toString();
-      var res2 = (await getDataFromEvent(tx2, "GPP")).toString();
-      var res3 = (await getDataFromEvent(tx3, "GPP")).toString();
-      var res4 = (await getDataFromEvent(tx4, "GPP")).toString();
-      var res5 = (await getDataFromEvent(tx5, "GPP")).toString();
-
-      expect(res1).to.equal("1", "Incorrect Guinea Pig Uuid 1");
-      expect(res2).to.equal("2", "Incorrect Guinea Pig Uuid 2");
-      expect(res3).to.equal("3", "Incorrect Guinea Pig Uuid 3");
-      expect(res4).to.equal("4", "Incorrect Guinea Pig Uuid 4");
-      expect(res5).to.equal("5", "Incorrect Guinea Pig Uuid 5");
-
-      await expect(tx1).to.emit(pac, "GuineaPigPurchaseFinish");
-      await expect(tx2).to.emit(pac, "GuineaPigPurchaseFinish");
-      await expect(tx3).to.emit(pac, "GuineaPigPurchaseFinish");
-      await expect(tx4).to.emit(pac, "GuineaPigPurchaseFinish");
-      await expect(tx5).to.emit(pac, "GuineaPigPurchaseFinish");
+      await testing.purchaseGuineaPig(alice, [1, 1]); // uuid 1
+      await testing.purchaseGuineaPig(bob, [2, 2]); // uuid 2
+      await testing.purchaseGuineaPig(carl, [3, 3]); // uuid 3
+      await testing.purchaseGuineaPig(deysi, [4, 1]); // uuid 4
+      await testing.purchaseGuineaPig(earl, [5, 3]); // uuid 5
     });
   });
 
   describe("Pachas", () => {
-    it("Purchase", async () => {
-      var businesses = [
-        "CHAKRA",
-        "PACHA",
-        "QHATU_WASI",
-        "MISAY_WASI",
-        "GUINEA_PIG_1",
-        "GUINEA_PIG_2",
-        "GUINEA_PIG_3",
-      ];
-      var PACHA = "PACHA";
-      var pachaPrice = await pachacuyInfo.getPriceInPcuy(
-        ethers.utils.toUtf8Bytes(PACHA)
-      );
-      var poolRewardAddress = await pachacuyInfo.poolRewardAddress();
-
+    it("Purchase with no funds", async () => {
       var pac = purchaseAssetController;
-      var tx1 = await pac.connect(alice).purchaseLandWithPcuy(1);
-      var tx2 = await pac.connect(bob).purchaseLandWithPcuy(2);
-      var tx3 = await pac.connect(carl).purchaseLandWithPcuy(3);
-      var tx4 = await pac.connect(deysi).purchaseLandWithPcuy(4);
-      var tx5 = await pac.connect(earl).purchaseLandWithPcuy(5);
-      var txs = [tx1, tx2, tx3, tx4, tx5];
+      await expect(
+        pac.connect(huidobro).purchaseLandWithPcuy(1)
+      ).to.revertedWith("PurchaseAC: Not enough PCUY");
+    });
 
-      var res1 = (await getDataFromEvent(tx1, "PP")).toString();
-      var res2 = (await getDataFromEvent(tx2, "PP")).toString();
-      var res3 = (await getDataFromEvent(tx3, "PP")).toString();
-      var res4 = (await getDataFromEvent(tx4, "PP")).toString();
-      var res5 = (await getDataFromEvent(tx5, "PP")).toString();
+    it("Purchase 5 pachas 6-10", async () => {
+      await testing.purchaseLand(alice, [1, 6]); // uuid 6
+      await testing.purchaseLand(bob, [2, 7]); // uuid 7
+      await testing.purchaseLand(carl, [3, 8]); // uuid 8
+      await testing.purchaseLand(deysi, [4, 9]); // uuid 9
+      await testing.purchaseLand(earl, [5, 10]); // uuid 10
+    });
 
-      expect(res1).to.equal("6", "Incorrect Pacha Uuid 6");
-      expect(res2).to.equal("7", "Incorrect Pacha Uuid 7");
-      expect(res3).to.equal("8", "Incorrect Pacha Uuid 8");
-      expect(res4).to.equal("9", "Incorrect Pacha Uuid 9");
-      expect(res5).to.equal("10", "Incorrect Pacha Uuid 10");
-
-      var pr = poolRewardAddress;
-      var args1 = [alice.address, res1, pe(pachaPrice.toString()), 1, pr];
-      var args2 = [bob.address, res2, pe(pachaPrice.toString()), 2, pr];
-      var args3 = [carl.address, res3, pe(pachaPrice.toString()), 3, pr];
-      var args4 = [deysi.address, res4, pe(pachaPrice.toString()), 4, pr];
-      var args5 = [earl.address, res5, pe(pachaPrice.toString()), 5, pr];
-      var addresses = [args1, args2, args3, args4, args5];
-      var promises = addresses.map((args, ix) =>
-        expect(txs[ix])
-          .to.emit(pac, "PurchaseLand")
-          .withArgs(...args)
+    it("Purchase same location", async () => {
+      var pac = purchaseAssetController;
+      await expect(pac.connect(bob).purchaseLandWithPcuy(1)).to.revertedWith(
+        "NFP: location taken"
       );
-      await Promise.all(promises);
+    });
+
+    it("Location out of bounds", async () => {
+      var pac = purchaseAssetController;
+      await expect(pac.connect(bob).purchaseLandWithPcuy(0)).to.revertedWith(
+        "Pacha: Out of bounds"
+      );
+      await expect(pac.connect(bob).purchaseLandWithPcuy(698)).to.revertedWith(
+        "Pacha: Out of bounds"
+      );
+    });
+
+    it("Get URI", async () => {
+      var locations = [1, 2, 3, 4, 5];
+      var uuids = [6, 7, 8, 9, 10];
+      var uris = locations.map((location) => `${_prefix}PACHA${location}.json`);
+      var promises = uuids.map((uuid) => nftProducerPachacuy.tokenURI(uuid));
+      var tokenUris = await Promise.all(promises);
+      tokenUris.forEach((tokenUri, ix) =>
+        expect(tokenUri).to.equal(uris[ix], `Failed at ${ix}`)
+      );
     });
   });
 
@@ -778,19 +756,45 @@ describe("Tesing Pachacuy Game", function () {
       expect(res2).to.equal("31", "Incorrect Pacha Pass Uuid 31");
       expect(res3).to.equal("31", "Incorrect Pacha Pass Uuid 31");
     });
-  });
 
-  describe("URI", () => {
-    xit("Reading uri", async () => {
-      console.log("1", await nftProducerPachacuy.tokenURI(1));
-      console.log("2", await nftProducerPachacuy.tokenURI(2));
-      console.log("3", await nftProducerPachacuy.tokenURI(3));
-      console.log("4", await nftProducerPachacuy.tokenURI(4));
-      console.log("5", await nftProducerPachacuy.tokenURI(5));
-      console.log("6", await nftProducerPachacuy.tokenURI(6));
-      console.log("7", await nftProducerPachacuy.tokenURI(7));
-      console.log("8", await nftProducerPachacuy.tokenURI(8));
-      console.log("9", await nftProducerPachacuy.tokenURI(9));
+    it("Test pachapass permission - type 1", async () => {
+      var pachaUuid = 6; // alice's pacha
+
+      // true
+      var accounts = [earl, fephe, gary, huidobro].map((acc) => acc.address);
+      var promises = accounts.map((address) =>
+        nftProducerPachacuy.isGuineaPigAllowedInPacha(address, pachaUuid)
+      );
+      var responses = await Promise.all(promises);
+      responses.forEach((res) => expect(res).to.be.true);
+
+      // false
+      var accounts = [alice, bob, carl, deysi].map((acc) => acc.address);
+      var promises = accounts.map((address) =>
+        nftProducerPachacuy.isGuineaPigAllowedInPacha(address, pachaUuid)
+      );
+      var responses = await Promise.all(promises);
+      responses.forEach((res) => expect(res).to.be.false);
+    });
+
+    it("Test pachapass permission - type 2", async () => {
+      var pachaUuid = 7; // bob's pacha
+
+      // true
+      var accounts = [fephe, gary, huidobro].map((acc) => acc.address);
+      var promises = accounts.map((address) =>
+        nftProducerPachacuy.isGuineaPigAllowedInPacha(address, pachaUuid)
+      );
+      var responses = await Promise.all(promises);
+      responses.forEach((res) => expect(res).to.be.true);
+
+      // false
+      var accounts = [alice, bob, carl, deysi].map((acc) => acc.address);
+      var promises = accounts.map((address) =>
+        nftProducerPachacuy.isGuineaPigAllowedInPacha(address, pachaUuid)
+      );
+      var responses = await Promise.all(promises);
+      responses.forEach((res) => expect(res).to.be.false);
     });
   });
 });

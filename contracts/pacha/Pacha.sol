@@ -130,6 +130,12 @@ contract Pacha is
         uint256 _pachaUuid,
         uint256 _price
     ) external onlyRole(GAME_MANAGER) {
+        // validates location between 1 - 697
+        require(
+            _idForJsonFile > 0 && _idForJsonFile < 698,
+            "Pacha: Out of bounds"
+        );
+
         // Mark that space of land as purchased
         isLandAlreadyTaken[_idForJsonFile] = true;
 
@@ -163,13 +169,13 @@ contract Pacha is
     function setPachaToPublic(uint256 _pachaUuid) public {
         // Verify that land's uuid exists
         PachaInfo storage pacha = _uuidToPachaInfo[_pachaUuid];
-        require(pacha.isPacha, "NFP: non-existant uuid");
+        require(pacha.isPacha, "Pacha: non-existant uuid");
 
         // Verify that is land's owner
-        require(pacha.owner == _msgSender(), "NFP: not the owner");
+        require(pacha.owner == _msgSender(), "Pacha: not the owner");
 
         // Verify that land is private
-        require(!pacha.isPublic, "NFP: land must be private");
+        require(!pacha.isPublic, "Pacha: land must be private");
 
         // make the land public
         pacha.isPublic = true;
@@ -191,7 +197,7 @@ contract Pacha is
         require(pacha.isPacha, "Pacha: Non-existant uuid");
 
         // Verify that is land's owner
-        require(pacha.owner == _msgSender(), "Pacha:not the owner");
+        require(pacha.owner == _msgSender(), "Pacha: not the owner");
 
         // Verify that distribution is either 0 or 1
         require(
@@ -216,10 +222,10 @@ contract Pacha is
 
         // if type of distribution of pachapass is private (with no price)
         if (_typeOfDistribution == 1) {
-            require(_price == 0, "Nft. P: price must be 0");
+            require(_price == 0, "Pacha: price must be 0");
         } else if (_typeOfDistribution == 2) {
             // if type of distribution of pachapass is public (with price)
-            require(_price > 0, "Nft. P: price greater than 0");
+            require(_price > 0, "Pacha: price greater than 0");
             // For a land, set its pacha pass price
             pacha.pachaPassPrice = _price;
         }
@@ -327,20 +333,26 @@ contract Pacha is
         pachacuyInfo = IPachacuyInfo(_infoAddress);
     }
 
-    function tokenUri(string memory _prefix, uint256 _pachaUuid)
+    // _uuid: either _pachaUuid or _pachaPassUuid
+    function tokenUri(string memory _prefix, uint256 _uuid)
         external
         view
         returns (string memory)
     {
-        return
-            string(
-                abi.encodePacked(
-                    _prefix,
-                    "PACHA",
-                    _uuidToPachaInfo[_pachaUuid].idForJsonFile.toString(),
-                    ".json"
-                )
-            );
+        if (_uuidToPachaPassInfo[_uuid].isPachaPass) {
+            return string(abi.encodePacked(_prefix, "PACHAPASS.json"));
+        } else if (_uuidToPachaInfo[_uuid].isPacha) {
+            return
+                string(
+                    abi.encodePacked(
+                        _prefix,
+                        "PACHA",
+                        _uuidToPachaInfo[_uuid].idForJsonFile.toString(),
+                        ".json"
+                    )
+                );
+        }
+        return "";
     }
 
     ///////////////////////////////////////////////////////////////

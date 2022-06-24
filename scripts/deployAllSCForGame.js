@@ -340,7 +340,7 @@ async function main() {
 
   // Tatacuy
   var tt = tatacuy;
-  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
   var nftAdd = nftProducerPachacuy.address;
   var pacAdd = purchaseAssetController.address;
   var rngAdd = randomNumberGenerator.address;
@@ -352,7 +352,7 @@ async function main() {
 
   // Wiracocha
   var wi = wiracocha;
-  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
   var nftAdd = nftProducerPachacuy.address;
   var pacAdd = purchaseAssetController.address;
   var pIAdd = pachacuyInfo.address;
@@ -417,7 +417,7 @@ async function main() {
   var msws = misayWasi;
   var nftAdd = nftProducerPachacuy.address;
   var pcIadd = pachacuyInfo.address;
-  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
   var rngAdd = randomNumberGenerator.address;
   await executeSet(msws, "setPachacuyInfoAddress", [pcIadd], "msws 001");
   await executeSet(msws, "grantRole", [game_manager, nftAdd], "msws 002");
@@ -443,11 +443,12 @@ async function main() {
   // VRF
   var url = "https://matic-mumbai.chainstacklabs.com";
   var provider = new ethers.providers.JsonRpcProvider(url);
+  var signer = await ethers.getSigner();
   var vrfAddress = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed";
   var abiVrf = ["function addConsumer(uint64 subId, address consumer)"];
   var vrfC = new ethers.Contract(vrfAddress, abiVrf, provider);
   var rngA = randomNumberGenerator.address;
-  await executeSet(vrfC, "addConsumer", [581, rngA], "VRF 001");
+  await executeSet(vrfC.connect(signer), "addConsumer", [581, rngA], "VRF 001");
 
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Final setting finished!");
@@ -541,7 +542,7 @@ async function upgrade() {
   // var TatacuyAddress = "0xD6cDFb590364E478AB3151Edc0180ebf82Bb456F";
   // const Tatacuy = await gcf("Tatacuy");
   // await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
-  var NFTPAddress = "0x5c6767459c363B51aFB67F9f68E16F5FE6E910Fc";
+  var NFTPAddress = "0x8e3bc832ed2A328B9bEc7715a2733425e4e5B14F";
   const NftProducerPachacuy = await gcf("NftProducerPachacuy");
   await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
   // var WiracochaAddress = "0xA5100bE10f9e9da4cD1bA33553Fe119861E11a27";
@@ -610,7 +611,7 @@ async function upgrade() {
   // var TatacuyAddress = "0xA6B3b26fcE99a5Dd8e180c43B8EB98eF6DA493f6";
   // var Tatacuy = await gcf("Tatacuy");
   // var ttc = await Tatacuy.attach(TatacuyAddress);
-  // var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
+  // var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
   // await executeSet(ttc, "grantRole", [game_manager, rel], "tt 001");
 
   // var WiracochaAddress = "0xA645bFdb41c151d3137b825baA31579240F5Bd08";
@@ -647,12 +648,12 @@ async function resetOngoingTransaction() {
 
 async function sendTokens() {
   // var PachaCuyTokenAddress = "0x26813E464DA80707B7F24bf19e08Bf876F0f3388"; // alpha
-  var PachaCuyTokenAddress = "0xF712AbC0011871B822b421451f3FBA860B1bDfA0"; // dev
+  var PachaCuyTokenAddress = "0x7Bff8A404D571120B38f76467Ef2965DE25babdC"; // dev
   var PachaCuyToken = await gcf("PachaCuyToken");
   var pachaCuyToken = await PachaCuyToken.attach(PachaCuyTokenAddress);
   var wallets = [
     "0x77a033E62057eE1F818f75F703427c07D4A7c1E4", // 0
-    "0x3d28c70749aF3F7F7Ebaeb12387748f3ed1F9Faa", // 0
+    "0x3dFFC99BFD24bA180a114a4b7072998508a5176c", // 0
     "0xf6E4f7B1b2f403238DD194EAD252AfB42A47BFe3", // 0
     "0xb8fF16Af207ce357E5A53103D5789c4b1c103B61", // 1
     "0x3dFFC99BFD24bA180a114a4b7072998508a5176c",

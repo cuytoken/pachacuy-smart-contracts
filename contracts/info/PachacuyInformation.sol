@@ -35,6 +35,18 @@ contract PachacuyInfo is
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
+    // NFT types
+    bytes32 public constant TATACUY = keccak256("TATACUY");
+    bytes32 public constant WIRACOCHA = keccak256("WIRACOCHA");
+    bytes32 public constant CHAKRA = keccak256("CHAKRA");
+    bytes32 public constant HATUNWASI = keccak256("HATUNWASI");
+    bytes32 public constant MISAYWASI = keccak256("MISAYWASI");
+    bytes32 public constant QHATUWASI = keccak256("QHATUWASI");
+    bytes32 public constant GUINEAPIG = keccak256("GUINEAPIG");
+    bytes32 public constant PACHA = keccak256("PACHA");
+    bytes32 public constant TICKETRAFFLE = keccak256("TICKETRAFFLE");
+    bytes32 public constant PACHAPASS = keccak256("PACHAPASS");
+
     // Contract addresses
     address public chakraAddress;
     address public poolRewardAddress;
@@ -100,6 +112,9 @@ contract PachacuyInfo is
     // Prices
     // type of business => price of business
     mapping(bytes32 => uint256) public businesses;
+
+    // Addresses mapping
+    mapping(bytes32 => address) public nftTypeToAddress;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -263,6 +278,7 @@ contract PachacuyInfo is
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        nftTypeToAddress[CHAKRA] = _chakraAddress;
         chakraAddress = _chakraAddress;
     }
 
@@ -277,6 +293,7 @@ contract PachacuyInfo is
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        nftTypeToAddress[HATUNWASI] = _hatunWasiAddress;
         hatunWasiAddress = _hatunWasiAddress;
     }
 
@@ -284,6 +301,7 @@ contract PachacuyInfo is
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        nftTypeToAddress[TATACUY] = _tatacuyAddress;
         tatacuyAddress = _tatacuyAddress;
     }
 
@@ -291,6 +309,7 @@ contract PachacuyInfo is
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        nftTypeToAddress[WIRACOCHA] = _wiracochaAddress;
         wiracochaAddress = _wiracochaAddress;
     }
 
@@ -312,6 +331,8 @@ contract PachacuyInfo is
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        nftTypeToAddress[MISAYWASI] = _misayWasiAddress;
+        nftTypeToAddress[TICKETRAFFLE] = _misayWasiAddress;
         misayWasiAddress = _misayWasiAddress;
     }
 
@@ -326,6 +347,7 @@ contract PachacuyInfo is
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        nftTypeToAddress[GUINEAPIG] = _guineaPigAddress;
         guineaPigAddress = _guineaPigAddress;
     }
 
@@ -347,6 +369,8 @@ contract PachacuyInfo is
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        nftTypeToAddress[PACHA] = _pachaAddress;
+        nftTypeToAddress[PACHAPASS] = _pachaAddress;
         pachaAddress = _pachaAddress;
     }
 
@@ -354,6 +378,7 @@ contract PachacuyInfo is
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+        nftTypeToAddress[QHATUWASI] = _qhatuWasiAddress;
         qhatuWasiAddress = _qhatuWasiAddress;
     }
 
@@ -426,6 +451,14 @@ contract PachacuyInfo is
         returns (uint256 _pcuyAmount)
     {
         _pcuyAmount = (_samiAmount * 10**18) / exchangeRatePcuyToSami;
+    }
+
+    function getAddressOfNftType(bytes32 _type)
+        external
+        view
+        returns (address)
+    {
+        return nftTypeToAddress[_type];
     }
 
     ///////////////////////////////////////////////////////////////

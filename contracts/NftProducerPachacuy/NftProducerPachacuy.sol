@@ -559,30 +559,30 @@ contract NftProducerPachacuy is
     ///////////////////////////////////////////////////////////////
     ////                   HELPERS FUNCTIONS                   ////
     ///////////////////////////////////////////////////////////////
-    // /**
-    //  * @notice Indicates whether a Guinea Pig is allows to enter a Pacha
-    //  * @param _account Wallet to be validated against the Pacha
-    //  * @param _pachaUuid Uuid of the pacha to check the access of _account
-    //  */
-    // function isGuineaPigAllowedInPacha(address _account, uint256 _pachaUuid)
-    //     external
-    //     view
-    //     returns (bool)
-    // {
-    //     IPacha.PachaInfo memory pacha = IPacha(pachacuyInfo.pachaAddress())
-    //         .getPachaWithUuid(_pachaUuid);
+    /**
+     * @notice Indicates whether a Guinea Pig is allows to enter a Pacha
+     * @param _account Wallet to be validated against the Pacha
+     * @param _pachaUuid Uuid of the pacha to check the access of _account
+     */
+    function isGuineaPigAllowedInPacha(address _account, uint256 _pachaUuid)
+        external
+        view
+        returns (bool)
+    {
+        IPacha.PachaInfo memory pacha = IPacha(pachacuyInfo.pachaAddress())
+            .getPachaWithUuid(_pachaUuid);
 
-    //     // pacha do not exist
-    //     if (!pacha.isPacha) return false;
-    //     // pacha is public
-    //     if (pacha.isPublic) return true;
+        // pacha do not exist
+        if (!pacha.isPacha) return false;
+        // pacha is public
+        if (pacha.isPublic) return true;
 
-    //     // All private land must have a uuid for its pachapass
-    //     require(pacha.pachaPassUuid > 0, "NFP: Uuid's pachapass missing");
-    //     if (balanceOf(_account, pacha.pachaPassUuid) > 0) {
-    //         return true;
-    //     } else return false;
-    // }
+        // All private land must have a uuid for its pachapass
+        require(pacha.pachaPassUuid > 0, "NFP: Uuid's pachapass missing");
+        if (balanceOf(_account, pacha.pachaPassUuid) > 0) {
+            return true;
+        } else return false;
+    }
 
     function _compareStrings(string memory a, string memory b)
         internal
@@ -649,23 +649,9 @@ contract NftProducerPachacuy is
     function tokenURI(uint256 _uuid) public view returns (string memory) {
         require(exists(_uuid), "NFP: Not minted.");
 
-        bytes32 typeOfNft = _nftTypes[_uuid];
-        string memory fileName;
-
-        if (typeOfNft == GUINEAPIG) {
-            fileName = IGuineaPig(pachacuyInfo.guineaPigAddress()).tokenUri(
-                _prefix,
-                _uuid
-            );
-        } else if (typeOfNft == PACHA) {
-            fileName = IPacha(pachacuyInfo.pachaAddress()).tokenUri(
-                _prefix,
-                _uuid
-            );
-        }
-        // //  else if (_uuidToPachaPassData[_uuid].isPachaPass) {
-        // //     fileName = string(abi.encodePacked(_prefix, "PACHAPASS.json"));
-        // // }
+        string memory fileName = ITokenUri(
+            pachacuyInfo.getAddressOfNftType(_nftTypes[_uuid])
+        ).tokenUri(_prefix, _uuid);
 
         return bytes(_prefix).length > 0 ? fileName : "";
     }

@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+interface ITokenUri {
+    function tokenUri(string memory _prefix, uint256 _uuid)
+        external
+        view
+        returns (string memory);
+}
+
 interface IPachacuyInfo {
     function totalFood() external returns (uint256);
 
@@ -75,4 +82,10 @@ interface IPachacuyInfo {
     function convertSamiToPcuy(uint256 _samiAmount)
         external
         returns (uint256 _pcuyAmount);
+
+    //////////////////////////////////////////////////////////////////
+    ///                      ADDRESS RETRIEVAL                     ///
+    //////////////////////////////////////////////////////////////////
+
+    function getAddressOfNftType(bytes32 _type) external view returns (address);
 }

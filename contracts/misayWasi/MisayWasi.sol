@@ -407,6 +407,22 @@ contract MisayWasi is
         return uuidToMisayWasiInfo[_misayWasiUuid];
     }
 
+    // _uuid: either _misayWasiUuid or _pachaPassUuid
+    function tokenUri(string memory _prefix, uint256 _uuid)
+        external
+        view
+        returns (string memory)
+    {
+        if (uuidToMisayWasiInfo[_uuid].hasMisayWasi) {
+            return string(abi.encodePacked(_prefix, "MISAYWASI.json"));
+        } else if (
+            uuidToMisayWasiInfo[_ticketUuidToMisayWasiUuid[_uuid]].hasMisayWasi
+        ) {
+            return string(abi.encodePacked(_prefix, "TICKETMISAYWASI.json"));
+        }
+        return "";
+    }
+
     ///////////////////////////////////////////////////////////////
     ////                   STANDARD FUNCTIONS                  ////
     ///////////////////////////////////////////////////////////////
