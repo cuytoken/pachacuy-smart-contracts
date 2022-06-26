@@ -112,6 +112,15 @@ contract MisayWasi is
         uint256 ticketUuid
     );
 
+    event RaffleStarted(
+        uint256 misayWasiUuid,
+        uint256 rafflePrize,
+        uint256 ticketPrice,
+        uint256 campaignStartDate,
+        uint256 campaignEndDate,
+        uint256 pachaUuid
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -209,6 +218,15 @@ contract MisayWasi is
 
         // link ticket uuid to misay wasi uuid
         _ticketUuidToMisayWasiUuid[_ticketUuid] = _misayWasiUuid;
+
+        emit RaffleStarted(
+            _misayWasiUuid,
+            _rafflePrize,
+            _ticketPrice,
+            block.timestamp,
+            _campaignEndDate,
+            misayWasiInfo.pachaUuid
+        );
     }
 
     function registerTicketPurchase(

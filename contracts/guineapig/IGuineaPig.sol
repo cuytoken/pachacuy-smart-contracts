@@ -24,7 +24,8 @@ interface IGuineaPig {
             string memory
         );
 
-    function feedGuineaPig(uint256 _guineaPigUuid) external;
+    function feedGuineaPig(uint256 _guineaPigUuid, uint256 _amountFood)
+        external;
 
     function tokenUri(string memory _prefix, uint256 _guineaPigUuid)
         external

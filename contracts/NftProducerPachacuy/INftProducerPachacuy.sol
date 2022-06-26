@@ -33,6 +33,7 @@ interface INftProducerPachacuy {
     ) external returns (uint256);
 
     function purchaseFood(
+        address _account,
         uint256 _chakraUuid,
         uint256 _amountFood,
         uint256 _guineaPigUuid

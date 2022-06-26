@@ -289,13 +289,20 @@ contract NftProducerPachacuy is
     }
 
     function purchaseFood(
+        address _account,
         uint256 _chakraUuid,
         uint256 _amountFood,
         uint256 _guineaPigUuid
     ) external onlyRole(GAME_MANAGER) returns (uint256 availableFood) {
+        require(
+            balanceOf(_account, _guineaPigUuid) > 0,
+            "NFP: No guinea pig found"
+        );
+
         // update Guinea Pig life span
         IGuineaPig(pachacuyInfo.guineaPigAddress()).feedGuineaPig(
-            _guineaPigUuid
+            _guineaPigUuid,
+            _amountFood
         );
 
         availableFood = IChakra(pachacuyInfo.chakraAddress())
@@ -413,7 +420,7 @@ contract NftProducerPachacuy is
             _account,
             _pachaUuid,
             _pachaPassUuid,
-            "puchased"
+            "purchased"
         );
 
         emit Uuid(_pachaPassUuid);

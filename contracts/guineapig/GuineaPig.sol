@@ -159,13 +159,19 @@ contract GuineaPig is
         listOfUuidGuineaPigs.push(_guineaPigUuid);
     }
 
-    function feedGuineaPig(uint256 _guineaPigUuid)
+    function feedGuineaPig(uint256 _guineaPigUuid, uint256 _amountFood)
         external
         onlyRole(GAME_MANAGER)
     {
         GuineaPigInfo storage _guineaPig = _uuidToGuineaPigInfo[_guineaPigUuid];
-        _guineaPig.feedingDate += _guineaPig.daysUntilHungry * 1 days;
-        _guineaPig.burningDate += _guineaPig.daysUntilHungry * 1 days;
+        _guineaPig.feedingDate +=
+            _guineaPig.daysUntilHungry *
+            _amountFood *
+            1 days;
+        _guineaPig.burningDate +=
+            _guineaPig.daysUntilHungry *
+            _amountFood *
+            1 days;
 
         emit GuineaPigFed(
             _guineaPig.feedingDate,

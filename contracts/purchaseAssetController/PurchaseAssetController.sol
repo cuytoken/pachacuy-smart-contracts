@@ -160,7 +160,7 @@ contract PurchaseAssetController is
         // Valid index (1, 2 or 3)
         require(
             _ix == 1 || _ix == 2 || _ix == 3,
-            "PurchaseAC: Index must be 1, 2 or 3"
+            "PAC: Index must be 1, 2 or 3"
         );
 
         uint256 price = pachacuyInfo.getPriceInPcuy(
@@ -233,7 +233,7 @@ contract PurchaseAssetController is
         if (_tokenAddress == address(pachaCuyToken)) {
             require(
                 pachaCuyToken.balanceOf(_msgSender()) >= _priceInPcuy,
-                "PurchaseAC: Not enough PCUY"
+                "PAC: Not enough PCUY"
             );
             pachaCuyToken.operatorSend(
                 _msgSender(),
@@ -246,14 +246,14 @@ contract PurchaseAssetController is
             _priceInPcuy = _fromPcuyToBusd(_priceInPcuy);
             require(
                 busdToken.balanceOf(_msgSender()) >= _priceInPcuy,
-                "PurchaseAC: Not enough BUSD"
+                "PAC: Not enough BUSD"
             );
 
             // Verify id customer has given allowance to the PurchaseAC contract
             require(
                 busdToken.allowance(_msgSender(), address(this)) >=
                     _priceInPcuy,
-                "PurchaseAC: Allowance not given"
+                "PAC: Allowance not given"
             );
 
             // SC transfers BUSD from purchaser to pool rewards
@@ -295,9 +295,11 @@ contract PurchaseAssetController is
             pachacuyInfo.chakraAddress()
         ).getChakraWithUuid(_chakraUuid);
 
+        require(chakraInfo.hasChakra, "PAC: Chakra not found");
+
         require(
             _amountFood <= chakraInfo.availableFood,
-            "PurchaseAC: Not enough food at chakra"
+            "PAC: Not enough food at chakra"
         );
 
         (uint256 _net, uint256 _fee) = _transferPcuyWithTax(
@@ -307,6 +309,7 @@ contract PurchaseAssetController is
         );
 
         uint256 availableFood = nftProducerPachacuy.purchaseFood(
+            _msgSender(),
             _chakraUuid,
             _amountFood,
             _guineaPigUuid
@@ -336,15 +339,11 @@ contract PurchaseAssetController is
             pachacuyInfo.misayWasiAddress()
         ).getMisayWasiWithUuid(_misayWasiUuid);
 
-        require(
-            misayWasiInfo.isCampaignActive,
-            "PurchaseAC: No raffle running"
-        );
-
+        require(misayWasiInfo.isCampaignActive, "PAC: No raffle running");
         _transferPcuyWithoutTax(
             _msgSender(),
             misayWasiInfo.owner,
-            misayWasiInfo.ticketPrice
+            misayWasiInfo.ticketPrice * _amountOfTickets
         );
 
         nftProducerPachacuy.purchaseTicketRaffle(
@@ -427,7 +426,7 @@ contract PurchaseAssetController is
     ) external onlyRole(MONEY_TRANSFER) {
         require(
             pachaCuyToken.balanceOf(_account) >= _pcuyAmount,
-            "PurchaseAC: Not enough PCUY"
+            "PAC: Not enough PCUY"
         );
 
         pachaCuyToken.operatorSend(
@@ -459,7 +458,7 @@ contract PurchaseAssetController is
     ) internal returns (uint256 _net, uint256 _fee) {
         require(
             pachaCuyToken.balanceOf(_from) >= _pcuyAmount,
-            "PurchaseAC: Not enough PCUY"
+            "PAC: Not enough PCUY"
         );
 
         _fee = (_pcuyAmount * pachacuyInfo.purchaseTax()) / 100;
@@ -482,9 +481,8 @@ contract PurchaseAssetController is
     ) internal {
         require(
             pachaCuyToken.balanceOf(_from) >= _pcuyAmount,
-            "PurchaseAC: Not enough PCUY"
+            "PAC: Not enough PCUY"
         );
-
         pachaCuyToken.operatorSend(_from, _to, _pcuyAmount, "", "");
     }
 
@@ -515,7 +513,7 @@ contract PurchaseAssetController is
 
         require(
             address(nftProducerPachacuy) != address(0),
-            "PurchaseAC: Guinea Pig Token not set"
+            "PAC: Guinea Pig Token not set"
         );
 
         uint256 price = pachacuyInfo.getPriceInPcuy(
