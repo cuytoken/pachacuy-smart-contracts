@@ -40,6 +40,7 @@ contract RandomNumberGenerator is
 {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    bytes32 public constant GAMER_ROLE = keccak256("GAMER_ROLE");
 
     // Random numbers for bouncing
     uint256 randomNumberOne;
@@ -358,6 +359,13 @@ contract RandomNumberGenerator is
             randomWords[1] = _getRandomNumberTwo(randomNumberTwo, _account);
         }
 
+        return randomWords;
+    }
+
+    function requestRandomNumberOZ(address _account, uint32 _amountNumbers)
+        external
+        onlyRole(GAMER_ROLE)
+    {
         // updates with VRF
         if (!ongoinBouncingRN) {
             // Calculate amount of gas to be spent
@@ -377,8 +385,6 @@ contract RandomNumberGenerator is
             );
             ongoinBouncingRN = true;
         }
-
-        return randomWords;
     }
 
     function _getRadomNumberOne(uint256 _random, address _account)

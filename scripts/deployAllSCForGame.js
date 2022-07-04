@@ -532,9 +532,9 @@ async function upgrade() {
   // const Pacha = await gcf("Pacha");
   // await upgrades.upgradeProxy(PachaAddress, Pacha);
 
-  // var PachaCuyTokenAddress = "0x26813E464DA80707B7F24bf19e08Bf876F0f3388";
-  // const PachaCuyToken = await gcf("PachaCuyToken");
-  // await upgrades.upgradeProxy(PachaCuyTokenAddress, PachaCuyToken);
+  var PachaCuyTokenAddress = "0x26813E464DA80707B7F24bf19e08Bf876F0f3388";
+  const PachaCuyToken = await gcf("PachaCuyToken");
+  await upgrades.upgradeProxy(PachaCuyTokenAddress, PachaCuyToken);
 
   // var HatunWasiAddress = "0x0697473655bb97F27d5325d76b528155eC9FB9c7";
   // const HatunWasi = await gcf("HatunWasi");
@@ -800,8 +800,8 @@ async function fixRelayer() {
 // upgrade()
 // resetOngoingTransaction()
 // fixDeployment()
-// main()
-sendTokens()
+main()
+  // sendTokens()
   // fixRelayer()
   .then(() => process.exit(0))
   .catch((error) => {

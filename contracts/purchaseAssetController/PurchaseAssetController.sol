@@ -73,20 +73,13 @@ contract PurchaseAssetController is
     address public poolRewardsAddress;
 
     // Marks the end of a guinea pig purchase
-    event GuineaPigPurchaseFinish(
+    event GuineaPigPurchase(
         address _account,
         uint256 price,
         uint256 _guineaPigId,
         uint256 _uuid,
-        string _raceAndGender
-    );
-
-    // Marks the beginning of a guinea pig purchase
-    event GuineaPigPurchaseInit(
-        address _account,
-        uint256 price,
-        uint256 _ix,
-        address poolRewardsAddress
+        string _raceAndGender,
+        uint256 balanceConsumer
     );
 
     // Purchase of Land event
@@ -95,7 +88,8 @@ contract PurchaseAssetController is
         uint256 uuid,
         uint256 landPrice,
         uint256 _location,
-        address poolRewardsAddress
+        address poolRewardsAddress,
+        uint256 balanceConsumer
     );
 
     // Purhcase of PachaPass event
@@ -105,7 +99,9 @@ contract PurchaseAssetController is
         uint256 pachaPassUuid,
         uint256 price,
         uint256 pcuyReceived,
-        uint256 pcuyTaxed
+        uint256 pcuyTaxed,
+        uint256 balanceOwner,
+        uint256 balanceConsumer
     );
 
     event PurchaseFoodChakra(
@@ -115,7 +111,17 @@ contract PurchaseAssetController is
         address chakraOwner,
         uint256 pcuyReceived,
         uint256 pcuyTaxed,
-        uint256 tax
+        uint256 tax,
+        uint256 balanceOwner,
+        uint256 balanceConsumer
+    );
+
+    event PurchaseTicket(
+        address misayWasiOwner,
+        uint256 misayWasiUuid,
+        uint256 ticketUuid,
+        uint256 balanceOwner,
+        uint256 balanceConsumer
     );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -174,14 +180,6 @@ contract PurchaseAssetController is
         uint256[] memory _randomNumbers = randomNumberGenerator
             .requestRandomNumberBouncing(_msgSender(), 2);
 
-        // Emit event
-        emit GuineaPigPurchaseInit(
-            _msgSender(),
-            price,
-            _ix,
-            poolRewardsAddress
-        );
-
         _finishPurchaseGuineaPig(
             _ix,
             _msgSender(),
@@ -222,7 +220,8 @@ contract PurchaseAssetController is
             uuid,
             pachaPrice,
             _location,
-            poolRewardsAddress
+            poolRewardsAddress,
+            pachaCuyToken.balanceOf(_msgSender())
         );
     }
 
@@ -322,7 +321,9 @@ contract PurchaseAssetController is
             chakraInfo.owner,
             _net,
             _fee,
-            pachacuyInfo.purchaseTax()
+            pachacuyInfo.purchaseTax(),
+            pachaCuyToken.balanceOf(chakraInfo.owner),
+            pachaCuyToken.balanceOf(_msgSender())
         );
     }
 
@@ -351,6 +352,14 @@ contract PurchaseAssetController is
             misayWasiInfo.ticketUuid,
             _misayWasiUuid,
             _amountOfTickets
+        );
+
+        emit PurchaseTicket(
+            misayWasiInfo.owner,
+            _misayWasiUuid,
+            misayWasiInfo.ticketUuid,
+            pachaCuyToken.balanceOf(misayWasiInfo.owner),
+            pachaCuyToken.balanceOf(_msgSender())
         );
     }
 
@@ -416,7 +425,9 @@ contract PurchaseAssetController is
             pacha.pachaPassUuid,
             pacha.pachaPassPrice,
             _net,
-            _fee
+            _fee,
+            pachaCuyToken.balanceOf(pacha.owner),
+            pachaCuyToken.balanceOf(_msgSender())
         );
     }
 
@@ -524,12 +535,14 @@ contract PurchaseAssetController is
         uint256 _uuid = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
             .mintGuineaPigNft(_account, _gender, _race, _guineaPigId, price);
 
-        emit GuineaPigPurchaseFinish(
+        uint256 _balance = pachaCuyToken.balanceOf(_account);
+        emit GuineaPigPurchase(
             _account,
             price,
             _guineaPigId,
             _uuid,
-            _raceAndGender
+            _raceAndGender,
+            _balance
         );
     }
 

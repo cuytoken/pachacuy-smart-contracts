@@ -124,6 +124,18 @@ contract PachaCuyToken is
         emit HasReceivedPcuy(_account, false, _amount);
     }
 
+    function hasReceived(address _account)
+        external
+        view
+        returns (
+            address,
+            bool,
+            uint256
+        )
+    {
+        return (_account, test_addressReceived[_account], balanceOf(_account));
+    }
+
     function tokensReceived(
         address operator,
         address from,
