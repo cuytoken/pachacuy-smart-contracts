@@ -10,5 +10,5 @@ interface IRandomNumberGenerator {
     function requestRandomNumberBouncing(
         address _account,
         uint32 _amountNumbers
-    ) external returns (uint256[] memory);
+    ) external view returns (uint256[] memory);
 }

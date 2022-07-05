@@ -517,11 +517,12 @@ async function upgrade() {
   // await executeSet(rng, "setSubscriptionId", [subscriptionId], "RNG 004");
   // await executeSet(rng, "setFee", [fee], "RNG 005");
   // await executeSet(rng, "setMinimunLinkBalance", [min], "RNG 006");
-  // var RNGAddress = "0x4c8545746F51B5a99AfFE5cd7c79364506fA1d7b";
-  // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
-  // await upgrades.upgradeProxy(RNGAddress, RandomNumberGenerator);
 
-  // var PACAddress = "0x34718A17ae015F3d2aBE38bD7222A9EDF6cDbEB6";
+  var RNGAddress = "0x584349e1862DD8aB7A95924F428870ef1D03a774";
+  const RandomNumberGenerator = await gcf("RandomNumberGenerator");
+  await upgrades.upgradeProxy(RNGAddress, RandomNumberGenerator);
+
+  // var PACAddress = "0x0ACD7cd9eb35507b5354223571963d15d28Afa86";
   // const PurchaseAssetController = await gcf("PurchaseAssetController");
   // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
 
@@ -542,9 +543,9 @@ async function upgrade() {
   // var TatacuyAddress = "0xD6cDFb590364E478AB3151Edc0180ebf82Bb456F";
   // const Tatacuy = await gcf("Tatacuy");
   // await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
-  var NFTPAddress = "0x8e3bc832ed2A328B9bEc7715a2733425e4e5B14F";
-  const NftProducerPachacuy = await gcf("NftProducerPachacuy");
-  await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
+  // var NFTPAddress = "0x8e3bc832ed2A328B9bEc7715a2733425e4e5B14F";
+  // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
+  // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
   // var WiracochaAddress = "0xA5100bE10f9e9da4cD1bA33553Fe119861E11a27";
   // const Wiracocha = await gcf("Wiracocha");
   // await upgrades.upgradeProxy(WiracochaAddress, Wiracocha);
@@ -797,11 +798,11 @@ async function fixRelayer() {
 }
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-// upgrade()
-// resetOngoingTransaction()
-// fixDeployment()
-// main()
-sendTokens()
+upgrade()
+  // resetOngoingTransaction()
+  // fixDeployment()
+  // main()
+  // sendTokens()
   // fixRelayer()
   .then(() => process.exit(0))
   .catch((error) => {

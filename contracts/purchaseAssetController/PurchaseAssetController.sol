@@ -72,6 +72,22 @@ contract PurchaseAssetController is
     // pool rewards for busd
     address public poolRewardsAddress;
 
+    // Verifies that customer has one transaction at a time
+    /**
+     * @dev Transaction objects that indicates type of the current transaction
+     * @param transactionType - Type of the current transaction: PURCHASE_GUINEA_PIG
+     * @param account - The wallet address caller of the customer
+     * @param ongoing - Indicates whether the customer has an ongoing transaction
+     * @param ix - Indicates the price range (1, 2 or 3) of the current transaction
+     */
+    struct Transaction {
+        string transactionType;
+        address account;
+        bool ongoing;
+        uint256 ix;
+    }
+    mapping(address => Transaction) ongoingTransaction;
+
     // Marks the end of a guinea pig purchase
     event GuineaPigPurchaseFinish(
         address _account,
@@ -118,6 +134,13 @@ contract PurchaseAssetController is
         uint256 tax
     );
 
+    event Testing(
+        uint256 _gender,
+        uint256 _race,
+        uint256 _guineaPigId,
+        string _raceAndGender
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -160,7 +183,13 @@ contract PurchaseAssetController is
         // Valid index (1, 2 or 3)
         require(
             _ix == 1 || _ix == 2 || _ix == 3,
-            "PAC: Index must be 1, 2 or 3"
+            "PurchaseAC: Index must be 1, 2 or 3"
+        );
+
+        // Verify that customer does not have an ongoing transaction
+        require(
+            !ongoingTransaction[_msgSender()].ongoing,
+            "PurchaseAC: Multiple ongoing transactions"
         );
 
         uint256 price = pachacuyInfo.getPriceInPcuy(
@@ -170,9 +199,16 @@ contract PurchaseAssetController is
         // Make transfer with appropiate token address
         _purchaseAtPriceInPcuyAndToken(price, _tokenAddress);
 
+        // Mark as ongoing transaction for a customer
+        ongoingTransaction[_msgSender()] = Transaction({
+            transactionType: "PURCHASE_GUINEA_PIG",
+            account: _msgSender(),
+            ongoing: true,
+            ix: _ix
+        });
+
         // Ask for two random numbers
-        uint256[] memory _randomNumbers = randomNumberGenerator
-            .requestRandomNumberBouncing(_msgSender(), 2);
+        randomNumberGenerator.requestRandomNumber(_msgSender(), 2);
 
         // Emit event
         emit GuineaPigPurchaseInit(
@@ -181,13 +217,24 @@ contract PurchaseAssetController is
             _ix,
             poolRewardsAddress
         );
+    }
 
-        _finishPurchaseGuineaPig(
-            _ix,
-            _msgSender(),
-            _randomNumbers[0],
-            _randomNumbers[1]
-        );
+    function fulfillRandomness(
+        address _account,
+        uint256[] memory _randomNumbers
+    ) external onlyRole(RNG_GENERATOR) {
+        Transaction memory _tx = ongoingTransaction[_account];
+
+        if (_compareStrings(_tx.transactionType, "PURCHASE_GUINEA_PIG")) {
+            _finishPurchaseGuineaPig(
+                _tx.ix,
+                _account,
+                _randomNumbers[0],
+                _randomNumbers[1]
+            );
+            delete ongoingTransaction[_account];
+            return;
+        }
     }
 
     function purchaseLandWithBusd(uint256 _location) external {
