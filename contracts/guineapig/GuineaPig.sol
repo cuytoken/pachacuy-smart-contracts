@@ -159,6 +159,27 @@ contract GuineaPig is
         listOfUuidGuineaPigs.push(_guineaPigUuid);
     }
 
+    function setDaysUntilHungry(uint256[4] memory _daysUntilHungry_)
+        external
+        onlyRole(GAME_MANAGER)
+    {
+        _daysUntilHungry = _daysUntilHungry_;
+    }
+
+    function setDaysUntilDeath(uint256[4] memory _daysUntilDeath_)
+        external
+        onlyRole(GAME_MANAGER)
+    {
+        _daysUntilDeath = _daysUntilDeath_;
+    }
+
+    function setSpeeds(uint256[4] memory _speeds_)
+        external
+        onlyRole(GAME_MANAGER)
+    {
+        _speeds = _speeds_;
+    }
+
     function feedGuineaPig(uint256 _guineaPigUuid, uint256 _amountFood)
         external
         onlyRole(GAME_MANAGER)

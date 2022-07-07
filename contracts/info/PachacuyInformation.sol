@@ -116,6 +116,20 @@ contract PachacuyInfo is
     // Addresses mapping
     mapping(bytes32 => address) public nftTypeToAddress;
 
+    // whitelist
+    mapping(address => bool) public whitelist;
+
+    // blacklist
+    mapping(address => bool) public blacklist;
+
+    // whitelist with ID
+    struct WhiteListS {
+        uint256 id;
+        address account;
+        bool included;
+    }
+    mapping(uint256 => WhiteListS) public whitelistInfo;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -188,6 +202,46 @@ contract PachacuyInfo is
         for (uint256 _ix = 0; _ix < _prices.length; _ix++) {
             businesses[_types[_ix]] = _prices[_ix];
         }
+    }
+
+    ///////////////////////////////////////////////////////////////
+    ////                     ACCESS LIST                       ////
+    ///////////////////////////////////////////////////////////////
+
+    function updateWhitelist(
+        address _account,
+        bool _included_,
+        uint256 _id
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        whitelistInfo[_id] = WhiteListS({
+            id: _id,
+            account: _account,
+            included: _included_
+        });
+        whitelist[_account] = _included_;
+    }
+
+    function isWhiteListed(uint256 _id) external view returns (address, bool) {
+        return (whitelistInfo[_id].account, whitelistInfo[_id].included);
+    }
+
+    function isWhitelistedWithWallet(address _account)
+        external
+        view
+        returns (bool)
+    {
+        return whitelist[_account];
+    }
+
+    function updateBlackList(address _account, bool _included)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        blacklist[_account] = _included;
+    }
+
+    function isBlackListed(address _account) external view returns (bool) {
+        return blacklist[_account];
     }
 
     ///////////////////////////////////////////////////////////////

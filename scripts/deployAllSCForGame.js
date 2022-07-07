@@ -492,9 +492,10 @@ async function upgrade() {
   // await pachacuyInfo.updateInformationByRank(8, 9000, 260, 44);
   // await pachacuyInfo.updateInformationByRank(9, 10000, 280, 47);
 
-  // var PachaCuyTokenAddress = "0xbf5F94350d52390290aA032b96F6FC971AeE70E9";
+  // var PachaCuyTokenAddress = "0x829776b2eb5D6588971cabf6186bA39243b83fc0";
   // const PachaCuyToken = await gcf("PachaCuyToken");
   // await upgrades.upgradeProxy(PachaCuyTokenAddress, PachaCuyToken);
+
   // var RandomNumberGeneratorAddress =
   // "0x4EE342f41c55b9b097FF0e5d55A64cdf50E92dCa";
   // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
@@ -518,17 +519,30 @@ async function upgrade() {
   // await executeSet(rng, "setFee", [fee], "RNG 005");
   // await executeSet(rng, "setMinimunLinkBalance", [min], "RNG 006");
 
-  var RNGAddress = "0x584349e1862DD8aB7A95924F428870ef1D03a774";
-  const RandomNumberGenerator = await gcf("RandomNumberGenerator");
-  await upgrades.upgradeProxy(RNGAddress, RandomNumberGenerator);
+  // var RNGAddress = "0x584349e1862DD8aB7A95924F428870ef1D03a774";
+  // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
+  // await upgrades.upgradeProxy(RNGAddress, RandomNumberGenerator);
 
   // var PACAddress = "0x0ACD7cd9eb35507b5354223571963d15d28Afa86";
   // const PurchaseAssetController = await gcf("PurchaseAssetController");
   // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
 
-  // var GuineaPigAddress = "0xbB528C3ba24647D710b667B439d5e84D7e35B7bc";
+  // var admin =
+  // "0x0000000000000000000000000000000000000000000000000000000000000000";
+  // var rel = "0xa2a24eeb8f3fe4c7253b2023111f7d5ac3c11cae";
+  var PachacuyInfoAddress = "0x1655b030Bad6AB10D44e57bcb3E7e48e29633317";
+  const PachacuyInfo = await gcf("PachacuyInfo");
+  await upgrades.upgradeProxy(PachacuyInfoAddress, PachacuyInfo);
+  // var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
+  // await pachacuyInfo.grantRole(admin, rel);
+
+  // var GuineaPigAddress = "0x8C22443f080c423E0E638cc2FA22c2b438904291";
   // const GuineaPig = await gcf("GuineaPig");
   // await upgrades.upgradeProxy(GuineaPigAddress, GuineaPig);
+  // var guinePig = await GuineaPig.attach(GuineaPigAddress);
+  // await guinePig.setDaysUntilHungry([3, 4, 5, 6]);
+  // await guinePig.setDaysUntilDeath([1, 1, 1, 1]);
+
   // var PachaAddress = "0x34Df8bA6C7cE58708aDfd2e9137b573FD4Cd7d76";
   // const Pacha = await gcf("Pacha");
   // await upgrades.upgradeProxy(PachaAddress, Pacha);
