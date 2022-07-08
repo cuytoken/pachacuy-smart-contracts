@@ -478,168 +478,65 @@ async function main() {
 
 async function upgrade() {
   // upgrading
-  // var PachacuyInfoAddress = "0xd895aDE1CC01A273aCD5A0fDD9223Fe694b0339E";
-  // var PachacuyInfo = await ethers.getContractFactory("PachacuyInfo");
-  // var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
-  // await pachacuyInfo.updateInformationByRank(0, 1000, 50, 30);
-  // await pachacuyInfo.updateInformationByRank(1, 2000, 120, 32);
-  // await pachacuyInfo.updateInformationByRank(2, 3000, 140, 33);
-  // await pachacuyInfo.updateInformationByRank(3, 4000, 160, 35);
-  // await pachacuyInfo.updateInformationByRank(4, 5000, 180, 36);
-  // await pachacuyInfo.updateInformationByRank(5, 6000, 200, 38);
-  // await pachacuyInfo.updateInformationByRank(6, 7000, 220, 40);
-  // await pachacuyInfo.updateInformationByRank(7, 8000, 240, 42);
-  // await pachacuyInfo.updateInformationByRank(8, 9000, 260, 44);
-  // await pachacuyInfo.updateInformationByRank(9, 10000, 280, 47);
+  try {
+    var PurchaseAssetControllerAddress =
+      "0x0ACD7cd9eb35507b5354223571963d15d28Afa86";
+    const PurchaseAssetController = await gcf("PurchaseAssetController");
+    await upgrades.upgradeProxy(
+      PurchaseAssetControllerAddress,
+      PurchaseAssetController
+    );
+  } catch (error) {
+    console.log("Error with PAC", error);
+  }
 
-  // var PachaCuyTokenAddress = "0x829776b2eb5D6588971cabf6186bA39243b83fc0";
-  // const PachaCuyToken = await gcf("PachaCuyToken");
-  // await upgrades.upgradeProxy(PachaCuyTokenAddress, PachaCuyToken);
+  try {
+    var ChakraAddress = "0xc0CF45633fb9Ec2f4b072c82139075c742D3B487";
+    const Chakra = await gcf("Chakra");
+    await upgrades.upgradeProxy(ChakraAddress, Chakra);
+  } catch (error) {
+    console.log("Error with Chakra", error);
+  }
 
-  // var RandomNumberGeneratorAddress =
-  // "0x4EE342f41c55b9b097FF0e5d55A64cdf50E92dCa";
-  // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
-  // await upgrades.upgradeProxy(
-  //   RandomNumberGeneratorAddress,
-  //   RandomNumberGenerator
-  // );
-  // POLYGON SETUP
-  // var rng = await RandomNumberGenerator.attach(RandomNumberGeneratorAddress);
-  // var keyHash =
-  // "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f";
-  // var vrfCoordinatorAdd = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed";
-  // var link = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
-  // var subscriptionId = 581;
-  // var fee = 5 * 10 ** 14;
-  // var min = bn("100000000000000000");
-  // await executeSet(rng, "setKeyHash", [keyHash], "RNG 001");
-  // await executeSet(rng, "setvrfCoordinator", [vrfCoordinatorAdd], "RNG 002");
-  // await executeSet(rng, "setlinkToken", [link], "RNG 003");
-  // await executeSet(rng, "setSubscriptionId", [subscriptionId], "RNG 004");
-  // await executeSet(rng, "setFee", [fee], "RNG 005");
-  // await executeSet(rng, "setMinimunLinkBalance", [min], "RNG 006");
+  try {
+    var MisayWasiAddress = "0x3724172Cdb9E3C5D721Ba2ca12EAf43F4e47323C";
+    const MisayWasi = await gcf("MisayWasi");
+    await upgrades.upgradeProxy(MisayWasiAddress, MisayWasi);
+  } catch (error) {
+    console.log("Error with MisayW", error);
+  }
 
-  // var RNGAddress = "0x584349e1862DD8aB7A95924F428870ef1D03a774";
-  // const RandomNumberGenerator = await gcf("RandomNumberGenerator");
-  // await upgrades.upgradeProxy(RNGAddress, RandomNumberGenerator);
+  try {
+    var QhatuWasiAddress = "0xFb40402d38324be195ABe44C64C30727000DdD0A";
+    const QhatuWasi = await gcf("QhatuWasi");
+    await upgrades.upgradeProxy(QhatuWasiAddress, QhatuWasi);
+  } catch (error) {
+    console.log("Error with QW", error);
+  }
 
-  // var PACAddress = "0x0ACD7cd9eb35507b5354223571963d15d28Afa86";
-  // const PurchaseAssetController = await gcf("PurchaseAssetController");
-  // await upgrades.upgradeProxy(PACAddress, PurchaseAssetController);
+  try {
+    var WiracochaAddress = "0x95F99e19f620b9597AeA5C0D461D4e905fC67b72";
+    const Wiracocha = await gcf("Wiracocha");
+    await upgrades.upgradeProxy(WiracochaAddress, Wiracocha);
+  } catch (error) {
+    console.log("Error with Wiracocha", error);
+  }
 
-  // var admin =
-  // "0x0000000000000000000000000000000000000000000000000000000000000000";
-  // var rel = "0xa2a24eeb8f3fe4c7253b2023111f7d5ac3c11cae";
-  var PachacuyInfoAddress = "0x1655b030Bad6AB10D44e57bcb3E7e48e29633317";
-  const PachacuyInfo = await gcf("PachacuyInfo");
-  await upgrades.upgradeProxy(PachacuyInfoAddress, PachacuyInfo);
-  // var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
-  // await pachacuyInfo.grantRole(admin, rel);
+  try {
+    var TatacuyAddress = "0x114bA5B4f6Cc1661628A7c7784f406a2DCBC6f82";
+    const Tatacuy = await gcf("Tatacuy");
+    await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
+  } catch (error) {
+    console.log("Error with Tatacuy", error);
+  }
 
-  // var GuineaPigAddress = "0x8C22443f080c423E0E638cc2FA22c2b438904291";
-  // const GuineaPig = await gcf("GuineaPig");
-  // await upgrades.upgradeProxy(GuineaPigAddress, GuineaPig);
-  // var guinePig = await GuineaPig.attach(GuineaPigAddress);
-  // await guinePig.setDaysUntilHungry([3, 4, 5, 6]);
-  // await guinePig.setDaysUntilDeath([1, 1, 1, 1]);
-
-  // var PachaAddress = "0x34Df8bA6C7cE58708aDfd2e9137b573FD4Cd7d76";
-  // const Pacha = await gcf("Pacha");
-  // await upgrades.upgradeProxy(PachaAddress, Pacha);
-
-  // var PachaCuyTokenAddress = "0x26813E464DA80707B7F24bf19e08Bf876F0f3388";
-  // const PachaCuyToken = await gcf("PachaCuyToken");
-  // await upgrades.upgradeProxy(PachaCuyTokenAddress, PachaCuyToken);
-
-  // var HatunWasiAddress = "0x0697473655bb97F27d5325d76b528155eC9FB9c7";
-  // const HatunWasi = await gcf("HatunWasi");
-  // await upgrades.upgradeProxy(HatunWasiAddress, HatunWasi);
-  // var TatacuyAddress = "0xD6cDFb590364E478AB3151Edc0180ebf82Bb456F";
-  // const Tatacuy = await gcf("Tatacuy");
-  // await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
-  // var NFTPAddress = "0x8e3bc832ed2A328B9bEc7715a2733425e4e5B14F";
-  // const NftProducerPachacuy = await gcf("NftProducerPachacuy");
-  // await upgrades.upgradeProxy(NFTPAddress, NftProducerPachacuy);
-  // var WiracochaAddress = "0xA5100bE10f9e9da4cD1bA33553Fe119861E11a27";
-  // const Wiracocha = await gcf("Wiracocha");
-  // await upgrades.upgradeProxy(WiracochaAddress, Wiracocha);
-  // var ChakraAddress = "0xab87082eCac2A7D4fcAB8Fa8f097C9C4F75E05D1";
-  // const Chakra = await gcf("Chakra");
-  // await upgrades.upgradeProxy(ChakraAddress, Chakra);
-  // var PachaCuyToken, pachaCuyToken, pachacuyTokenImp;
-  // var purchaseAssetController = "0xe8A25f2A8f992bfe250f43ab29f2EBec6E27C46b";
-  // if (process.env.HARDHAT_NETWORK) {
-  //   PachaCuyToken = await gcf("PachaCuyToken");
-  //   pachaCuyToken = await dp(
-  //     PachaCuyToken,
-  //     [
-  //       owner.address,
-  //       owner.address,
-  //       owner.address,
-  //       owner.address,
-  //       owner.address,
-  //       [purchaseAssetController],
-  //     ],
-  //     {
-  //       kind: "uups",
-  //     }
-  //   );
-  //   await pachaCuyToken.deployed();
-  //   console.log("PachaCuyToken Proxy:", pachaCuyToken.address);
-  //   pachacuyTokenImp = await getImplementation(pachaCuyToken);
-  //   console.log("PachaCuyToken Imp:", pachacuyTokenImp);
-  // }
-  // // PAC
-  // var PurchaseAssetControllerAddress =
-  //   "0xD07374655eC9BCD08229D6Ef4Cb1b815fBD25291";
-  // var PurchaseAssetController = await gcf("PurchaseAssetController");
-  // await upgrades.upgradeProxy(
-  //   PurchaseAssetControllerAddress,
-  //   PurchaseAssetController
-  // );
-  // var RandomNumberGeneratorAddress =
-  //   "0x14B0524D9CdBd2098198A6a9e094bbd68974a50B";
-  // var RandomNumberGenerator = await gcf("RandomNumberGenerator");
-  // await upgrades.upgradeProxy(
-  //   RandomNumberGeneratorAddress,
-  //   RandomNumberGenerator
-  // );
-  // var randomNumberGenerator = await RandomNumberGenerator.attach(
-  //   RandomNumberGeneratorAddress
-  // );
-  // await randomNumberGenerator.setRequestConfirmationsAMount(3);
-  // var purchaseAssetController = await PurchaseAssetController.attach(
-  //   PurchaseAssetControllerAddress
-  // );
-  // var pac = purchaseAssetController;
-  // var pCuyAdd = pachaCuyToken.address;
-  // await executeSet(pac, "setPcuyTokenAddress", [pCuyAdd], "PAC 002");
-  // // Pachacuy Info
-  // var PachacuyInfoAddress = "0x72d620EA947cFE5fceDf0FF94Dc9A0Fa498C7cc7";
-  // var PachacuyInfo = await gcf("PachacuyInfo");
-  // var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
-  // var pI = pachacuyInfo;
-  // await executeSet(pI, "setPachaCuyTokenAddress", [pCuyAdd], "pI 012");
-  // // Verify
-  // await verify(pachacuyTokenImp, "Pachacuy token");
-
-  // var TatacuyAddress = "0xA6B3b26fcE99a5Dd8e180c43B8EB98eF6DA493f6";
-  // var Tatacuy = await gcf("Tatacuy");
-  // var ttc = await Tatacuy.attach(TatacuyAddress);
-  // var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
-  // await executeSet(ttc, "grantRole", [game_manager, rel], "tt 001");
-
-  // var WiracochaAddress = "0xA645bFdb41c151d3137b825baA31579240F5Bd08";
-  // var Wiracocha = await gcf("Wiracocha");
-  // var wr = await Wiracocha.attach(WiracochaAddress);
-  // var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
-  // await executeSet(wr, "grantRole", [game_manager, rel], "tt 002");
-
-  // var MisayWasiAddress = "0x4f1e1E9753b6bdE59E4863417c392838fdB3FC43";
-  // var MisayWasi = await gcf("MisayWasi");
-  // var msws = await MisayWasi.attach(MisayWasiAddress);
-  // var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
-  // await executeSet(msws, "grantRole", [game_manager, rel], "tt 003");
+  try {
+    var HatunWasiAddress = "0xDdb1E26f2fFaa644E1E3043e77924C317994a535";
+    const HatunWasi = await gcf("HatunWasi");
+    await upgrades.upgradeProxy(HatunWasiAddress, HatunWasi);
+  } catch (error) {
+    console.log("Error with HatunWasi", error);
+  }
 }
 
 async function resetOngoingTransaction() {

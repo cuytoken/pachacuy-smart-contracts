@@ -65,6 +65,13 @@ contract HatunWasi is
 
     mapping(address => bool) public ownerHasHatunWasi;
 
+    event MintHatunWasi(
+        address owner,
+        uint256 hatunWasiUuid,
+        uint256 pachaUuid,
+        uint256 creationDate
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -108,6 +115,13 @@ contract HatunWasi is
 
         _hatunWasiIx[_hatunWasiUuid] = current;
         listUuidOfHatunWasi.push(_hatunWasiUuid);
+
+        emit MintHatunWasi(
+            _account,
+            _hatunWasiUuid,
+            _pachaUuid,
+            block.timestamp
+        );
     }
 
     function burnHatunWasi(uint256 _hatunWasiUuid)

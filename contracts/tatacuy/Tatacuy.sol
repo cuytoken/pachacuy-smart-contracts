@@ -144,6 +144,13 @@ contract Tatacuy is
         uint256 changeSamiPoints
     );
 
+    event MintTatacuy(
+        address owner,
+        uint256 tatacuyUuid,
+        uint256 pachaUuid,
+        uint256 creationDate
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -191,6 +198,8 @@ contract Tatacuy is
             hasTatacuy: true,
             isCampaignActive: false
         });
+
+        emit MintTatacuy(_account, _tatacuyUuid, _pachaUuid, block.timestamp);
     }
 
     /**

@@ -121,6 +121,22 @@ contract MisayWasi is
         uint256 pachaUuid
     );
 
+    event PurchaseTicketFromMisayWasi(
+        address account,
+        uint256 misayWasiUuid,
+        uint256 pachaUuid,
+        uint256 ticketPrice,
+        uint256 amountOfTickets
+    );
+
+    event PurchaseMisayWasi(
+        address account,
+        uint256 misayWasiUuid,
+        uint256 pachaUuid,
+        uint256 creationDate,
+        uint256 misayWasiPrice
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -165,6 +181,14 @@ contract MisayWasi is
             listOfParticipants: new address[](0)
         });
         uuidToMisayWasiInfo[_misayWasiUuid] = misayWasiInfo;
+
+        emit PurchaseMisayWasi(
+            _account,
+            _misayWasiUuid,
+            _pachaUuid,
+            block.timestamp,
+            _misayWasiPrice
+        );
     }
 
     /**
@@ -245,6 +269,14 @@ contract MisayWasi is
         if (newCustomer) {
             misayWasiInfo.listOfParticipants.push(_account);
         }
+
+        emit PurchaseTicketFromMisayWasi(
+            _account,
+            _misayWasiUuid,
+            misayWasiInfo.pachaUuid,
+            misayWasiInfo.ticketPrice,
+            _amountOfTickets
+        );
     }
 
     /**

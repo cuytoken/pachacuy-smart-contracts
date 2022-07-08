@@ -74,6 +74,14 @@ contract Chakra is
     // chakra uuid => array index
     mapping(uint256 => uint256) internal _chakraIx;
 
+    event PurchaseChakra(
+        address owner,
+        uint256 chakraUuid,
+        uint256 pachaUuid,
+        uint256 chakraPrice,
+        uint256 creationDate
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -124,6 +132,14 @@ contract Chakra is
 
         _chakraIx[_chakraUuid] = current;
         listOfChakrasWithFood.push(chakra);
+
+        emit PurchaseChakra(
+            _account,
+            _chakraUuid,
+            _pachaUuid,
+            _chakraPrice,
+            block.timestamp
+        );
     }
 
     function updateFoodPriceAtChakra(uint256 _chakraUuid, uint256 _pricePerFood)

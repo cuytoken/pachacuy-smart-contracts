@@ -71,6 +71,14 @@ contract QhatuWasi is
         uint256 _prizePerView
     );
 
+    event PurchaseQhatuWasi(
+        address owner,
+        uint256 qhatuWasiUuid,
+        uint256 pachaUuid,
+        uint256 qhatuWasiPrice,
+        uint256 creationDate
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -92,6 +100,7 @@ contract QhatuWasi is
      */
     function registerQhatuWasi(
         uint256 _qhatuWasiUuid,
+        uint256 _pachaUuid,
         address _owner,
         uint256 _qhatuWasiPrice
     ) external onlyRole(GAME_MANAGER) {
@@ -112,6 +121,14 @@ contract QhatuWasi is
 
         _qhatuWasiIx[_qhatuWasiUuid] = current;
         listUuidQhatuWasis.push(_qhatuWasiUuid);
+
+        emit PurchaseQhatuWasi(
+            _owner,
+            _qhatuWasiUuid,
+            _pachaUuid,
+            _qhatuWasiPrice,
+            block.timestamp
+        );
     }
 
     /**
