@@ -155,13 +155,13 @@ describe("Tesing Pachacuy Game", function () {
        * 2. rng 002 - Add Tatacuy sc within the whitelist of Random Number Generator
        * 3. rng 003 - Add Misay Wasi sc within the whitelist of Random Number Generator
        */
-      // RandomNumberGenerator = await gcf("RandomNumberGenerator");
       RandomNumberGenerator = await gcf("RandomNumberV2Mock");
+      // RandomNumberGenerator = await gcf("RandomNumberGenerator");
       // randomNumberGenerator = await dp(RandomNumberGenerator, [], {
-      //   kind: "uups",
+      // kind: "uups",
       // });
+      // await randomNumberGenerator.deployed();
       randomNumberGenerator = await RandomNumberGenerator.deploy();
-      await randomNumberGenerator.deployed();
 
       /**
        * Purchase Asset Controller
@@ -490,7 +490,8 @@ describe("Tesing Pachacuy Game", function () {
         chakra,
         pachacuyInfo,
         guineaPig,
-        misayWasi
+        misayWasi,
+        randomNumberGenerator
       );
     });
   });

@@ -26,6 +26,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../info/IPachacuyInfo.sol";
+import "../token/IPachaCuy.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract Chakra is
@@ -73,6 +74,15 @@ contract Chakra is
     ChakraInfo[] listOfChakrasWithFood;
     // chakra uuid => array index
     mapping(uint256 => uint256) internal _chakraIx;
+
+    event PurchaseChakra(
+        address owner,
+        uint256 chakraUuid,
+        uint256 pachaUuid,
+        uint256 chakraPrice,
+        uint256 creationDate,
+        uint256 balanceConsumer
+    );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -124,6 +134,17 @@ contract Chakra is
 
         _chakraIx[_chakraUuid] = current;
         listOfChakrasWithFood.push(chakra);
+
+        uint256 balanceConsumer = IPachaCuy(pachacuyInfo.pachaCuyTokenAddress())
+            .balanceOf(_account);
+        emit PurchaseChakra(
+            _account,
+            _chakraUuid,
+            _pachaUuid,
+            _chakraPrice,
+            block.timestamp,
+            balanceConsumer
+        );
     }
 
     function updateFoodPriceAtChakra(uint256 _chakraUuid, uint256 _pricePerFood)

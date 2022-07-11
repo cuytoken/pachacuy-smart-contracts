@@ -276,6 +276,7 @@ contract RandomNumberGenerator is
     }
 
     // Callback function for the VRF request
+    // Callback function for the VRF request
     function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords)
         internal
         override
@@ -283,25 +284,6 @@ contract RandomNumberGenerator is
         // Wallet address and SC for which the request was made
         address _account = chainlinkRequestForAccount[requestId].walletAddress;
         address _smartc = chainlinkRequestForAccount[requestId].smartCAddress;
-        bool _bouncing = chainlinkRequestForAccount[requestId].bouncing;
-        if (_bouncing) {
-            if (randomWords.length == 1) {
-                randomNumberOne = randomWords[0];
-            } else if (randomWords.length == 2) {
-                randomNumberOne = randomWords[0];
-                randomNumberTwo = randomWords[1];
-            }
-
-            ongoinBouncingRN = false;
-
-            emit RandomNumberDelivered(
-                requestId,
-                _smartc,
-                _account,
-                randomWords
-            );
-            return;
-        }
 
         // mark the request as completed
         isRequestOngoing[_account] = false;
@@ -311,7 +293,13 @@ contract RandomNumberGenerator is
 
         emit RandomNumberDelivered(requestId, _smartc, _account, randomWords);
 
-        _executeCallBack(_smartc, _account, requestId, randomWords);
+        try
+            CallbackInterface(_smartc).fulfillRandomness(_account, randomWords)
+        {} catch Error(string memory reason) {
+            emit ErrorFromVrfCallback(reason, requestId, _smartc, _account);
+        } catch (bytes memory reason) {
+            emit ErrorNotHandled(reason, requestId, _smartc, _account);
+        }
     }
 
     function _executeCallBack(
@@ -335,20 +323,12 @@ contract RandomNumberGenerator is
     function requestRandomNumberBouncing(
         address _account,
         uint32 _amountNumbers
-    ) external returns (uint256[] memory) {
+    ) external view returns (uint256[] memory) {
         // verify that this function is called by an accepted address
         require(
             whiteListSmartContract[_msgSender()],
             "RNG: Request from unauthorized address"
         );
-
-        // check if the subscription has enough link to make the request
-        (uint96 balance, , , ) = vrfCoordinator.getSubscription(subscriptionId);
-        require(balance >= fee, "RNG: Not enough LINK to pay the request fee!");
-
-        if (balance < minimunLinkBalance) {
-            emit LinkBalanceIsLow(minimunLinkBalance, balance);
-        }
 
         // respondes inmediately the random numbers
         uint256[] memory randomWords = new uint256[](_amountNumbers);
@@ -362,7 +342,7 @@ contract RandomNumberGenerator is
         return randomWords;
     }
 
-    function requestRandomNumberOZ(address _account, uint32 _amountNumbers)
+    function requestNumberOz(address _account, uint32 _amountNumbers)
         external
         onlyRole(GAMER_ROLE)
     {

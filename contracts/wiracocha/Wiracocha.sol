@@ -97,6 +97,13 @@ contract Wiracocha is
         uint256 idFromFront
     );
 
+    event MintWiracocha(
+        address owner,
+        uint256 wiracochaUuid,
+        uint256 pachaUuid,
+        uint256 creationDate
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -143,6 +150,13 @@ contract Wiracocha is
 
         _wiracochaIx[_wiracochaUuid] = current;
         listUuidWiracocha.push(_wiracochaUuid);
+
+        emit MintWiracocha(
+            _account,
+            _wiracochaUuid,
+            _pachaUuid,
+            block.timestamp
+        );
     }
 
     /**

@@ -30,6 +30,7 @@ import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 import "../purchaseAssetController/IPurchaseAssetController.sol";
 import "../vrf/IRandomNumberGenerator.sol";
 import "../binarysearch/IBinarySearch.sol";
+import "../token/IPachaCuy.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract MisayWasi is
@@ -121,6 +122,23 @@ contract MisayWasi is
         uint256 pachaUuid
     );
 
+    event PurchaseTicketFromMisayWasi(
+        address account,
+        uint256 misayWasiUuid,
+        uint256 pachaUuid,
+        uint256 ticketPrice,
+        uint256 amountOfTickets
+    );
+
+    event PurchaseMisayWasi(
+        address account,
+        uint256 misayWasiUuid,
+        uint256 pachaUuid,
+        uint256 creationDate,
+        uint256 misayWasiPrice,
+        uint256 balanceConsumer
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -165,6 +183,18 @@ contract MisayWasi is
             listOfParticipants: new address[](0)
         });
         uuidToMisayWasiInfo[_misayWasiUuid] = misayWasiInfo;
+
+        uint256 balanceConsumer = IPachaCuy(pachacuyInfo.pachaCuyTokenAddress())
+            .balanceOf(_account);
+
+        emit PurchaseMisayWasi(
+            _account,
+            _misayWasiUuid,
+            _pachaUuid,
+            block.timestamp,
+            _misayWasiPrice,
+            balanceConsumer
+        );
     }
 
     /**
@@ -245,6 +275,14 @@ contract MisayWasi is
         if (newCustomer) {
             misayWasiInfo.listOfParticipants.push(_account);
         }
+
+        emit PurchaseTicketFromMisayWasi(
+            _account,
+            _misayWasiUuid,
+            misayWasiInfo.pachaUuid,
+            misayWasiInfo.ticketPrice,
+            _amountOfTickets
+        );
     }
 
     /**

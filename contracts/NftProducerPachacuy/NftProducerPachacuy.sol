@@ -502,6 +502,7 @@ contract NftProducerPachacuy is
 
         IQhatuWasi(pachacuyInfo.qhatuWasiAddress()).registerQhatuWasi(
             uuid,
+            _pachaUuid,
             _account,
             _qhatuWasiPrice
         );

@@ -18,7 +18,7 @@ async function verify(_implementation, _contractName) {
       constructorArguments: [],
     });
   } catch (e) {
-    if (e.message.includes("code already verified"))
+    if (e.message.includes("Contract source code already verified"))
       console.log(`${_contractName} is verified already`);
     else console.error(`Error veryfing - ${_contractName}`, e);
   }

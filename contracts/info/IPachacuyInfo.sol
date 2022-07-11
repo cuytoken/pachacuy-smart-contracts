@@ -88,4 +88,13 @@ interface IPachacuyInfo {
     //////////////////////////////////////////////////////////////////
 
     function getAddressOfNftType(bytes32 _type) external view returns (address);
+
+    // tokens
+    function updateWhitelist(
+        address _account,
+        bool _included_,
+        uint256 _id
+    ) external;
+
+    function isWhiteListed(uint256 _id) external view returns (address, bool);
 }

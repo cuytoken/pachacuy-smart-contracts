@@ -125,7 +125,7 @@ var businesses = [
 
 function _getRadomNumberOne(_random, _account) {}
 
-function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws) {
+function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws, rNumb) {
   return {
     purchaseGuineaPig: async function (signer, args) {
       var [gpUuid, ix] = args;
@@ -138,7 +138,8 @@ function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws) {
       var prevBalCustodianW = await tkn.balanceOf(cw);
 
       // purchase
-      var tx = await pac.connect(signer).purchaseGuineaPigWithPcuy(ix);
+      await pac.connect(signer).purchaseGuineaPigWithPcuy(ix);
+      var tx = await rNumb.fulfillRandomWords(324324, [1232, 123244333]);
 
       // check correct uuid
       var res = (await getDataFromEvent(tx, "PP")).toString();
@@ -199,7 +200,14 @@ function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws) {
       );
 
       // event
-      args = [signer.address, res, pachaPrice.toString(), location, cw];
+      args = [
+        signer.address,
+        res,
+        pachaPrice.toString(),
+        location,
+        cw,
+        afterBalAcc,
+      ];
       expect(tx)
         .to.emit(pac, "PurchaseLand")
         .withArgs(...args);

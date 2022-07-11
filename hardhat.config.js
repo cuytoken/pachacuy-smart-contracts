@@ -36,9 +36,12 @@ module.exports = {
     ],
   },
   networks: {
-    hardhat: {},
+    hardhat: {
+      gas: "auto",
+      gasPrice: "auto",
+    },
     localhost: {
-      url: "http://127.0.0.1:8545/",
+      url: "HTTP://127.0.0.1:7545",
       timeout: 800000,
       gas: "auto",
       gasPrice: "auto",

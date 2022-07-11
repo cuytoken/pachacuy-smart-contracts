@@ -27,6 +27,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../purchaseAssetController/IPurchaseAssetController.sol";
 import "../info/IPachacuyInfo.sol";
+import "../token/IPachaCuy.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract QhatuWasi is
@@ -46,6 +47,7 @@ contract QhatuWasi is
 
     struct QhatuWasiInfo {
         uint256 uuid;
+        uint256 pachaUuid;
         address owner;
         uint256 creationDate;
         uint256 totalPcuyDeposited;
@@ -71,6 +73,15 @@ contract QhatuWasi is
         uint256 _prizePerView
     );
 
+    event PurchaseQhatuWasi(
+        address owner,
+        uint256 qhatuWasiUuid,
+        uint256 pachaUuid,
+        uint256 qhatuWasiPrice,
+        uint256 creationDate,
+        uint256 balanceConsumer
+    );
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -92,11 +103,13 @@ contract QhatuWasi is
      */
     function registerQhatuWasi(
         uint256 _qhatuWasiUuid,
+        uint256 _pachaUuid,
         address _owner,
         uint256 _qhatuWasiPrice
     ) external onlyRole(GAME_MANAGER) {
         QhatuWasiInfo memory _qhatuWasiInfo = QhatuWasiInfo({
             uuid: _qhatuWasiUuid,
+            pachaUuid: _pachaUuid,
             owner: _owner,
             creationDate: block.timestamp,
             totalPcuyDeposited: 0,
@@ -112,6 +125,18 @@ contract QhatuWasi is
 
         _qhatuWasiIx[_qhatuWasiUuid] = current;
         listUuidQhatuWasis.push(_qhatuWasiUuid);
+
+        uint256 balanceConsumer = IPachaCuy(pachacuyInfo.pachaCuyTokenAddress())
+            .balanceOf(_owner);
+
+        emit PurchaseQhatuWasi(
+            _owner,
+            _qhatuWasiUuid,
+            _pachaUuid,
+            _qhatuWasiPrice,
+            block.timestamp,
+            balanceConsumer
+        );
     }
 
     /**
