@@ -119,6 +119,7 @@ contract PurchaseAssetController is
     // Purhcase of PachaPass event
     event PurchasePachaPass(
         address account,
+        address pachaOwner,
         uint256 pachaUuid,
         uint256 pachaPassUuid,
         uint256 price,
@@ -477,6 +478,7 @@ contract PurchaseAssetController is
 
         emit PurchasePachaPass(
             _msgSender(),
+            pacha.owner,
             pacha.uuid,
             pacha.pachaPassUuid,
             pacha.pachaPassPrice,

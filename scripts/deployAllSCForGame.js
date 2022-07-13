@@ -479,13 +479,17 @@ async function main() {
 async function upgrade() {
   // upgrading
   try {
-    var PachaCuyTokenAddress = "0x829776b2eb5D6588971cabf6186bA39243b83fc0";
-    const PachaCuyToken = await gcf("PachaCuyToken");
-    await upgrades.upgradeProxy(PachaCuyTokenAddress, PachaCuyToken);
+    var PurchaseAssetControllerAddress =
+      "0x12ad5406567B3326b6014e4037026963511e763D";
+    const PurchaseAssetController = await gcf("PurchaseAssetController");
+    await upgrades.upgradeProxy(
+      PurchaseAssetControllerAddress,
+      PurchaseAssetController
+    );
   } catch (error) {
-    console.log("Error with Upgrade", error);
+    console.log("Error with PurchaseAssetController", error);
   }
-
+  return;
   try {
     var PachaCuyTokenAddress = "0x829776b2eb5D6588971cabf6186bA39243b83fc0";
     const PachaCuyToken = await gcf("PachaCuyToken");
