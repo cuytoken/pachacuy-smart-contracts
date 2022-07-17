@@ -67,4 +67,10 @@ interface INftProducerPachacuy {
         uint256 _pachaUuid,
         uint256 _pachaPassUuid
     ) external;
+
+    function burn(
+        address account,
+        uint256 uuid,
+        uint256 value
+    ) external;
 }

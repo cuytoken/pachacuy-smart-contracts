@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const { formatEther } = require("ethers/lib/utils");
 const { ethers } = require("hardhat");
 const {
   safeAwait,
@@ -196,6 +197,8 @@ describe("Tesing Pachacuy Game", function () {
        * nftP 002 - set setPachacuyInfoaddress
        * nftP 003 - grant game_role to PurchaseAssetController
        * nftP 004 - grant game_role to Misay Wasi
+       * nftP 005 - grant game_role to Pacha
+       * nftP 006 - Inlcude all smart contracts for burning
        */
       var name = "In-game NFT Pachacuy";
       var symbol = "NFTGAMEPCUY";
@@ -340,6 +343,17 @@ describe("Tesing Pachacuy Game", function () {
     });
 
     it("Sets up all Smart Contracts", async () => {
+      var allScAdd = [
+        qhatuWasi.address,
+        pacha.address,
+        guineaPig.address,
+        misayWasi.address,
+        hatunWasi.address,
+        chakra.address,
+        wiracocha.address,
+        tatacuy.address,
+      ];
+
       // RANDOM NUMBER GENERATOR
       var rng = randomNumberGenerator;
       var pacAdd = purchaseAssetController.address;
@@ -381,6 +395,7 @@ describe("Tesing Pachacuy Game", function () {
       await executeSet(nftP, "grantRole", [game_manager, pacAdd], "nftP 003");
       await executeSet(nftP, "grantRole", [game_manager, mswsAdd], "nftP 004");
       await executeSet(nftP, "grantRole", [game_manager, pachaAdd], "nftP 005");
+      await executeSet(nftP, "setBurnOp", [allScAdd], "nftP 006");
 
       // Tatacuy
       var tt = tatacuy;
@@ -673,6 +688,60 @@ describe("Tesing Pachacuy Game", function () {
         pac.connect(fephe).purchaseFoodFromChakra(12, 2, 17)
       ).to.revertedWith("PAC: Not enough food at chakra");
     });
+
+    it("Burn chakra", async () => {
+      // alice ->  uuid 12 chakra
+      // bob -> uuid 13 chakra
+      // carl -> uuid 14 chakra
+      // deysi -> uuid 15 chakra
+      // earl, -> uuid 16 chakra
+      var aUuid = 12;
+      var bUuid = 13;
+      var cUuid = 14;
+      var dUuid = 15;
+      var eUuid = 16;
+
+      // balances at NFT Producer
+      var bal = await nftProducerPachacuy.balanceOf(alice.address, aUuid);
+      expect(bal.toString()).to.equal(String(1));
+      var bal = await nftProducerPachacuy.balanceOf(bob.address, bUuid);
+      expect(bal.toString()).to.equal(String(1));
+      var bal = await nftProducerPachacuy.balanceOf(carl.address, cUuid);
+      expect(bal.toString()).to.equal(String(1));
+      var bal = await nftProducerPachacuy.balanceOf(deysi.address, dUuid);
+      expect(bal.toString()).to.equal(String(1));
+      var bal = await nftProducerPachacuy.balanceOf(earl.address, eUuid);
+      expect(bal.toString()).to.equal(String(1));
+
+      var beforeQ = await chakra.getListOfChakrasWithFood();
+      await chakra.connect(deysi).burnChakra(15);
+      await chakra.connect(earl).burnChakra(16);
+      var afterQ = await chakra.getListOfChakrasWithFood();
+      expect(beforeQ.length - 2).to.equal(afterQ.length);
+
+      var [owner] = await chakra.getChakraWithUuid(12);
+      expect(owner).to.equal(alice.address);
+      var [owner] = await chakra.getChakraWithUuid(13);
+      expect(owner).to.equal(bob.address);
+      var [owner] = await chakra.getChakraWithUuid(14);
+      expect(owner).to.equal(carl.address);
+      var [owner] = await chakra.getChakraWithUuid(15);
+      expect(owner).to.equal("0x0000000000000000000000000000000000000000");
+      var [owner] = await chakra.getChakraWithUuid(16);
+      expect(owner).to.equal("0x0000000000000000000000000000000000000000");
+
+      // balances at NFT Producer
+      var bal = await nftProducerPachacuy.balanceOf(alice.address, aUuid);
+      expect(bal.toString()).to.equal(String(1));
+      var bal = await nftProducerPachacuy.balanceOf(bob.address, bUuid);
+      expect(bal.toString()).to.equal(String(1));
+      var bal = await nftProducerPachacuy.balanceOf(carl.address, cUuid);
+      expect(bal.toString()).to.equal(String(1));
+      var bal = await nftProducerPachacuy.balanceOf(deysi.address, dUuid);
+      expect(bal.toString()).to.equal(String(0));
+      var bal = await nftProducerPachacuy.balanceOf(earl.address, eUuid);
+      expect(bal.toString()).to.equal(String(0));
+    });
   });
 
   describe("Misay Wasi", () => {
@@ -835,6 +904,11 @@ describe("Tesing Pachacuy Game", function () {
       expect(prevBalCustodianW.sub(afterBalCustodianW).toString()).to.equal(
         prize.sub(fee).toString(),
         "Incorrect price custodian"
+      );
+
+      var misayWasiUuids = [mswsUuid, mswsUuid, mswsUuid];
+      var promises = misayWasiUuids.map((mswsUuid) =>
+        misayWasi.getHistoricWinners(mswsUuid)
       );
     });
 

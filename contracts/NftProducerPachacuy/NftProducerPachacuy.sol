@@ -90,6 +90,9 @@ contract NftProducerPachacuy is
     // Map uuid with NFT type
     mapping(uint256 => bytes32) internal _nftTypes;
 
+    // Pachacuy Smart Contracts allowed to burn
+    mapping(address => bool) public allowedToBurn;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -146,8 +149,6 @@ contract NftProducerPachacuy is
             uuid,
             _price
         );
-
-        _setApprovalForAll(_account, address(this), true);
 
         _tokenIdCounter.increment();
         emit Uuid(uuid);
@@ -307,12 +308,6 @@ contract NftProducerPachacuy is
 
         availableFood = IChakra(pachacuyInfo.chakraAddress())
             .consumeFoodFromChakra(_chakraUuid, _amountFood);
-    }
-
-    function burnChakra(uint256 _chakraUuid) external {
-        _burn(_msgSender(), _chakraUuid, 1);
-
-        IChakra(pachacuyInfo.chakraAddress()).burnChakra(_chakraUuid);
     }
 
     function mintHatunWasi(uint256 _pachaUuid) external returns (uint256) {
@@ -540,29 +535,26 @@ contract NftProducerPachacuy is
     //     _safeTransferFrom(from, to, uuid, amount, data);
     // }
 
-    // function burn(
-    //     address account,
-    //     uint256 uuid,
-    //     uint256 value
-    // ) public virtual override {
-    //     require(
-    //         account == _msgSender() || isApprovedForAll(account, _msgSender()),
-    //         "ERC1155: caller is not owner nor approved"
-    //     );
+    function burn(
+        address account,
+        uint256 uuid,
+        uint256 value
+    ) public virtual override {
+        require(
+            allowedToBurn[_msgSender()],
+            "ERC1155: caller is not owner nor approved"
+        );
+        _burn(account, uuid, value);
+    }
 
-    //     if (_uuidToGuineaPigData[uuid].isGuineaPig) {
-    //         value = 1;
-    //         delete _uuidToGuineaPigData[uuid];
-    //     } else if (_uuidToLandData[uuid].isLand) {
-    //         value = 1;
-    //         delete _uuidToLandData[uuid];
-    //     }
-
-    //     // remove uuid from _ownerToUuids => uuid[]
-    //     _rmvElFromOwnerToUuids(account, uuid);
-
-    //     _burn(account, uuid, value);
-    // }
+    function setBurnOp(address[] memory _scAddressArr)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        for (uint256 ix = 0; ix < _scAddressArr.length; ix++) {
+            allowedToBurn[_scAddressArr[ix]] = true;
+        }
+    }
 
     ///////////////////////////////////////////////////////////////
     ////                   HELPERS FUNCTIONS                   ////

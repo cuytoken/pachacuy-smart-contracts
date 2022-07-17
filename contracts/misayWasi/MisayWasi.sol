@@ -139,6 +139,19 @@ contract MisayWasi is
         uint256 balanceConsumer
     );
 
+    struct HistoricWinners {
+        address owner;
+        uint256 ticketUuid;
+        uint256 misayWasiUuid;
+        uint256 pachaUuid;
+        address winner;
+        uint256 netPrize;
+        uint256 feePrize;
+    }
+
+    // misayWasi uuid => HistoricWinners
+    mapping(uint256 => HistoricWinners[]) historicWinners;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -361,6 +374,18 @@ contract MisayWasi is
             misayWasiInfo.ticketUuid
         );
 
+        historicWinners[_misayWasiUuid].push(
+            HistoricWinners({
+                owner: misayWasiInfo.owner,
+                ticketUuid: misayWasiInfo.ticketUuid,
+                misayWasiUuid: misayWasiInfo.misayWasiUuid,
+                pachaUuid: misayWasiInfo.pachaUuid,
+                winner: _winner,
+                netPrize: _netPrize,
+                feePrize: _feePrize
+            })
+        );
+
         // Gives prize
         IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
             .transferPcuyFromPoolRewardToUser(_winner, _netPrize);
@@ -372,6 +397,14 @@ contract MisayWasi is
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
+
+    function getHistoricWinners(uint256 _misayWasiUuid)
+        external
+        view
+        returns (HistoricWinners[] memory)
+    {
+        return historicWinners[_misayWasiUuid];
+    }
 
     function _removeMisayWasiFromActive(uint256 _misayWasiUuid) internal {
         MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[

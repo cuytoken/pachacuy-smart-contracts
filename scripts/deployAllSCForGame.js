@@ -119,6 +119,7 @@ async function main() {
    * nftP 003 - grant game_role to PurchaseAssetController
    * nftP 004 - grant game_role to Misay Wasi
    * nftP 005 - grant game_role to Pacha
+   * nftP 006 - Inlcude all smart contracts for burning
    */
   var name = "In-game NFT Pachacuy";
   var symbol = "NFTGAMEPCUY";
@@ -294,6 +295,17 @@ async function main() {
   console.log("Finish Setting up Smart Contracts");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
 
+  var allScAdd = [
+    qhatuWasi.address,
+    pacha.address,
+    guineaPig.address,
+    misayWasi.address,
+    hatunWasi.address,
+    chakra.address,
+    wiracocha.address,
+    tatacuy.address,
+  ];
+
   // RANDOM NUMBER GENERATOR
   var rng = randomNumberGenerator;
   var pacAdd = purchaseAssetController.address;
@@ -337,6 +349,7 @@ async function main() {
   await executeSet(nftP, "grantRole", [game_manager, pacAdd], "nftP 003");
   await executeSet(nftP, "grantRole", [game_manager, mswsAdd], "nftP 004");
   await executeSet(nftP, "grantRole", [game_manager, pachaAdd], "nftP 005");
+  await executeSet(nftP, "setBurnOp", [allScAdd], "nftP 006");
 
   // Tatacuy
   var tt = tatacuy;
@@ -345,6 +358,7 @@ async function main() {
   var pacAdd = purchaseAssetController.address;
   var rngAdd = randomNumberGenerator.address;
   var pIAdd = pachacuyInfo.address;
+
   await executeSet(tt, "grantRole", [game_manager, rel], "tt 001");
   await executeSet(tt, "grantRole", [game_manager, nftAdd], "tt 002");
   await executeSet(tt, "grantRole", [rng_generator, rngAdd], "tt 003");
@@ -479,26 +493,11 @@ async function main() {
 async function upgrade() {
   // upgrading
   try {
-    var PurchaseAssetControllerAddress =
-      "0x12ad5406567B3326b6014e4037026963511e763D";
-    const PurchaseAssetController = await gcf("PurchaseAssetController");
-    await upgrades.upgradeProxy(
-      PurchaseAssetControllerAddress,
-      PurchaseAssetController
-    );
+    var MisayWasiAddress = "0xE24935E73d1920609a8b5e16Dd3cE24f301598ac";
+    const MisayWasi = await gcf("MisayWasi");
+    await upgrades.upgradeProxy(MisayWasiAddress, MisayWasi);
   } catch (error) {
-    console.log("Error with PurchaseAssetController", error);
-  }
-  return;
-  try {
-    var PachaCuyTokenAddress = "0x829776b2eb5D6588971cabf6186bA39243b83fc0";
-    const PachaCuyToken = await gcf("PachaCuyToken");
-    var pachaCuyToken = await PachaCuyToken.attach(PachaCuyTokenAddress);
-    await pachaCuyToken.setPachacuyInfoAddress(
-      "0x1655b030Bad6AB10D44e57bcb3E7e48e29633317"
-    );
-  } catch (error) {
-    console.log("Error with pcuy info add", error);
+    console.log("Error with MisayWasi", error);
   }
 }
 
@@ -672,10 +671,10 @@ async function fixRelayer() {
 }
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-upgrade()
-  // resetOngoingTransaction()
-  // fixDeployment()
-  // main()
+// upgrade()
+// resetOngoingTransaction()
+// fixDeployment()
+main()
   // sendTokens()
   // fixRelayer()
   .then(() => process.exit(0))

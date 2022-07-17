@@ -27,6 +27,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../info/IPachacuyInfo.sol";
 import "../token/IPachaCuy.sol";
+import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract Chakra is
@@ -182,9 +183,15 @@ contract Chakra is
         revert("Chakra: No food at chakra");
     }
 
-    function burnChakra(uint256 _chakraUuid) external onlyRole(GAME_MANAGER) {
+    function burnChakra(uint256 _chakraUuid) external {
         delete uuidToChakraInfo[_chakraUuid];
         _removeChakraWithUuid(_chakraUuid);
+
+        INftProducerPachacuy(pachacuyInfo.nftProducerAddress()).burn(
+            _msgSender(),
+            _chakraUuid,
+            1
+        );
     }
 
     ///////////////////////////////////////////////////////////////
@@ -197,6 +204,7 @@ contract Chakra is
             listOfChakrasWithFood.pop();
             delete _chakraIx[_chakraUuid];
             _tokenIdCounter.decrement();
+            return;
         }
 
         // get _ix of element to remove
