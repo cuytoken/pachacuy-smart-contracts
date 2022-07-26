@@ -131,6 +131,14 @@ contract GuineaPig is
         return true;
     }
 
+    // /**
+    //  * @dev Trigger when it is minted
+    //  * @param _account:
+    //  * @param _gender:
+    //  * @param _race:
+    //  * @param _idForJsonFile:
+    //  * @param _guineaPigUuid:
+    //  */
     function registerNft(bytes memory _data) external {
         (
             address _account,
@@ -159,6 +167,15 @@ contract GuineaPig is
 
         _guineaPigsIx[_guineaPigUuid] = current;
         listOfUuidGuineaPigs.push(_guineaPigUuid);
+    }
+
+    function transfer(
+        address,
+        address _newOwner,
+        uint256 _guineaPigUuid
+    ) external onlyRole(GAME_MANAGER) {
+        GuineaPigInfo storage _guineaPig = _uuidToGuineaPigInfo[_guineaPigUuid];
+        _guineaPig.owner = _newOwner;
     }
 
     /**

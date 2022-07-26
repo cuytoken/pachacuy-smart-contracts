@@ -102,8 +102,6 @@ contract Pacha is
     mapping(uint256 => PachaPassInfo) internal _uuidToPachaPassInfo;
     // List of uuids that represet a Pacha Pass
     uint256[] internal _listUuidsPachaPasses;
-    // Pacha uuid => array index
-    mapping(uint256 => uint256) internal _pachaPassIx;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -127,6 +125,12 @@ contract Pacha is
         return !isLandAlreadyTaken[_location];
     }
 
+    // /**
+    //  * @dev Trigger when it is minted
+    //  * @param _account: Wallet address of the current owner of the Pacha
+    //  * @param _idForJsonFile: Uuid of the pacha when it was minted
+    //  * @param _pachaUuid: Uuid of the Pacha when it was minted
+    //  */
     function registerNft(bytes memory _data) external {
         (
             address _account,
@@ -167,48 +171,34 @@ contract Pacha is
         listUuidsPachas.push(_pachaUuid);
     }
 
-    /**
-     * @dev Trigger when it is minted
-     * @param _account: Wallet address of the current owner of the Pacha
-     * @param _idForJsonFile: Uuid of the pacha when it was minted
-     * @param _pachaUuid: Uuid of the Pacha when it was minted
-     */
-    function registerPacha(
-        address _account,
-        uint256 _idForJsonFile,
-        uint256 _pachaUuid,
-        uint256 _price
+    function transfer(
+        address _oldOwner,
+        address _newOwner,
+        uint256 _uuid
     ) external onlyRole(GAME_MANAGER) {
-        // validates location between 1 - 697
-        require(
-            _idForJsonFile > 0 && _idForJsonFile < 698,
-            "Pacha: Out of bounds"
-        );
+        if (_uuidToPachaInfo[_uuid].isPacha) {
+            _uuidToPachaInfo[_uuid].owner = _newOwner;
 
-        // Mark that space of land as purchased
-        isLandAlreadyTaken[_idForJsonFile] = true;
+            // move all uuids within this pacha to the new owner
+        } else if (_uuidToPachaPassInfo[_uuid].isPachaPass) {
+            // remove old pacha pass owner from pacha pass list
+            address[] storage listPP = _uuidToPachaPassInfo[_uuid]
+                .listPachaPassOwners;
+            uint256 ixForChange = 0;
+            for (uint256 ix = 0; ix < listPP.length; ix++) {
+                if (listPP[ix] == _oldOwner) {
+                    ixForChange = ix;
+                    break;
+                }
+            }
+            listPP[ixForChange] = _newOwner;
 
-        // Map uuid -> Guinea Pig Struct
-        _uuidToPachaInfo[_pachaUuid] = PachaInfo({
-            isPacha: true,
-            isPublic: true,
-            pachaPassUuid: 0,
-            pachaPassPrice: 0,
-            typeOfDistribution: 0,
-            uuid: _pachaUuid,
-            location: _idForJsonFile,
-            idForJsonFile: _idForJsonFile,
-            owner: _account,
-            wasPurchased: block.timestamp,
-            price: _price,
-            listPachaPassOwners: new address[](0)
-        });
-
-        uint256 current = _tokenIdCounterPacha.current();
-        _tokenIdCounterPacha.increment();
-
-        _pachaIx[_pachaUuid] = current;
-        listUuidsPachas.push(_pachaUuid);
+            // remove old pacha pass owner from pacha list
+            uint256 pachaUuid = _uuidToPachaPassInfo[_uuid].pachaUuid;
+            address[] storage listP = _uuidToPachaInfo[pachaUuid]
+                .listPachaPassOwners;
+            listP[ixForChange] = _newOwner;
+        }
     }
 
     /**
@@ -299,11 +289,6 @@ contract Pacha is
                 transferMode: "",
                 listPachaPassOwners: new address[](0)
             });
-
-            uint256 current = _tokenIdCounterPachaPass.current();
-            _tokenIdCounterPachaPass.increment();
-
-            _pachaPassIx[pacha.pachaPassUuid] = current;
             _listUuidsPachaPasses.push(pacha.pachaPassUuid);
         }
     }
@@ -317,6 +302,7 @@ contract Pacha is
         PachaPassInfo storage pachaPassInfo = _uuidToPachaPassInfo[
             _pachaPassUuid
         ];
+
         pachaPassInfo.transferMode = _transferMode;
         pachaPassInfo.listPachaPassOwners.push(_account);
 

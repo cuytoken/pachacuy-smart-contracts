@@ -152,6 +152,20 @@ contract MisayWasi is
     // misayWasi uuid => HistoricWinners
     mapping(uint256 => HistoricWinners[]) historicWinners;
 
+    struct TicketRaffle {
+        bool isTicketRaffle;
+        address owner;
+        uint256 misayWasiUuid;
+        uint256 ticketUuid;
+        uint256 purchaseDate;
+        uint256 ticketPrice;
+        uint256 rafflePrize;
+        uint256 tickets;
+        uint256 campaignStartDate;
+        uint256 campaignEndDate;
+    }
+    mapping(uint256 => mapping(address => TicketRaffle)) _mswsUuidToAccToTicket;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -177,6 +191,13 @@ contract MisayWasi is
         return _q > 0;
     }
 
+    // /**
+    //  * @dev Trigger when it is minted
+    //  * @param _account: Wallet address of the current owner of the Pacha
+    //  * @param _pachaUuid: Uuid of the pacha when it was minted
+    //  * @param _misayWasiUuid: Uuid of the Tatacuy when it was minted
+    //  * @param _misayWasiPrice: Price in PCUY of the Misay Wasi
+    //  */
     function registerNft(bytes memory _data) external {
         (
             address _account,
@@ -185,50 +206,6 @@ contract MisayWasi is
             uint256 _misayWasiUuid
         ) = abi.decode(_data, (address, uint256, uint256, uint256));
 
-        MisayWasiInfo memory misayWasiInfo = MisayWasiInfo({
-            owner: _account,
-            misayWasiUuid: _misayWasiUuid,
-            pachaUuid: _pachaUuid,
-            creationDate: block.timestamp,
-            ticketPrice: 0,
-            ticketUuid: 0,
-            misayWasiPrice: _misayWasiPrice,
-            rafflePrize: 0,
-            numberTicketsPurchased: 0,
-            campaignStartDate: 0,
-            campaignEndDate: 0,
-            isCampaignActive: false,
-            hasMisayWasi: true,
-            listOfParticipants: new address[](0)
-        });
-        uuidToMisayWasiInfo[_misayWasiUuid] = misayWasiInfo;
-
-        uint256 balanceConsumer = IPachaCuy(pachacuyInfo.pachaCuyTokenAddress())
-            .balanceOf(_account);
-
-        emit PurchaseMisayWasi(
-            _account,
-            _misayWasiUuid,
-            _pachaUuid,
-            block.timestamp,
-            _misayWasiPrice,
-            balanceConsumer
-        );
-    }
-
-    /**
-     * @dev Trigger when it is minted
-     * @param _account: Wallet address of the current owner of the Pacha
-     * @param _pachaUuid: Uuid of the pacha when it was minted
-     * @param _misayWasiUuid: Uuid of the Tatacuy when it was minted
-     * @param _misayWasiPrice: Price in PCUY of the Misay Wasi
-     */
-    function registerMisayWasi(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _misayWasiUuid,
-        uint256 _misayWasiPrice
-    ) external onlyRole(GAME_MANAGER) {
         MisayWasiInfo memory misayWasiInfo = MisayWasiInfo({
             owner: _account,
             misayWasiUuid: _misayWasiUuid,
@@ -337,7 +314,21 @@ contract MisayWasi is
         misayWasiInfo.numberTicketsPurchased += _amountOfTickets;
         if (newCustomer) {
             misayWasiInfo.listOfParticipants.push(_account);
+            _mswsUuidToAccToTicket[_misayWasiUuid][_account] = TicketRaffle({
+                isTicketRaffle: true,
+                owner: _account,
+                misayWasiUuid: _misayWasiUuid,
+                ticketUuid: misayWasiInfo.ticketUuid,
+                purchaseDate: block.timestamp,
+                ticketPrice: misayWasiInfo.ticketPrice,
+                rafflePrize: misayWasiInfo.rafflePrize,
+                tickets: _amountOfTickets,
+                campaignStartDate: misayWasiInfo.campaignStartDate,
+                campaignEndDate: misayWasiInfo.campaignEndDate
+            });
         }
+        _mswsUuidToAccToTicket[_misayWasiUuid][_account]
+            .tickets += _amountOfTickets;
 
         emit PurchaseTicketFromMisayWasi(
             _account,
@@ -442,6 +433,22 @@ contract MisayWasi is
 
         // Cleans raffle from Misay Wasi
         _removeMisayWasiFromActive(_misayWasiUuid);
+    }
+
+    function transfer(
+        address _oldOwner,
+        address _newOwner,
+        uint256 _uuid
+    ) external onlyRole(GAME_MANAGER) {
+        // MisayWasiInfo storage miswinfo = uuidToMisayWasiInfo[
+        //         _ticketUuidToMisayWasiUuid[_uuid]
+        //     ];
+        // if (uuidToMisayWasiInfo[_uuid].hasMisayWasi) {
+        //     MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[_uuid];
+        //     misayWasiInfo.owner = _newOwner;
+        //     misayWasiInfo.pachaUuid = 0;
+        // } else if(_mswsUuidToAccToTicket[_misayWasiUuid][_account]) {
+        // }
     }
 
     ///////////////////////////////////////////////////////////////

@@ -70,7 +70,7 @@ contract NftProducerPachacuy is
     // bytes32 public constant HATUNWASI = keccak256("HATUNWASI");
     // bytes32 public constant MISAYWASI = keccak256("MISAYWASI");
     // bytes32 public constant QHATUWASI = keccak256("QHATUWASI");
-    bytes32 public constant GUINEAPIG = keccak256("GUINEAPIG");
+    // bytes32 public constant GUINEAPIG = keccak256("GUINEAPIG");
     // bytes32 public constant PACHA = keccak256("PACHA");
     bytes32 public constant TICKETRAFFLE = keccak256("TICKETRAFFLE");
     bytes32 public constant PACHAPASS = keccak256("PACHAPASS");
@@ -79,6 +79,7 @@ contract NftProducerPachacuy is
     // Struct Nft Info
     struct NftInfo {
         bytes32 nftType;
+        bool canTransfer;
         address scAddress;
         bool requiredRole;
         string errorMessage;
@@ -330,34 +331,39 @@ contract NftProducerPachacuy is
         emit Uuid(uuid);
     }
 
-    // function safeTransferFrom(
-    //     address from,
-    //     address to,
-    //     uint256 uuid,
-    //     uint256 amount,
-    //     bytes memory data
-    // ) public override {
-    //     require(
-    //         from == _msgSender() || isApprovedForAll(from, _msgSender()),
-    //         "ERC1155: caller is not owner nor approved"
-    //     );
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 uuid,
+        uint256 amount,
+        bytes memory data
+    ) public override {
+        require(
+            from == _msgSender() || isApprovedForAll(from, _msgSender()),
+            "ERC1155: caller is not owner nor approved"
+        );
+        require(_nftInfo[_nftTypes[uuid]].canTransfer, "NFP: Cannot transfer");
 
-    //     if (_uuidToGuineaPigData[uuid].isGuineaPig) {
-    //         _uuidToGuineaPigData[uuid].owner = to;
-    //     } else if (_uuidToLandData[uuid].isLand) {
-    //         _uuidToLandData[uuid].owner = to;
-    //         // Transfer all elements within a Land
-    //         // IMPLEMENT
-    //     }
+        // remove uuid from _ownerToUuids => uuid[]
+        _rmvElFromOwnerToUuids(from, uuid);
 
-    //     // remove uuid from _ownerToUuids => uuid[]
-    //     _rmvElFromOwnerToUuids(from, uuid);
+        // add that uuid to new owner's array
+        _ownerToUuids[to].push(uuid);
 
-    //     // add that uuid to new owner's array
-    //     _ownerToUuids[to].push(uuid);
+        _safeTransferFrom(from, to, uuid, amount, data);
 
-    //     _safeTransferFrom(from, to, uuid, amount, data);
-    // }
+        // update smart contract
+        (bool success, ) = _nftInfo[_nftTypes[uuid]].scAddress.call(
+            abi.encodeWithSignature(
+                "transfer(address,address,uint256,uint256)",
+                from,
+                to,
+                uuid,
+                amount
+            )
+        );
+        require(success, "NFP: Failed transfer");
+    }
 
     function burn(
         address account,
@@ -365,13 +371,42 @@ contract NftProducerPachacuy is
         uint256 value
     ) public virtual override {
         require(
-            allowedToBurn[_msgSender()],
+            allowedToBurn[_msgSender()] || _msgSender() == account,
             "ERC1155: caller is not owner nor approved"
         );
         _nftTypes[uuid] = BURNED;
         _burn(account, uuid, value);
     }
 
+    function _rmvElFromOwnerToUuids(address _account, uint256 _uuid) internal {
+        require(_ownerToUuids[_account].length > 0, "NFP: Array is empty");
+
+        if (_ownerToUuids[_account].length == 1) {
+            if (_ownerToUuids[_account][0] == _uuid) {
+                _ownerToUuids[_account].pop();
+                return;
+            } else {
+                revert("NFP: Not found");
+            }
+        }
+
+        // find the index of _uuid
+        uint256 i;
+        for (i = 0; i < _ownerToUuids[_account].length; i++) {
+            if (_ownerToUuids[_account][i] == _uuid) break;
+        }
+        require(i != _ownerToUuids[_account].length, "NFP: Not found");
+
+        // remove the element
+        _ownerToUuids[_account][i] = _ownerToUuids[_account][
+            _ownerToUuids[_account].length - 1
+        ];
+        _ownerToUuids[_account].pop();
+    }
+
+    ///////////////////////////////////////////////////////////////
+    ////                   HELPERS FUNCTIONS                   ////
+    ///////////////////////////////////////////////////////////////
     function setBurnOp(address[] memory _scAddressArr)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -381,9 +416,6 @@ contract NftProducerPachacuy is
         }
     }
 
-    ///////////////////////////////////////////////////////////////
-    ////                   HELPERS FUNCTIONS                   ////
-    ///////////////////////////////////////////////////////////////
     /**
      * @notice Indicates whether a Guinea Pig is allows to enter a Pacha
      * @param _account Wallet to be validated against the Pacha
@@ -397,6 +429,8 @@ contract NftProducerPachacuy is
         IPacha.PachaInfo memory pacha = IPacha(pachacuyInfo.pachaAddress())
             .getPachaWithUuid(_pachaUuid);
 
+        // pacha onwer
+        if (pacha.owner == _account) return true;
         // pacha do not exist
         if (!pacha.isPacha) return false;
         // pacha is public
@@ -413,17 +447,19 @@ contract NftProducerPachacuy is
         for (uint256 i = 0; i < _dataArray.length; i++) {
             (
                 bytes32 _nftType,
+                bool _canTransfer,
                 address _scAddress,
                 bool _requiredRole,
                 string memory _errorMessage,
                 string memory _errorRegister
             ) = abi.decode(
                     _dataArray[i],
-                    (bytes32, address, bool, string, string)
+                    (bytes32, bool, address, bool, string, string)
                 );
 
             _nftInfo[_nftType] = NftInfo({
                 nftType: _nftType,
+                canTransfer: _canTransfer,
                 scAddress: _scAddress,
                 requiredRole: _requiredRole,
                 errorMessage: _errorMessage,
@@ -431,32 +467,6 @@ contract NftProducerPachacuy is
             });
         }
     }
-
-    // function _rmvElFromOwnerToUuids(address _account, uint256 _uuid) internal {
-    //     require(_ownerToUuids[_account].length > 0, "NFP: Array is empty");
-
-    //     if (_ownerToUuids[_account].length == 1) {
-    //         if (_ownerToUuids[_account][0] == _uuid) {
-    //             _ownerToUuids[_account].pop();
-    //             return;
-    //         } else {
-    //             revert("NFP: Not found");
-    //         }
-    //     }
-
-    //     // find the index of _uuid
-    //     uint256 i;
-    //     for (i = 0; i < _ownerToUuids[_account].length; i++) {
-    //         if (_ownerToUuids[_account][i] == _uuid) break;
-    //     }
-    //     require(i != _ownerToUuids[_account].length, "NFP: Not found");
-
-    //     // remove the element
-    //     _ownerToUuids[_account][i] = _ownerToUuids[_account][
-    //         _ownerToUuids[_account].length - 1
-    //     ];
-    //     _ownerToUuids[_account].pop();
-    // }
 
     function getListOfUuidsPerAccount(address _account)
         external

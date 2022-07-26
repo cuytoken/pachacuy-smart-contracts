@@ -113,6 +113,13 @@ contract Chakra is
         return _q > 0;
     }
 
+    // /**
+    //  * @dev Trigger when it is minted
+    //  * @param _account: Wallet address of the current owner of the Pacha
+    //  * @param _pachaUuid: Uuid of the pacha when it was minted
+    //  * @param _chakraUuid: Uuid of the Tatacuy when it was minted
+    //  * @param _chakraPrice: Price in PCUY of the chakra
+    //  */
     function registerNft(bytes memory _data) external {
         (
             address _account,
@@ -156,51 +163,14 @@ contract Chakra is
         );
     }
 
-    /**
-     * @dev Trigger when it is minted
-     * @param _account: Wallet address of the current owner of the Pacha
-     * @param _pachaUuid: Uuid of the pacha when it was minted
-     * @param _chakraUuid: Uuid of the Tatacuy when it was minted
-     * @param _chakraPrice: Price in PCUY of the chakra
-     */
-    function registerChakra(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _chakraUuid,
-        uint256 _chakraPrice
+    function transfer(
+        address,
+        address _newOwner,
+        uint256 _chakraUuid
     ) external onlyRole(GAME_MANAGER) {
-        uint256 _totalFood = pachacuyInfo.totalFood();
-        uint256 _pricePerFood = pachacuyInfo.pricePerFood();
-
-        ChakraInfo memory chakra = ChakraInfo({
-            owner: _account,
-            chakraUuid: _chakraUuid,
-            pachaUuid: _pachaUuid,
-            creationDate: block.timestamp,
-            priceOfChakra: _chakraPrice,
-            pricePerFood: _pricePerFood,
-            totalFood: _totalFood,
-            availableFood: _totalFood,
-            hasChakra: true
-        });
-        uuidToChakraInfo[_chakraUuid] = chakra;
-
-        uint256 current = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-
-        _chakraIx[_chakraUuid] = current;
-        listOfChakrasWithFood.push(chakra);
-
-        uint256 balanceConsumer = IPachaCuy(pachacuyInfo.pachaCuyTokenAddress())
-            .balanceOf(_account);
-        emit PurchaseChakra(
-            _account,
-            _chakraUuid,
-            _pachaUuid,
-            _chakraPrice,
-            block.timestamp,
-            balanceConsumer
-        );
+        ChakraInfo storage chakraInfo1 = uuidToChakraInfo[_chakraUuid];
+        chakraInfo1.pachaUuid = 0;
+        chakraInfo1.owner = _newOwner;
     }
 
     function updateFoodPriceAtChakra(uint256 _chakraUuid, uint256 _pricePerFood)

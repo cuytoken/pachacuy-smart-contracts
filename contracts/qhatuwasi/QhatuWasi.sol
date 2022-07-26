@@ -241,6 +241,18 @@ contract QhatuWasi is
         );
     }
 
+    function transfer(
+        address,
+        address _newOwner,
+        uint256 _qhatuWasiUuid
+    ) external onlyRole(GAME_MANAGER) {
+        QhatuWasiInfo storage _qhatuWasiInfo = _uuidToQhatuWasiInfo[
+            _qhatuWasiUuid
+        ];
+        _qhatuWasiInfo.owner = _newOwner;
+        _qhatuWasiInfo.pachaUuid = 0;
+    }
+
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////

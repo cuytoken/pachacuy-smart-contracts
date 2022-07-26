@@ -297,7 +297,7 @@ describe("Tesing Pachacuy Game", function () {
       /**
        * GUINEA PIG
        * 1. gp 001 - setPachacuyInfoAddress
-       * 2. gp 002 - give role_manager to nftProducer
+       * 2. gp 002 - give game_manager to nftProducer
        */
       GuineaPig = await gcf("GuineaPig");
       guineaPig = await dp(GuineaPig, [], {
@@ -344,9 +344,10 @@ describe("Tesing Pachacuy Game", function () {
     it("Sets up all Smart Contracts", async () => {
       nftData = [
         ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "bool", "string", "string"],
+          ["bytes32", "bool", "address", "bool", "string", "string"],
           [
             toBytes32("PACHA"),
+            true,
             pacha.address,
             true,
             "NFP: location taken",
@@ -354,9 +355,14 @@ describe("Tesing Pachacuy Game", function () {
           ]
         ),
         ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "bool", "string", "string"],
+          ["bytes32", "bool", "address", "bool", "string", "string"],
+          [toBytes32("PACHAPASS"), true, pacha.address, true, "", ""]
+        ),
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "bool", "address", "bool", "string", "string"],
           [
             toBytes32("QHATUWASI"),
+            true,
             qhatuWasi.address,
             true,
             "NFP: No pacha found",
@@ -364,9 +370,10 @@ describe("Tesing Pachacuy Game", function () {
           ]
         ),
         ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "bool", "string", "string"],
+          ["bytes32", "bool", "address", "bool", "string", "string"],
           [
             toBytes32("MISAYWASI"),
+            true,
             misayWasi.address,
             true,
             "NFP: No pacha found",
@@ -374,9 +381,14 @@ describe("Tesing Pachacuy Game", function () {
           ]
         ),
         ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "bool", "string", "string"],
+          ["bytes32", "bool", "address", "bool", "string", "string"],
+          [toBytes32("TICKETRAFFLE"), true, misayWasi.address, true, "", ""]
+        ),
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "bool", "address", "bool", "string", "string"],
           [
             toBytes32("HATUNWASI"),
+            false,
             hatunWasi.address,
             false,
             "NFP: No pacha found",
@@ -384,13 +396,21 @@ describe("Tesing Pachacuy Game", function () {
           ]
         ),
         ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "bool", "string", "string"],
-          [toBytes32("CHAKRA"), chakra.address, true, "NFP: No pacha found", ""]
+          ["bytes32", "bool", "address", "bool", "string", "string"],
+          [
+            toBytes32("CHAKRA"),
+            true,
+            chakra.address,
+            true,
+            "NFP: No pacha found",
+            "",
+          ]
         ),
         ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "bool", "string", "string"],
+          ["bytes32", "bool", "address", "bool", "string", "string"],
           [
             toBytes32("TATACUY"),
+            false,
             tatacuy.address,
             false,
             "NFP: No pacha found",
@@ -398,9 +418,10 @@ describe("Tesing Pachacuy Game", function () {
           ]
         ),
         ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "bool", "string", "string"],
+          ["bytes32", "bool", "address", "bool", "string", "string"],
           [
             toBytes32("WIRACOCHA"),
+            false,
             wiracocha.address,
             false,
             "NFP: No pacha found",
@@ -408,9 +429,10 @@ describe("Tesing Pachacuy Game", function () {
           ]
         ),
         ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "bool", "string", "string"],
+          ["bytes32", "bool", "address", "bool", "string", "string"],
           [
             toBytes32("GUINEAPIG"),
+            true,
             guineaPig.address,
             true,
             "NFP: No pacha found",
@@ -585,7 +607,8 @@ describe("Tesing Pachacuy Game", function () {
         pachacuyInfo,
         guineaPig,
         misayWasi,
-        randomNumberGenerator
+        randomNumberGenerator,
+        nftProducerPachacuy
       );
     });
   });
@@ -1091,7 +1114,7 @@ describe("Tesing Pachacuy Game", function () {
       var {
         isPacha,
         isPublic,
-        uuid,
+        uuid: uuidRes,
         pachaPassUuid,
         typeOfDistribution,
         owner,
@@ -1100,7 +1123,7 @@ describe("Tesing Pachacuy Game", function () {
 
       expect(isPacha).to.be.true;
       expect(isPublic).to.be.false;
-      expect(uuid.toString()).to.equal(String(pachaUuid));
+      expect(uuidRes.toString()).to.equal(String(pachaUuid));
       expect(typeOfDistribution.toString()).to.equal(String(1));
       expect(owner).to.equal(alice.address);
       expect(listPachaPassOwners.length).to.equal(0);
@@ -1165,7 +1188,7 @@ describe("Tesing Pachacuy Game", function () {
       var {
         isPacha,
         isPublic,
-        uuid,
+        uuid: uuidRes,
         pachaPassUuid,
         typeOfDistribution,
         owner,
@@ -1175,7 +1198,7 @@ describe("Tesing Pachacuy Game", function () {
 
       expect(isPacha).to.be.true;
       expect(isPublic).to.be.false;
-      expect(uuid.toString()).to.equal(String(pachaUuid));
+      expect(uuidRes.toString()).to.equal(String(pachaUuid));
       expect(pachaPassPrice).to.equal(String(price));
       expect(typeOfDistribution.toString()).to.equal(String(2));
       expect(owner).to.equal(bob.address);
@@ -1244,7 +1267,9 @@ describe("Tesing Pachacuy Game", function () {
       var pachaUuid = 6; // alice's pacha
 
       // true
-      var accounts = [earl, fephe, gary, huidobro].map((acc) => acc.address);
+      var accounts = [alice, earl, fephe, gary, huidobro].map(
+        (acc) => acc.address
+      );
       var promises = accounts.map((address) =>
         nftProducerPachacuy.isGuineaPigAllowedInPacha(address, pachaUuid)
       );
@@ -1252,7 +1277,7 @@ describe("Tesing Pachacuy Game", function () {
       responses.forEach((res) => expect(res).to.be.true);
 
       // false
-      var accounts = [alice, bob, carl, deysi].map((acc) => acc.address);
+      var accounts = [bob, carl, deysi].map((acc) => acc.address);
       var promises = accounts.map((address) =>
         nftProducerPachacuy.isGuineaPigAllowedInPacha(address, pachaUuid)
       );
@@ -1264,7 +1289,7 @@ describe("Tesing Pachacuy Game", function () {
       var pachaUuid = 7; // bob's pacha
 
       // true
-      var accounts = [fephe, gary, huidobro].map((acc) => acc.address);
+      var accounts = [bob, fephe, gary, huidobro].map((acc) => acc.address);
       var promises = accounts.map((address) =>
         nftProducerPachacuy.isGuineaPigAllowedInPacha(address, pachaUuid)
       );
@@ -1272,12 +1297,225 @@ describe("Tesing Pachacuy Game", function () {
       responses.forEach((res) => expect(res).to.be.true);
 
       // false
-      var accounts = [alice, bob, carl, deysi].map((acc) => acc.address);
+      var accounts = [alice, carl, deysi].map((acc) => acc.address);
       var promises = accounts.map((address) =>
         nftProducerPachacuy.isGuineaPigAllowedInPacha(address, pachaUuid)
       );
       var responses = await Promise.all(promises);
       responses.forEach((res) => expect(res).to.be.false);
+    });
+  });
+
+  describe("Transfer", () => {
+    it("Guinea Pig", async () => {
+      // alice guinea pig uuid 1
+      var uuidTRMV = 1;
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === uuidTRMV);
+      expect(uuidList.length).to.be.equal(1, "Guinea pig before transfer");
+
+      var preCount = await guineaPig.getListOfGuineaPigs();
+
+      await nftProducerPachacuy
+        .connect(alice)
+        .safeTransferFrom(alice.address, huidobro.address, uuidTRMV, 1, "0x");
+
+      var afterCount = await guineaPig.getListOfGuineaPigs();
+      expect(preCount.length).to.be.equal(
+        afterCount.length,
+        "Different guinea pig count"
+      );
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === uuidTRMV);
+      expect(uuidList.length).to.be.equal(0);
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(huidobro.address)
+      )[0].filter((uuid) => uuid.toNumber() === uuidTRMV);
+      expect(uuidList.length).to.be.equal(1);
+    });
+
+    it("Hatun Wasi", async () => {
+      // uuid pacha 6 alice
+      var pachaUuid = 6;
+      await testing.mintHatunWasi(alice, [pachaUuid, ++uuid]); // uuid 34 hatun wasi
+      var hwUuid = 34;
+      expect(
+        nftProducerPachacuy
+          .connect(alice)
+          .safeTransferFrom(alice.address, huidobro.address, hwUuid, 1, "0x")
+      ).to.be.revertedWith("NFP: Cannot transfer");
+    });
+
+    it("Wiracocha", async () => {
+      // uuid pacha 6 alice
+      var pachaUuid = 6;
+      await testing.mintWiracocha(alice, [pachaUuid, ++uuid]); // uuid 35 wiracocha
+      var wirUuid = 35;
+      expect(
+        nftProducerPachacuy
+          .connect(alice)
+          .safeTransferFrom(alice.address, huidobro.address, wirUuid, 1, "0x")
+      ).to.be.revertedWith("NFP: Cannot transfer");
+    });
+
+    it("Tatacuy", async () => {
+      // uuid pacha 6 alice
+      var pachaUuid = 6;
+      await testing.mintTatacuy(alice, [pachaUuid, ++uuid]); // uuid 35 wiracocha
+      var ttcyUuid = 36;
+      expect(
+        nftProducerPachacuy
+          .connect(alice)
+          .safeTransferFrom(alice.address, huidobro.address, ttcyUuid, 1, "0x")
+      ).to.be.revertedWith("NFP: Cannot transfer");
+    });
+
+    it("Misay Wasi", async () => {
+      // alice misay wasi uuid 20
+      var pachaUuid = 6;
+      var mswsUuid = 20;
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === mswsUuid);
+      expect(uuidList.length).to.be.equal(1, "Misay Wasi before transfer");
+
+      await nftProducerPachacuy
+        .connect(alice)
+        .safeTransferFrom(alice.address, huidobro.address, mswsUuid, 1, "0x");
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === mswsUuid);
+      expect(uuidList.length).to.be.equal(0, "Misay Wasi after transfer");
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(huidobro.address)
+      )[0].filter((uuid) => uuid.toNumber() === mswsUuid);
+      expect(uuidList.length).to.be.equal(1, "Misay Wasi after transfer");
+    });
+
+    it("Qhatu Wasi", async () => {
+      // alice misay wasi uuid 20
+      var pachaUuid = 6;
+      var qtwsUuid = 27;
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === qtwsUuid);
+      expect(uuidList.length).to.be.equal(1, "Qhatu Wasi before transfer");
+
+      await nftProducerPachacuy
+        .connect(alice)
+        .safeTransferFrom(alice.address, huidobro.address, qtwsUuid, 1, "0x");
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === qtwsUuid);
+      expect(uuidList.length).to.be.equal(0, "Qhatu Wasi after transfer");
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(huidobro.address)
+      )[0].filter((uuid) => uuid.toNumber() === qtwsUuid);
+      expect(uuidList.length).to.be.equal(1, "Qhatu Wasi after transfer");
+    });
+
+    it("Chakra", async () => {
+      // alice misay wasi uuid 20
+      var pachaUuid = 6;
+      var chakraUuid = 12;
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === chakraUuid);
+      expect(uuidList.length).to.be.equal(1, "Qhatu Wasi before transfer");
+
+      await nftProducerPachacuy
+        .connect(alice)
+        .safeTransferFrom(alice.address, huidobro.address, chakraUuid, 1, "0x");
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === chakraUuid);
+      expect(uuidList.length).to.be.equal(0, "Qhatu Wasi after transfer");
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(huidobro.address)
+      )[0].filter((uuid) => uuid.toNumber() === chakraUuid);
+      expect(uuidList.length).to.be.equal(1, "Qhatu Wasi after transfer");
+    });
+
+    it("Pacha Pass", async () => {
+      // alice misay wasi uuid 20
+      var pachaUuid = 7;
+      var ppUuid = 33;
+
+      var { listPachaPassOwners } = await pacha.getPachaWithUuid(pachaUuid);
+      var list = listPachaPassOwners.filter((add) => add === fephe.address);
+      expect(list.length).to.be.equal(1);
+      var { listPachaPassOwners } = await pacha.getPachaPassWithUuid(ppUuid);
+      var list = listPachaPassOwners.filter((add) => add === fephe.address);
+      expect(list.length).to.be.equal(1);
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(fephe.address)
+      )[0].filter((uuid) => uuid.toNumber() === ppUuid);
+      expect(uuidList.length).to.be.equal(1, "Pacha pass before transfer");
+
+      await nftProducerPachacuy
+        .connect(fephe)
+        .safeTransferFrom(fephe.address, alice.address, ppUuid, 1, "0x");
+
+      var { listPachaPassOwners } = await pacha.getPachaWithUuid(pachaUuid);
+      var list = listPachaPassOwners.filter((add) => add === alice.address);
+      expect(list.length).to.be.equal(1);
+      var { listPachaPassOwners } = await pacha.getPachaPassWithUuid(ppUuid);
+      var list = listPachaPassOwners.filter((add) => add === alice.address);
+      expect(list.length).to.be.equal(1);
+      var { listPachaPassOwners } = await pacha.getPachaWithUuid(pachaUuid);
+      var list = listPachaPassOwners.filter((add) => add === fephe.address);
+      expect(list.length).to.be.equal(0);
+      var { listPachaPassOwners } = await pacha.getPachaPassWithUuid(ppUuid);
+      var list = listPachaPassOwners.filter((add) => add === fephe.address);
+      expect(list.length).to.be.equal(0);
+
+      // uuid list
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(fephe.address)
+      )[0].filter((uuid) => uuid.toNumber() === ppUuid);
+      expect(uuidList.length).to.be.equal(0, "Pacha pass after transfer");
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === ppUuid);
+      expect(uuidList.length).to.be.equal(1, "Pacha pass after transfer");
+    });
+
+    it("Pacha", async () => {
+      // alice misay wasi uuid 20
+      var pachaUuid = 6;
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === pachaUuid);
+      expect(uuidList.length).to.be.equal(1, "Pacha before transfer");
+
+      await nftProducerPachacuy
+        .connect(alice)
+        .safeTransferFrom(alice.address, huidobro.address, pachaUuid, 1, "0x");
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(alice.address)
+      )[0].filter((uuid) => uuid.toNumber() === pachaUuid);
+      expect(uuidList.length).to.be.equal(0, "Pacha after transfer");
+
+      var uuidList = (
+        await nftProducerPachacuy.getListOfUuidsPerAccount(huidobro.address)
+      )[0].filter((uuid) => uuid.toNumber() === pachaUuid);
+      expect(uuidList.length).to.be.equal(1, "Pacha after transfer");
     });
   });
 });
