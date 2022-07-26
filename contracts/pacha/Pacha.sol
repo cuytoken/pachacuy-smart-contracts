@@ -118,6 +118,55 @@ contract Pacha is
         _grantRole(UPGRADER_ROLE, _msgSender());
     }
 
+    function validateMint(bytes memory _data) external view returns (bool) {
+        (, uint256 _location, ) = abi.decode(
+            _data,
+            (address, uint256, uint256)
+        );
+        require(!isLandAlreadyTaken[_location], "NFP: location taken");
+        return !isLandAlreadyTaken[_location];
+    }
+
+    function registerNft(bytes memory _data) external {
+        (
+            address _account,
+            uint256 _idForJsonFile,
+            uint256 _price,
+            uint256 _pachaUuid
+        ) = abi.decode(_data, (address, uint256, uint256, uint256));
+
+        // validates location between 1 - 697
+        require(
+            _idForJsonFile > 0 && _idForJsonFile < 698,
+            "Pacha: Out of bounds"
+        );
+
+        // Mark that space of land as purchased
+        isLandAlreadyTaken[_idForJsonFile] = true;
+
+        // Map uuid -> Guinea Pig Struct
+        _uuidToPachaInfo[_pachaUuid] = PachaInfo({
+            isPacha: true,
+            isPublic: true,
+            pachaPassUuid: 0,
+            pachaPassPrice: 0,
+            typeOfDistribution: 0,
+            uuid: _pachaUuid,
+            location: _idForJsonFile,
+            idForJsonFile: _idForJsonFile,
+            owner: _account,
+            wasPurchased: block.timestamp,
+            price: _price,
+            listPachaPassOwners: new address[](0)
+        });
+
+        uint256 current = _tokenIdCounterPacha.current();
+        _tokenIdCounterPacha.increment();
+
+        _pachaIx[_pachaUuid] = current;
+        listUuidsPachas.push(_pachaUuid);
+    }
+
     /**
      * @dev Trigger when it is minted
      * @param _account: Wallet address of the current owner of the Pacha

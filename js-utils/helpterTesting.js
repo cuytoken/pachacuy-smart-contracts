@@ -10,6 +10,7 @@ var bn = (num) => ethers.BigNumber.from(String(num));
 var secsInADay = 60 * 60 * 24;
 
 const { expect } = require("chai");
+const { toBytes32 } = require("./helpers");
 
 /**
  * GPP = GUINEA_PIG_PURCHASE
@@ -26,6 +27,8 @@ function mapTopic(eventName) {
     "QTWS",
     "TCKTRFFL",
     "PCPS",
+    "HTWS",
+    "WRCCH",
   ];
   if (!listEvents.includes(eventName)) throw new Error("Not an event Name");
 
@@ -39,6 +42,10 @@ function mapTopic(eventName) {
   var tTcktRfflUuid = new i([
     "event UuidAndAmount(uint256 uuid, uint256 amount)",
   ]).getEventTopic("UuidAndAmount");
+  // guinea pig finish
+  var tGNPFNSH = new i([
+    "event GuineaPigPurchaseFinish(address _account, uint256 price, uint256 _guineaPigId, uint256 _uuid, string _raceAndGender, uint256 balanceConsumer)",
+  ]).getEventTopic("GuineaPigPurchaseFinish");
 
   var map = {
     GPP: {
@@ -57,6 +64,10 @@ function mapTopic(eventName) {
       topic: tUuid,
       params: ["uint256"],
     },
+    WRCCH: {
+      topic: tUuid,
+      params: ["uint256"],
+    },
     PCHPSS: {
       topic: tUuid,
       params: ["uint256"],
@@ -66,6 +77,10 @@ function mapTopic(eventName) {
       params: ["uint256"],
     },
     PCPS: {
+      topic: tUuid,
+      params: ["uint256"],
+    },
+    HTWS: {
       topic: tUuid,
       params: ["uint256"],
     },
@@ -125,7 +140,7 @@ var businesses = [
 
 function _getRadomNumberOne(_random, _account) {}
 
-function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws, rNumb) {
+function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws, rNumb, nftP) {
   return {
     purchaseGuineaPig: async function (signer, args) {
       var [gpUuid, ix] = args;
@@ -142,8 +157,8 @@ function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws, rNumb) {
       var tx = await rNumb.fulfillRandomWords(324324, [1232, 123244333]);
 
       // check correct uuid
-      var res = (await getDataFromEvent(tx, "PP")).toString();
-      expect(res).to.equal(`${gpUuid}`, `Incorrect guinea pig Uuid ${gpUuid}`);
+      var res = (await getDataFromEvent(tx, "GPP")).toString();
+      expect(res).to.equal(`${gpUuid}`, `Wrong guinea pig Uuid ${gpUuid}`);
 
       // after balance
       var afterBalAcc = await tkn.balanceOf(signer.address);
@@ -486,6 +501,102 @@ function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws, rNumb) {
         net.toString(),
         "Incorrect price owner"
       );
+    },
+    mintHatunWasi: async function (signer, args) {
+      var [pachaUuid, hwUuid] = args;
+      // prev balance
+      var prevBalAcc = await tkn.balanceOf(signer.address);
+      var prevBalCustodianW = await tkn.balanceOf(cw);
+
+      /**
+        function mint(
+          bytes32 _nftType,
+          bytes memory _data,
+          address _account
+        )
+       */
+      var _nftType = toBytes32("HATUNWASI");
+      var _data = ethers.utils.defaultAbiCoder.encode(
+        ["address", "uint256", "uint256"],
+        [signer.address, pachaUuid, 0]
+      );
+      var tx = await nftP.connect(signer).mint(_nftType, _data, signer.address);
+      // check correct uuid
+      var res = (await getDataFromEvent(tx, "HTWS")).toString();
+      expect(res).to.equal(`${hwUuid}`, `Incorrect Uuid ${hwUuid}`);
+
+      // after balance
+      var afterBalAcc = await tkn.balanceOf(signer.address);
+      var afterBalCustodianW = await tkn.balanceOf(cw);
+
+      // check balances signer
+      expect(prevBalAcc).to.equal(afterBalAcc, "Incorrect price account");
+      // check balance chakra owner
+      expect(afterBalCustodianW).to.equal(prevBalCustodianW, "Incorrect CW");
+    },
+    mintTatacuy: async function (signer, args) {
+      var [pachaUuid, ttcyUuid] = args;
+      // prev balance
+      var prevBalAcc = await tkn.balanceOf(signer.address);
+      var prevBalCustodianW = await tkn.balanceOf(cw);
+
+      /**
+        function mint(
+          bytes32 _nftType,
+          bytes memory _data,
+          address _account
+        )
+       */
+      var _nftType = toBytes32("TATACUY");
+      var _data = ethers.utils.defaultAbiCoder.encode(
+        ["address", "uint256", "uint256"],
+        [signer.address, pachaUuid, 0]
+      );
+      var tx = await nftP.connect(signer).mint(_nftType, _data, signer.address);
+      // check correct uuid
+      var res = (await getDataFromEvent(tx, "HTWS")).toString();
+      expect(res).to.equal(`${ttcyUuid}`, `Incorrect Uuid ${ttcyUuid}`);
+
+      // after balance
+      var afterBalAcc = await tkn.balanceOf(signer.address);
+      var afterBalCustodianW = await tkn.balanceOf(cw);
+
+      // check balances signer
+      expect(prevBalAcc).to.equal(afterBalAcc, "Incorrect price account");
+      // check balance chakra owner
+      expect(afterBalCustodianW).to.equal(prevBalCustodianW, "Incorrect CW");
+    },
+    mintWiracocha: async function (signer, args) {
+      var [pachaUuid, wrcchUuid] = args;
+      // prev balance
+      var prevBalAcc = await tkn.balanceOf(signer.address);
+      var prevBalCustodianW = await tkn.balanceOf(cw);
+
+      /**
+        function mint(
+          bytes32 _nftType,
+          bytes memory _data,
+          address _account
+        )
+       */
+      var _nftType = toBytes32("WIRACOCHA");
+      var _data = ethers.utils.defaultAbiCoder.encode(
+        ["address", "uint256", "uint256"],
+        [signer.address, pachaUuid, 0]
+      );
+      var tx = await nftP.connect(signer).mint(_nftType, _data, signer.address);
+      // check correct uuid
+      var res = (await getDataFromEvent(tx, "WRCCH")).toString();
+      expect(res).to.equal(`${wrcchUuid}`, `Incorrect Uuid ${wrcchUuid}`);
+
+      // after balance
+      var afterBalAcc = await tkn.balanceOf(signer.address);
+      var afterBalCustodianW = await tkn.balanceOf(cw);
+
+      // check balances signer
+      expect(prevBalAcc).to.equal(afterBalAcc, "Incorrect price account");
+      // check balance chakra owner
+      expect(afterBalCustodianW).to.equal(prevBalCustodianW, "Incorrect CW");
     },
   };
 }

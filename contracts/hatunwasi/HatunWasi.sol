@@ -25,6 +25,9 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "../NftProducerPachacuy/INftProducerPachacuy.sol";
+import "../info/IPachacuyInfo.sol";
+import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract HatunWasi is
@@ -39,6 +42,8 @@ contract HatunWasi is
 
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _tokenIdCounter;
+
+    IPachacuyInfo pachacuyInfo;
 
     /**
      * @dev Details the information of a Hatun Wasi. Additional properties attached for its campaign
@@ -84,6 +89,46 @@ contract HatunWasi is
         _grantRole(PAUSER_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
         _grantRole(GAME_MANAGER, _msgSender());
+    }
+
+    function validateMint(bytes memory _data) external view returns (bool) {
+        (address _account, uint256 _pachaUuid, ) = abi.decode(
+            _data,
+            (address, uint256, uint256)
+        );
+        uint256 _q = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
+            .balanceOf(_account, _pachaUuid);
+
+        return (_q > 0) && !ownerHasHatunWasi[_account];
+    }
+
+    function registerNft(bytes memory _data) external {
+        (address _account, uint256 _pachaUuid, , uint256 _hatunWasiUuid) = abi
+            .decode(_data, (address, uint256, uint256, uint256));
+
+        HatunWasiInfo memory hatunWasi = HatunWasiInfo({
+            owner: _account,
+            hatunWasiUuid: _hatunWasiUuid,
+            pachaUuid: _pachaUuid,
+            creationDate: block.timestamp,
+            hasHatunWasi: true
+        });
+        uuidToHatunWasiInfo[_hatunWasiUuid] = hatunWasi;
+
+        uint256 current = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+
+        _hatunWasiIx[_hatunWasiUuid] = current;
+        listUuidOfHatunWasi.push(_hatunWasiUuid);
+
+        emit MintHatunWasi(
+            _account,
+            _hatunWasiUuid,
+            _pachaUuid,
+            block.timestamp
+        );
+
+        ownerHasHatunWasi[_account] = true;
     }
 
     /**
@@ -190,8 +235,11 @@ contract HatunWasi is
         return uuidToHatunWasiInfo[_hatunWasiUuid];
     }
 
-    function hasHatunWasi(address _account) external view returns (bool) {
-        return ownerHasHatunWasi[_account];
+    function setPachacuyInfoAddress(address _infoAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        pachacuyInfo = IPachacuyInfo(_infoAddress);
     }
 
     ///////////////////////////////////////////////////////////////

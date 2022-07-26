@@ -98,11 +98,10 @@ async function main() {
    * 7. PAC 007 grantRole money_transfer to misay wasi
    * 7. PAC 008 grantRole money_transfer to qhatu wasi
    */
-  var { _busdToken } = infoHelper(NETWORK);
   const PurchaseAssetController = await gcf("PurchaseAssetController");
   const purchaseAssetController = await dp(
     PurchaseAssetController,
-    [randomNumberGenerator.address, process.env.WALLET_FOR_FUNDS, _busdToken],
+    [randomNumberGenerator.address, process.env.WALLET_FOR_FUNDS],
     {
       kind: "uups",
     }
@@ -210,6 +209,7 @@ async function main() {
   /**
    * HATUN WASI
    * 1. hw 001 - Grant game_manager role to Nft producer
+   * 2. hw 002 - Set pachacuy info address
    */
   var HatunWasi = await gcf("HatunWasi");
   var hatunWasi = await dp(HatunWasi, [], {
@@ -353,7 +353,7 @@ async function main() {
 
   // Tatacuy
   var tt = tatacuy;
-  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
   var nftAdd = nftProducerPachacuy.address;
   var pacAdd = purchaseAssetController.address;
   var rngAdd = randomNumberGenerator.address;
@@ -366,7 +366,7 @@ async function main() {
 
   // Wiracocha
   var wi = wiracocha;
-  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
   var nftAdd = nftProducerPachacuy.address;
   var pacAdd = purchaseAssetController.address;
   var pIAdd = pachacuyInfo.address;
@@ -418,7 +418,9 @@ async function main() {
   // HATUN WASI
   var hw = hatunWasi;
   var nftAdd = nftProducerPachacuy.address;
+  var pcIAdd = pachacuyInfo.address;
   await executeSet(hw, "grantRole", [game_manager, nftAdd], "hw 001");
+  await executeSet(hw, "setPachacuyInfoAddress", [pcIAdd], "hw 002");
 
   // GUINEA PIG
   var gp = guineaPig;
@@ -431,7 +433,7 @@ async function main() {
   var msws = misayWasi;
   var nftAdd = nftProducerPachacuy.address;
   var pcIadd = pachacuyInfo.address;
-  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
+  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET;
   var rngAdd = randomNumberGenerator.address;
   await executeSet(msws, "setPachacuyInfoAddress", [pcIadd], "msws 001");
   await executeSet(msws, "grantRole", [game_manager, nftAdd], "msws 002");
@@ -493,11 +495,11 @@ async function main() {
 async function upgrade() {
   // upgrading
   try {
-    var MisayWasiAddress = "0xE24935E73d1920609a8b5e16Dd3cE24f301598ac";
-    const MisayWasi = await gcf("MisayWasi");
-    await upgrades.upgradeProxy(MisayWasiAddress, MisayWasi);
+    var TatacuyAddress = "0xE7551689191dDd744296BCb3CA500452f4feF00f";
+    const Tatacuy = await gcf("Tatacuy");
+    await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
   } catch (error) {
-    console.log("Error with MisayWasi", error);
+    console.log("Error with Tatacuy", error);
   }
 }
 
@@ -653,18 +655,17 @@ async function fixDeployment() {
 async function fixRelayer() {
   var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
 
-  var TatacuyAddress = "0xA6B3b26fcE99a5Dd8e180c43B8EB98eF6DA493f6";
+  var TatacuyAddress = "0xE7551689191dDd744296BCb3CA500452f4feF00f";
   var Tatacuy = await gcf("Tatacuy");
   var tt = await Tatacuy.attach(TatacuyAddress);
-  var rel = process.env.RELAYER_ADDRESS_MUMBAI_TESTNET_2;
   await executeSet(tt, "grantRole", [game_manager, rel], "tt 001");
 
-  var WiracochaAddress = "0xA645bFdb41c151d3137b825baA31579240F5Bd08";
+  var WiracochaAddress = "0x8AE6D7BCf46E26b338b2885a11c225d97e34BA2A";
   var Wiracocha = await gcf("Wiracocha");
   var wi = await Wiracocha.attach(WiracochaAddress);
   await executeSet(wi, "grantRole", [game_manager, rel], "wi 001");
 
-  var MisayWasiAddress = "0x4f1e1E9753b6bdE59E4863417c392838fdB3FC43";
+  var MisayWasiAddress = "0x699DC9c85335d58efcAbbB503E88D12C44ec2144";
   var MisayWasi = await gcf("MisayWasi");
   var msws = await MisayWasi.attach(MisayWasiAddress);
   await executeSet(msws, "grantRole", [game_manager, rel], "msws 003");
@@ -674,9 +675,9 @@ async function fixRelayer() {
 // upgrade()
 // resetOngoingTransaction()
 // fixDeployment()
-main()
-  // sendTokens()
-  // fixRelayer()
+// main()
+// sendTokens()
+fixRelayer()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

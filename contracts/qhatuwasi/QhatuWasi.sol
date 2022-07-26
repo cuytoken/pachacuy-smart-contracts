@@ -28,6 +28,8 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../purchaseAssetController/IPurchaseAssetController.sol";
 import "../info/IPachacuyInfo.sol";
 import "../token/IPachaCuy.sol";
+import "../NftProducerPachacuy/INftProducerPachacuy.sol";
+import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract QhatuWasi is
@@ -185,6 +187,57 @@ contract QhatuWasi is
             _qhatuWasiUuid,
             _qhatuWasiInfo.owner,
             _prizePerViewSami
+        );
+    }
+
+    function validateMint(bytes memory _data) external view returns (bool) {
+        (address _account, uint256 _pachaUuid, ) = abi.decode(
+            _data,
+            (address, uint256, uint256)
+        );
+        uint256 _q = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
+            .balanceOf(_account, _pachaUuid);
+
+        return _q > 0;
+    }
+
+    function registerNft(bytes memory _data) external {
+        (
+            address _owner,
+            uint256 _pachaUuid,
+            uint256 _qhatuWasiPrice,
+            uint256 _qhatuWasiUuid
+        ) = abi.decode(_data, (address, uint256, uint256, uint256));
+
+        QhatuWasiInfo memory _qhatuWasiInfo = QhatuWasiInfo({
+            uuid: _qhatuWasiUuid,
+            pachaUuid: _pachaUuid,
+            owner: _owner,
+            creationDate: block.timestamp,
+            totalPcuyDeposited: 0,
+            pcuyForCurrentCampaign: 0,
+            samiPointsToGiveAway: 0,
+            qhatuWasiPrice: _qhatuWasiPrice,
+            prizePerView: 0
+        });
+        _uuidToQhatuWasiInfo[_qhatuWasiUuid] = _qhatuWasiInfo;
+
+        uint256 current = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+
+        _qhatuWasiIx[_qhatuWasiUuid] = current;
+        listUuidQhatuWasis.push(_qhatuWasiUuid);
+
+        uint256 balanceConsumer = IPachaCuy(pachacuyInfo.pachaCuyTokenAddress())
+            .balanceOf(_owner);
+
+        emit PurchaseQhatuWasi(
+            _owner,
+            _qhatuWasiUuid,
+            _pachaUuid,
+            _qhatuWasiPrice,
+            block.timestamp,
+            balanceConsumer
         );
     }
 

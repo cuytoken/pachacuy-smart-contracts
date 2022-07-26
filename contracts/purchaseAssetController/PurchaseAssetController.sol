@@ -35,6 +35,7 @@ import "../pacha/IPacha.sol";
 import "../info/IPachacuyInfo.sol";
 import "../misayWasi/IMisayWasi.sol";
 import "../guineapig/IGuineaPig.sol";
+import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract PurchaseAssetController is
@@ -51,10 +52,6 @@ contract PurchaseAssetController is
 
     using StringsUpgradeable for uint256;
 
-    // BUSD token
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    IERC20Upgradeable public busdToken;
-
     // PCUY token
     IERC777Upgradeable pachaCuyToken;
 
@@ -69,7 +66,7 @@ contract PurchaseAssetController is
     // GuineaPig ERC1155
     INftProducerPachacuy public nftProducerPachacuy;
 
-    // pool rewards for busd
+    // pool rewards address
     address public poolRewardsAddress;
 
     // Verifies that customer has one transaction at a time
@@ -154,8 +151,7 @@ contract PurchaseAssetController is
 
     function initialize(
         address _randomNumberGeneratorAddress,
-        address _poolRewardsAddress,
-        address _busdAddress
+        address _poolRewardsAddress
     ) public initializer {
         __Pausable_init();
         __AccessControl_init();
@@ -165,7 +161,6 @@ contract PurchaseAssetController is
             _randomNumberGeneratorAddress
         );
 
-        busdToken = IERC20Upgradeable(_busdAddress);
         poolRewardsAddress = _poolRewardsAddress;
 
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
@@ -174,20 +169,11 @@ contract PurchaseAssetController is
         _grantRole(GAME_MANAGER, _msgSender());
     }
 
-    function purchaseGuineaPigWithBusd(uint256 _ix) external {
-        _purchaseGuineaPig(_ix, address(busdToken));
-    }
-
-    function purchaseGuineaPigWithPcuy(uint256 _ix) external {
-        _purchaseGuineaPig(_ix, address(pachaCuyToken));
-    }
-
     /**
      * @dev Buy a guinea pig by using an index (_ix represents a specific prive of three)
      * @param _ix Index of the price. There are three prices: 1, 2 and 3
-     * @param _tokenAddress Address of the token to use for the purchase (BUSD or PCUY)
      */
-    function _purchaseGuineaPig(uint256 _ix, address _tokenAddress) internal {
+    function purchaseGuineaPigWithPcuy(uint256 _ix) external {
         // Valid index (1, 2 or 3)
         require(
             _ix == 1 || _ix == 2 || _ix == 3,
@@ -205,7 +191,7 @@ contract PurchaseAssetController is
         ) * 10**18;
 
         // Make transfer with appropiate token address
-        _purchaseAtPriceInPcuyAndToken(price, _tokenAddress);
+        _purchaseAtPriceInPcuy(price);
 
         // Mark as ongoing transaction for a customer
         ongoingTransaction[_msgSender()] = Transaction({
@@ -245,31 +231,23 @@ contract PurchaseAssetController is
         }
     }
 
-    function purchaseLandWithBusd(uint256 _location) external {
-        _purchaseLand(_location, address(busdToken));
-    }
-
-    function purchaseLandWithPcuy(uint256 _location) external {
-        _purchaseLand(_location, address(pachaCuyToken));
-    }
-
     /**
      * @dev Buy a guinea pig by using an index (_ix represents a specific prive of three)
      * @param _location Location of the land from 1 to 697
      */
-    function _purchaseLand(uint256 _location, address _tokenAddress) internal {
+    function purchaseLandWithPcuy(uint256 _location) external {
         uint256 pachaPrice = pachacuyInfo.getPriceInPcuy("PACHA") * 10**18;
 
         // Make transfer with appropiate token address
-        _purchaseAtPriceInPcuyAndToken(pachaPrice, _tokenAddress);
+        _purchaseAtPriceInPcuy(pachaPrice);
 
         // mint a pacha
-        uint256 uuid = nftProducerPachacuy.mintLandNft(
-            _msgSender(),
-            _location,
-            pachaPrice,
-            ""
-        );
+        uint256 uuid = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
+            .mint(
+                keccak256("PACHA"),
+                abi.encode(_msgSender(), _location, pachaPrice),
+                _msgSender()
+            );
 
         // Emit event
         emit PurchaseLand(
@@ -282,57 +260,29 @@ contract PurchaseAssetController is
         );
     }
 
-    function _purchaseAtPriceInPcuyAndToken(
-        uint256 _priceInPcuy,
-        address _tokenAddress
-    ) internal {
-        if (_tokenAddress == address(pachaCuyToken)) {
-            require(
-                pachaCuyToken.balanceOf(_msgSender()) >= _priceInPcuy,
-                "PAC: Not enough PCUY"
-            );
-            pachaCuyToken.operatorSend(
-                _msgSender(),
-                poolRewardsAddress,
-                _priceInPcuy,
-                "",
-                ""
-            );
-        } else if (_tokenAddress == address(busdToken)) {
-            _priceInPcuy = _fromPcuyToBusd(_priceInPcuy);
-            require(
-                busdToken.balanceOf(_msgSender()) >= _priceInPcuy,
-                "PAC: Not enough BUSD"
-            );
-
-            // Verify id customer has given allowance to the PurchaseAC contract
-            require(
-                busdToken.allowance(_msgSender(), address(this)) >=
-                    _priceInPcuy,
-                "PAC: Allowance not given"
-            );
-
-            // SC transfers BUSD from purchaser to pool rewards
-            busdToken.safeTransferFrom(
-                _msgSender(),
-                poolRewardsAddress,
-                _priceInPcuy
-            );
-        }
+    function _purchaseAtPriceInPcuy(uint256 _priceInPcuy) internal {
+        require(
+            pachaCuyToken.balanceOf(_msgSender()) >= _priceInPcuy,
+            "PAC: Not enough PCUY"
+        );
+        pachaCuyToken.operatorSend(
+            _msgSender(),
+            poolRewardsAddress,
+            _priceInPcuy,
+            "",
+            ""
+        );
     }
 
-    function purchaseChakra(uint256 _pachaUuid)
-        external
-        returns (uint256 chakraUuid)
-    {
+    function purchaseChakra(uint256 _pachaUuid) external {
         uint256 _chakraPrice = pachacuyInfo.getPriceInPcuy("CHAKRA") * 10**18;
-        _purchaseAtPriceInPcuyAndToken(_chakraPrice, address(pachaCuyToken));
+        _purchaseAtPriceInPcuy(_chakraPrice);
 
         // mint a chakra
-        chakraUuid = nftProducerPachacuy.mintChakra(
-            _msgSender(),
-            _pachaUuid,
-            _chakraPrice
+        INftProducerPachacuy(pachacuyInfo.nftProducerAddress()).mint(
+            keccak256("CHAKRA"),
+            abi.encode(_msgSender(), _pachaUuid, _chakraPrice),
+            _msgSender()
         );
     }
 
@@ -423,25 +373,32 @@ contract PurchaseAssetController is
     function purchaseMisayWasi(uint256 _pachaUuid) external {
         uint256 _misayWasiPrice = pachacuyInfo.getPriceInPcuy("MISAY_WASI") *
             10**18;
-        _purchaseAtPriceInPcuyAndToken(_misayWasiPrice, address(pachaCuyToken));
-        // mint a Misay Wasi
-        nftProducerPachacuy.mintMisayWasi(
-            _msgSender(),
-            _pachaUuid,
-            _misayWasiPrice
+
+        _purchaseAtPriceInPcuy(_misayWasiPrice);
+
+        INftProducerPachacuy(pachacuyInfo.nftProducerAddress()).mint(
+            keccak256("MISAYWASI"),
+            abi.encode(_msgSender(), _pachaUuid, _misayWasiPrice),
+            _msgSender()
         );
+        // mint a Misay Wasi
+        // nftProducerPachacuy.mintMisayWasi(
+        // _msgSender(),
+        // _pachaUuid,
+        // _misayWasiPrice
+        // );
     }
 
     function purchaseQhatuWasi(uint256 _pachaUuid) external {
         uint256 _qhatuWasiPrice = pachacuyInfo.getPriceInPcuy("QHATU_WASI") *
             10**18;
-        _purchaseAtPriceInPcuyAndToken(_qhatuWasiPrice, address(pachaCuyToken));
+        _purchaseAtPriceInPcuy(_qhatuWasiPrice);
 
         // mint a Qhatu Wasi
-        nftProducerPachacuy.mintQhatuWasi(
-            _pachaUuid,
-            _msgSender(),
-            _qhatuWasiPrice
+        INftProducerPachacuy(pachacuyInfo.nftProducerAddress()).mint(
+            keccak256("QHATUWASI"),
+            abi.encode(_msgSender(), _pachaUuid, _qhatuWasiPrice),
+            _msgSender()
         );
     }
 
@@ -559,10 +516,6 @@ contract PurchaseAssetController is
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
 
-    function _fromPcuyToBusd(uint256 _amount) internal returns (uint256) {
-        return _amount / pachacuyInfo.exchangeRateBusdToPcuy();
-    }
-
     function _finishPurchaseGuineaPig(
         uint256 _ix,
         address _account,
@@ -591,7 +544,11 @@ contract PurchaseAssetController is
 
         // Mint Guinea Pigs
         uint256 _uuid = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
-            .mintGuineaPigNft(_account, _gender, _race, _guineaPigId, price);
+            .mint(
+                keccak256("GUINEAPIG"),
+                abi.encode(_account, _gender, _race, _guineaPigId, price),
+                _account
+            );
 
         uint256 _balance = pachaCuyToken.balanceOf(_account);
         emit GuineaPigPurchaseFinish(

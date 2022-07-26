@@ -29,6 +29,7 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../vrf/IRandomNumberGenerator.sol";
 import "../purchaseAssetController/IPurchaseAssetController.sol";
 import "../info/IPachacuyInfo.sol";
+import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract Tatacuy is
@@ -169,6 +170,40 @@ contract Tatacuy is
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
+    }
+
+    function validateMint(bytes memory _data) external view returns (bool) {
+        (address _account, uint256 _pachaUuid, ) = abi.decode(
+            _data,
+            (address, uint256, uint256)
+        );
+        uint256 _q = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
+            .balanceOf(_account, _pachaUuid);
+
+        return _q > 0;
+    }
+
+    function registerNft(bytes memory _data) external {
+        (address _account, uint256 _pachaUuid, , uint256 _tatacuyUuid) = abi
+            .decode(_data, (address, uint256, uint256, uint256));
+
+        uuidToTatacuyInfo[_tatacuyUuid] = TatacuyInfo({
+            owner: _account,
+            tatacuyUuid: _tatacuyUuid,
+            pachaUuid: _pachaUuid,
+            creationDate: block.timestamp,
+            totalFundsPcuyDeposited: 0,
+            ratePcuyToSamiPoints: 0,
+            totalFundsSamiPoints: 0,
+            prizePerWinnerSamiPoints: 0,
+            totalSamiPointsClaimed: 0,
+            campaignStartDate: 0,
+            campaignEndDate: 0,
+            hasTatacuy: true,
+            isCampaignActive: false
+        });
+
+        emit MintTatacuy(_account, _tatacuyUuid, _pachaUuid, block.timestamp);
     }
 
     /**
@@ -368,8 +403,8 @@ contract Tatacuy is
             emit TatacuyTryMyLuckResult(
                 _account,
                 true,
-                randomTx.likelihood,
                 randomTx.prizeWinner,
+                randomTx.likelihood,
                 randomTx.pachaUuid,
                 randomTx.tatacuyUuid,
                 randomTx.pachaOwner,
@@ -379,8 +414,8 @@ contract Tatacuy is
             emit TatacuyTryMyLuckResult(
                 _account,
                 false,
-                randomTx.likelihood,
                 0,
+                randomTx.likelihood,
                 randomTx.pachaUuid,
                 randomTx.tatacuyUuid,
                 randomTx.pachaOwner,

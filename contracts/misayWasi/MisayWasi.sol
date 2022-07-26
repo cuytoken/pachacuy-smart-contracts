@@ -166,6 +166,56 @@ contract MisayWasi is
         _grantRole(GAME_MANAGER, _msgSender());
     }
 
+    function validateMint(bytes memory _data) external view returns (bool) {
+        (address _account, uint256 _pachaUuid, ) = abi.decode(
+            _data,
+            (address, uint256, uint256)
+        );
+        uint256 _q = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
+            .balanceOf(_account, _pachaUuid);
+
+        return _q > 0;
+    }
+
+    function registerNft(bytes memory _data) external {
+        (
+            address _account,
+            uint256 _pachaUuid,
+            uint256 _misayWasiPrice,
+            uint256 _misayWasiUuid
+        ) = abi.decode(_data, (address, uint256, uint256, uint256));
+
+        MisayWasiInfo memory misayWasiInfo = MisayWasiInfo({
+            owner: _account,
+            misayWasiUuid: _misayWasiUuid,
+            pachaUuid: _pachaUuid,
+            creationDate: block.timestamp,
+            ticketPrice: 0,
+            ticketUuid: 0,
+            misayWasiPrice: _misayWasiPrice,
+            rafflePrize: 0,
+            numberTicketsPurchased: 0,
+            campaignStartDate: 0,
+            campaignEndDate: 0,
+            isCampaignActive: false,
+            hasMisayWasi: true,
+            listOfParticipants: new address[](0)
+        });
+        uuidToMisayWasiInfo[_misayWasiUuid] = misayWasiInfo;
+
+        uint256 balanceConsumer = IPachaCuy(pachacuyInfo.pachaCuyTokenAddress())
+            .balanceOf(_account);
+
+        emit PurchaseMisayWasi(
+            _account,
+            _misayWasiUuid,
+            _pachaUuid,
+            block.timestamp,
+            _misayWasiPrice,
+            balanceConsumer
+        );
+    }
+
     /**
      * @dev Trigger when it is minted
      * @param _account: Wallet address of the current owner of the Pacha

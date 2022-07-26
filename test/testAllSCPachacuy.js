@@ -19,6 +19,7 @@ const {
   businessesKey,
   b,
   getDataFromEvent,
+  toBytes32,
 } = require("../js-utils/helpers");
 const { init } = require("../js-utils/helpterTesting");
 // const NETWORK = "BSCNET";
@@ -26,6 +27,7 @@ const NETWORK = "BSCTESTNET";
 var _prefix = "ipfs://QmbbGgo93M6yr5WSUMj53SWN2vC7L6aMS1GZSPNkVRY8e4/";
 var testing;
 var cw = process.env.WALLET_FOR_FUNDS;
+var nftData;
 
 describe("Tesing Pachacuy Game", function () {
   var owner,
@@ -176,15 +178,10 @@ describe("Tesing Pachacuy Game", function () {
        * 7. PAC 007 grantRole money_transfer to misay wasi
        * 7. PAC 008 grantRole money_transfer to qhatu wasi
        */
-      var { _busdToken } = infoHelper(NETWORK);
       PurchaseAssetController = await gcf("PurchaseAssetController");
       purchaseAssetController = await dp(
         PurchaseAssetController,
-        [
-          randomNumberGenerator.address,
-          process.env.WALLET_FOR_FUNDS,
-          _busdToken,
-        ],
+        [randomNumberGenerator.address, process.env.WALLET_FOR_FUNDS],
         {
           kind: "uups",
         }
@@ -199,6 +196,7 @@ describe("Tesing Pachacuy Game", function () {
        * nftP 004 - grant game_role to Misay Wasi
        * nftP 005 - grant game_role to Pacha
        * nftP 006 - Inlcude all smart contracts for burning
+       * nftP 007 - Fills nft info fillNftsInfo array
        */
       var name = "In-game NFT Pachacuy";
       var symbol = "NFTGAMEPCUY";
@@ -273,6 +271,7 @@ describe("Tesing Pachacuy Game", function () {
       /**
        * HATUN WASI
        * 1. hw 001 - Grant game_manager role to Nft producer
+       * 2. hw 002 - Set pachacuy info address
        */
       HatunWasi = await gcf("HatunWasi");
       hatunWasi = await dp(HatunWasi, [], {
@@ -343,6 +342,83 @@ describe("Tesing Pachacuy Game", function () {
     });
 
     it("Sets up all Smart Contracts", async () => {
+      nftData = [
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "bool", "string", "string"],
+          [
+            toBytes32("PACHA"),
+            pacha.address,
+            true,
+            "NFP: location taken",
+            "Pacha: Out of bounds",
+          ]
+        ),
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "bool", "string", "string"],
+          [
+            toBytes32("QHATUWASI"),
+            qhatuWasi.address,
+            true,
+            "NFP: No pacha found",
+            "",
+          ]
+        ),
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "bool", "string", "string"],
+          [
+            toBytes32("MISAYWASI"),
+            misayWasi.address,
+            true,
+            "NFP: No pacha found",
+            "",
+          ]
+        ),
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "bool", "string", "string"],
+          [
+            toBytes32("HATUNWASI"),
+            hatunWasi.address,
+            false,
+            "NFP: No pacha found",
+            "",
+          ]
+        ),
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "bool", "string", "string"],
+          [toBytes32("CHAKRA"), chakra.address, true, "NFP: No pacha found", ""]
+        ),
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "bool", "string", "string"],
+          [
+            toBytes32("TATACUY"),
+            tatacuy.address,
+            false,
+            "NFP: No pacha found",
+            "",
+          ]
+        ),
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "bool", "string", "string"],
+          [
+            toBytes32("WIRACOCHA"),
+            wiracocha.address,
+            false,
+            "NFP: No pacha found",
+            "",
+          ]
+        ),
+        ethers.utils.defaultAbiCoder.encode(
+          ["bytes32", "address", "bool", "string", "string"],
+          [
+            toBytes32("GUINEAPIG"),
+            guineaPig.address,
+            true,
+            "NFP: No pacha found",
+            "",
+          ]
+        ),
+      ];
+
       var allScAdd = [
         qhatuWasi.address,
         pacha.address,
@@ -396,6 +472,7 @@ describe("Tesing Pachacuy Game", function () {
       await executeSet(nftP, "grantRole", [game_manager, mswsAdd], "nftP 004");
       await executeSet(nftP, "grantRole", [game_manager, pachaAdd], "nftP 005");
       await executeSet(nftP, "setBurnOp", [allScAdd], "nftP 006");
+      await executeSet(nftP, "fillNftsInfo", [nftData], "nftP 0071");
 
       // Tatacuy
       var tt = tatacuy;
@@ -461,7 +538,9 @@ describe("Tesing Pachacuy Game", function () {
       // HATUN WASI
       var hw = hatunWasi;
       var nftAdd = nftProducerPachacuy.address;
+      var pcIAdd = pachacuyInfo.address;
       await executeSet(hw, "grantRole", [game_manager, nftAdd], "hw 001");
+      await executeSet(hw, "setPachacuyInfoAddress", [pcIAdd], "hw 002");
 
       // GUINEA PIG
       var gp = guineaPig;
@@ -930,7 +1009,7 @@ describe("Tesing Pachacuy Game", function () {
     });
 
     it("Purchase", async () => {
-      // testing.purchaseQhatuWasi(signer, [pachaUuid])
+      // testing.purchaseQhatuWasi(signer, [pachaUuid, qtwsUuid])
       await testing.purchaseQhatuWasi(alice, [6, ++uuid]); // uuid 27 qhatu wasi
       await testing.purchaseQhatuWasi(bob, [7, ++uuid]); // uuid 28 qhatu wasi
       await testing.purchaseQhatuWasi(carl, [8, ++uuid]); // uuid 29 qhatu wasi

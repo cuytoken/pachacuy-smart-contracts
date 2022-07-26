@@ -101,6 +101,61 @@ contract Chakra is
         _grantRole(GAME_MANAGER, _msgSender());
     }
 
+    function validateMint(bytes memory _data) external view returns (bool) {
+        (address _account, uint256 _pachaUuid, ) = abi.decode(
+            _data,
+            (address, uint256, uint256)
+        );
+        uint256 _q = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
+            .balanceOf(_account, _pachaUuid);
+
+        require(_q > 0, "NFP: No pacha found");
+        return _q > 0;
+    }
+
+    function registerNft(bytes memory _data) external {
+        (
+            address _account,
+            uint256 _pachaUuid,
+            uint256 _chakraPrice,
+            uint256 _chakraUuid
+        ) = abi.decode(_data, (address, uint256, uint256, uint256));
+
+        uint256 _totalFood = pachacuyInfo.totalFood();
+        uint256 _pricePerFood = pachacuyInfo.pricePerFood();
+
+        ChakraInfo memory chakra = ChakraInfo({
+            owner: _account,
+            chakraUuid: _chakraUuid,
+            pachaUuid: _pachaUuid,
+            creationDate: block.timestamp,
+            priceOfChakra: _chakraPrice,
+            pricePerFood: _pricePerFood,
+            totalFood: _totalFood,
+            availableFood: _totalFood,
+            hasChakra: true
+        });
+        uuidToChakraInfo[_chakraUuid] = chakra;
+
+        uint256 current = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+
+        _chakraIx[_chakraUuid] = current;
+        listOfChakrasWithFood.push(chakra);
+
+        uint256 balanceConsumer = IPachaCuy(pachacuyInfo.pachaCuyTokenAddress())
+            .balanceOf(_account);
+
+        emit PurchaseChakra(
+            _account,
+            _chakraUuid,
+            _pachaUuid,
+            _chakraPrice,
+            block.timestamp,
+            balanceConsumer
+        );
+    }
+
     /**
      * @dev Trigger when it is minted
      * @param _account: Wallet address of the current owner of the Pacha

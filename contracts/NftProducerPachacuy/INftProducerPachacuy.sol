@@ -73,4 +73,15 @@ interface INftProducerPachacuy {
         uint256 uuid,
         uint256 value
     ) external;
+
+    function balanceOf(address account, uint256 id)
+        external
+        view
+        returns (uint256);
+
+    function mint(
+        bytes32 _nftType,
+        bytes memory _data,
+        address _account
+    ) external returns (uint256 uuid);
 }

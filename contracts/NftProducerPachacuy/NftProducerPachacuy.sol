@@ -40,6 +40,7 @@ import "../misayWasi/IMisayWasi.sol";
 import "../guineapig/IGuineaPig.sol";
 import "../pacha/IPacha.sol";
 import "../qhatuwasi/IQhatuWasi.sol";
+import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract NftProducerPachacuy is
@@ -63,16 +64,27 @@ contract NftProducerPachacuy is
     CountersUpgradeable.Counter private _tokenIdCounter;
 
     // NFT types
-    bytes32 public constant TATACUY = keccak256("TATACUY");
-    bytes32 public constant WIRACOCHA = keccak256("WIRACOCHA");
-    bytes32 public constant CHAKRA = keccak256("CHAKRA");
-    bytes32 public constant HATUNWASI = keccak256("HATUNWASI");
-    bytes32 public constant MISAYWASI = keccak256("MISAYWASI");
-    bytes32 public constant QHATUWASI = keccak256("QHATUWASI");
+    // bytes32 public constant TATACUY = keccak256("TATACUY");
+    // bytes32 public constant WIRACOCHA = keccak256("WIRACOCHA");
+    // bytes32 public constant CHAKRA = keccak256("CHAKRA");
+    // bytes32 public constant HATUNWASI = keccak256("HATUNWASI");
+    // bytes32 public constant MISAYWASI = keccak256("MISAYWASI");
+    // bytes32 public constant QHATUWASI = keccak256("QHATUWASI");
     bytes32 public constant GUINEAPIG = keccak256("GUINEAPIG");
-    bytes32 public constant PACHA = keccak256("PACHA");
+    // bytes32 public constant PACHA = keccak256("PACHA");
     bytes32 public constant TICKETRAFFLE = keccak256("TICKETRAFFLE");
     bytes32 public constant PACHAPASS = keccak256("PACHAPASS");
+    bytes32 public constant BURNED = keccak256("BURNED");
+
+    // Struct Nft Info
+    struct NftInfo {
+        bytes32 nftType;
+        address scAddress;
+        bool requiredRole;
+        string errorMessage;
+        string errorRegister;
+    }
+    mapping(bytes32 => NftInfo) public _nftInfo;
 
     event Uuid(uint256 uuid);
     event UuidAndAmount(uint256 uuid, uint256 amount);
@@ -123,171 +135,15 @@ contract NftProducerPachacuy is
         _tokenIdCounter.increment();
     }
 
-    function mintGuineaPigNft(
-        address _account,
-        uint256 _gender, // 0, 1
-        uint256 _race, // 1 -> 4
-        uint256 _idForJsonFile, // 1 -> 8
-        uint256 _price
-    ) public onlyRole(MINTER_ROLE) returns (uint256) {
-        // Creates a UUID for each mint
-        uint256 uuid = _tokenIdCounter.current();
-        _mint(_account, uuid, 1, "");
-        // Map owner -> uuid[]
-        // save in list of uuids for owner
-        _ownerToUuids[_account].push(uuid);
-
-        // save type of uuid minted
-        _nftTypes[uuid] = GUINEAPIG;
-
-        // Save info in Guinea Pig SC
-        IGuineaPig(pachacuyInfo.guineaPigAddress()).registerGuineaPig(
-            _account,
-            _gender,
-            _race,
-            _idForJsonFile,
-            uuid,
-            _price
-        );
-
-        _tokenIdCounter.increment();
-        emit Uuid(uuid);
-
-        return uuid;
-    }
-
-    function mintLandNft(
-        address _account,
-        uint256 _idForJsonFile, // comes from front-end 1 -> 697
-        uint256 _price,
-        bytes memory data
-    ) public onlyRole(MINTER_ROLE) returns (uint256) {
-        // Veryfies that location is not taken already
-        require(
-            !IPacha(pachacuyInfo.pachaAddress()).isPachaAlreadyTaken(
-                _idForJsonFile
-            ),
-            "NFP: location taken"
-        );
-
-        // Creates a UUID for each mint
-        uint256 uuid = _tokenIdCounter.current();
-        _mint(_account, uuid, 1, data);
-
-        // Map owner -> uuid[]
-        _ownerToUuids[_account].push(uuid);
-
-        // save type of uuid minted
-        _nftTypes[uuid] = PACHA;
-
-        // Map uuid -> Guinea Pig Struct
-        IPacha(pachacuyInfo.pachaAddress()).registerPacha(
-            _account,
-            _idForJsonFile,
-            uuid,
-            _price
-        );
-
-        _tokenIdCounter.increment();
-        emit Uuid(uuid);
-
-        return uuid;
-    }
-
-    function mintWiracocha(uint256 _pachaUuid) external returns (uint256) {
-        // validate that _account is an owner of that pacha
-        require(balanceOf(_msgSender(), _pachaUuid) > 0, "NFP: No pacha found");
-
-        // validate that there is not a Wiracocha at this pacha uuid
-        require(
-            !IWiracocha(pachacuyInfo.wiracochaAddress()).hasWiracocha(
-                _msgSender(),
-                _pachaUuid
-            ),
-            "NFP: Pacha has a Wiracocha already"
-        );
-
-        uint256 uuid = _tokenIdCounter.current();
-        _mint(_msgSender(), uuid, 1, "");
-
-        // save in list of uuids for owner
-        _ownerToUuids[_msgSender()].push(uuid);
-
-        // save type of uuid minted
-        _nftTypes[uuid] = WIRACOCHA;
-
-        // Save info in Tatacuy SC
-        // uuid =>  wiracochaUuid
-        IWiracocha(pachacuyInfo.wiracochaAddress()).registerWiracocha(
-            _msgSender(),
-            _pachaUuid,
-            uuid,
-            ""
-        );
-
-        _tokenIdCounter.increment();
-
-        emit Uuid(uuid);
-        return uuid;
-    }
-
-    function mintTatacuy(uint256 _pachaUuid) external returns (uint256) {
-        // validate that _account is an owner of that pacha
-        require(balanceOf(_msgSender(), _pachaUuid) > 0, "NFP: No pacha found");
-
-        uint256 uuid = _tokenIdCounter.current();
-        _mint(_msgSender(), uuid, 1, "");
-
-        // save in list of uuids for owner
-        _ownerToUuids[_msgSender()].push(uuid);
-
-        // save type of uuid minted
-        _nftTypes[uuid] = TATACUY;
-
-        // Save info in Tatacuy SC
-        // uuid =>  tatacuyUuid
-        ITatacuy(pachacuyInfo.tatacuyAddress()).registerTatacuy(
-            _msgSender(),
-            _pachaUuid,
-            uuid,
-            ""
-        );
-
-        _tokenIdCounter.increment();
-
-        emit Uuid(uuid);
-        return uuid;
-    }
-
-    function mintChakra(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _chakraPrice
-    ) external onlyRole(MINTER_ROLE) returns (uint256) {
-        // validate that _account is an owner of that pacha
-        require(balanceOf(_account, _pachaUuid) > 0, "NFP: No pacha found");
-
-        uint256 uuid = _tokenIdCounter.current();
-        _mint(_account, uuid, 1, "");
-
-        // save in list of uuids for owner
-        _ownerToUuids[_account].push(uuid);
-
-        // save type of uuid minted
-        _nftTypes[uuid] = CHAKRA;
-
-        // Save info in Chakra SC
-        IChakra(pachacuyInfo.chakraAddress()).registerChakra(
-            _account,
-            _pachaUuid,
-            uuid,
-            _chakraPrice
-        );
-
-        _tokenIdCounter.increment();
-        emit Uuid(uuid);
-        return uuid;
-    }
+    // DONE
+    // function mintGuineaPigNft(
+    // function mintLandNft(
+    // function mintWiracocha(uint256 _pachaUuid) external returns (uint256) {
+    // function mintTatacuy(uint256 _pachaUuid) external returns (uint256) {
+    // function mintChakra(
+    // function mintHatunWasi(uint256 _pachaUuid) external returns (uint256) {
+    // function mintMisayWasi(
+    // function mintQhatuWasi(
 
     function purchaseFood(
         address _account,
@@ -308,63 +164,6 @@ contract NftProducerPachacuy is
 
         availableFood = IChakra(pachacuyInfo.chakraAddress())
             .consumeFoodFromChakra(_chakraUuid, _amountFood);
-    }
-
-    function mintHatunWasi(uint256 _pachaUuid) external returns (uint256) {
-        // validate that _account is an owner of that pacha
-        require(balanceOf(_msgSender(), _pachaUuid) > 0, "NFP: No pacha found");
-
-        // validate that there is not a Wiracocha at this pacha uuid
-        IHatunWasi hw = IHatunWasi(pachacuyInfo.hatunWasiAddress());
-        require(!hw.hasHatunWasi(_msgSender()), "NFP: Hatun Wasi exists");
-
-        uint256 uuid = _tokenIdCounter.current();
-        _mint(_msgSender(), uuid, 1, "");
-
-        // save in list of uuids for owner
-        _ownerToUuids[_msgSender()].push(uuid);
-
-        // save type of uuid minted
-        _nftTypes[uuid] = HATUNWASI;
-
-        // Save info in Hatun Wasi SC
-        // uuid =>  hatunWasiUuid
-        hw.registerHatunWasi(_msgSender(), _pachaUuid, uuid);
-
-        _tokenIdCounter.increment();
-
-        emit Uuid(uuid);
-        return uuid;
-    }
-
-    function mintMisayWasi(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _misayWasiPrice
-    ) external onlyRole(GAME_MANAGER) {
-        // validate that _account is an owner of that pacha
-        require(balanceOf(_account, _pachaUuid) > 0, "NFP: No pacha found");
-
-        uint256 uuid = _tokenIdCounter.current();
-        _mint(_account, uuid, 1, "");
-
-        // save in list of uuids for owner
-        _ownerToUuids[_account].push(uuid);
-
-        // save type of uuid minted
-        _nftTypes[uuid] = MISAYWASI;
-
-        // Save info in Misay Wasi SC
-        IMisayWasi(pachacuyInfo.misayWasiAddress()).registerMisayWasi(
-            _account,
-            _pachaUuid,
-            uuid,
-            _misayWasiPrice
-        );
-
-        _tokenIdCounter.increment();
-
-        emit Uuid(uuid);
     }
 
     function createTicketIdRaffle()
@@ -478,32 +277,57 @@ contract NftProducerPachacuy is
         emit UuidAndAmount(_ticketUuid, balanceOf(_account, _ticketUuid));
     }
 
-    function mintQhatuWasi(
-        uint256 _pachaUuid,
-        address _account,
-        uint256 _qhatuWasiPrice
-    ) external onlyRole(MINTER_ROLE) {
-        // validate that _account is an owner of that pacha
-        require(balanceOf(_account, _pachaUuid) > 0, "NFP: No pacha found");
+    function mint(
+        bytes32 _nftType,
+        bytes calldata _data,
+        address _account
+    ) external returns (uint256 uuid) {
+        NftInfo memory nft = _nftInfo[_nftType];
+        require(nft.scAddress != address(0), "Nft P.: Wrong NFT type");
 
-        uint256 uuid = _tokenIdCounter.current();
+        // validate role
+        if (nft.requiredRole) {
+            require(hasRole(MINTER_ROLE, _msgSender()), "Nft P.: No privilege");
+        } else {
+            address _accountData = abi.decode(_data[:42], (address));
+            require(_account == _msgSender(), "Nft P.: Address mismatch 1");
+            require(_accountData == _msgSender(), "Nft P.: Address mismatch 2");
+        }
+
+        // validate mint
+        (bool success, bytes memory data) = nft.scAddress.call(
+            abi.encodeWithSignature("validateMint(bytes)", _data)
+        );
+        // require(success, "Nft P.: Wrong call");
+        require(success, nft.errorMessage);
+        require(abi.decode(data, (bool)), "Nft P.: Invalid mint");
+        // get counter
+        uuid = _tokenIdCounter.current();
+
+        // concat uuid to _data
+        bytes memory _dataWithUuid = bytes.concat(_data, abi.encode(uuid));
+
+        // mint
         _mint(_account, uuid, 1, "");
 
-        // save in list of uuids for owner
+        // _ownerToUuids
         _ownerToUuids[_account].push(uuid);
 
-        // save type of uuid minted
-        _nftTypes[uuid] = QHATUWASI;
+        // _nftTypes
+        _nftTypes[uuid] = _nftType;
 
-        IQhatuWasi(pachacuyInfo.qhatuWasiAddress()).registerQhatuWasi(
-            uuid,
-            _pachaUuid,
-            _account,
-            _qhatuWasiPrice
+        // register
+        (bool success2, ) = nft.scAddress.call(
+            abi.encodeWithSignature("registerNft(bytes)", _dataWithUuid)
         );
+        // require(success2, "Nft P.: Error registering NFT");
+        require(success2, nft.errorRegister);
 
-        emit Uuid(uuid);
+        // increase counter
         _tokenIdCounter.increment();
+
+        // emit Uuuid
+        emit Uuid(uuid);
     }
 
     // function safeTransferFrom(
@@ -544,6 +368,7 @@ contract NftProducerPachacuy is
             allowedToBurn[_msgSender()],
             "ERC1155: caller is not owner nor approved"
         );
+        _nftTypes[uuid] = BURNED;
         _burn(account, uuid, value);
     }
 
@@ -584,13 +409,27 @@ contract NftProducerPachacuy is
         } else return false;
     }
 
-    function _compareStrings(string memory a, string memory b)
-        internal
-        pure
-        returns (bool)
-    {
-        return (keccak256(abi.encodePacked((a))) ==
-            keccak256(abi.encodePacked((b))));
+    function fillNftsInfo(bytes[] memory _dataArray) external {
+        for (uint256 i = 0; i < _dataArray.length; i++) {
+            (
+                bytes32 _nftType,
+                address _scAddress,
+                bool _requiredRole,
+                string memory _errorMessage,
+                string memory _errorRegister
+            ) = abi.decode(
+                    _dataArray[i],
+                    (bytes32, address, bool, string, string)
+                );
+
+            _nftInfo[_nftType] = NftInfo({
+                nftType: _nftType,
+                scAddress: _scAddress,
+                requiredRole: _requiredRole,
+                errorMessage: _errorMessage,
+                errorRegister: _errorRegister
+            });
+        }
     }
 
     // function _rmvElFromOwnerToUuids(address _account, uint256 _uuid) internal {

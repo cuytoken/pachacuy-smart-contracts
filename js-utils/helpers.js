@@ -447,4 +447,5 @@ module.exports = {
   executeSet,
   b,
   getDataFromEvent,
+  toBytes32,
 };

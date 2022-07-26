@@ -28,6 +28,7 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../purchaseAssetController/IPurchaseAssetController.sol";
 import "../info/IPachacuyInfo.sol";
 import "../token/IPachaCuy.sol";
+import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract Wiracocha is
@@ -115,6 +116,51 @@ contract Wiracocha is
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
+    }
+
+    function validateMint(bytes memory _data) external view returns (bool) {
+        (address _account, uint256 _pachaUuid, ) = abi.decode(
+            _data,
+            (address, uint256, uint256)
+        );
+        uint256 _q = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
+            .balanceOf(_account, _pachaUuid);
+
+        return (_q > 0) && !_ownerHasWiracochaAtPacha[_account][_pachaUuid];
+    }
+
+    function registerNft(bytes memory _data) external {
+        (address _account, uint256 _pachaUuid, , uint256 _wiracochaUuid) = abi
+            .decode(_data, (address, uint256, uint256, uint256));
+
+        require(
+            !_ownerHasWiracochaAtPacha[_account][_pachaUuid],
+            "Tatacuy: Already exists one for this pacha"
+        );
+
+        _ownerHasWiracochaAtPacha[_account][_pachaUuid] = true;
+
+        uuidToWiracochaInfo[_wiracochaUuid] = WiracochaInfo({
+            owner: _account,
+            wiracochaUuid: _wiracochaUuid,
+            pachaUuid: _pachaUuid,
+            creationDate: block.timestamp,
+            amountPcuyExchanged: 0,
+            hasWiracocha: true
+        });
+
+        uint256 current = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+
+        _wiracochaIx[_wiracochaUuid] = current;
+        listUuidWiracocha.push(_wiracochaUuid);
+
+        emit MintWiracocha(
+            _account,
+            _wiracochaUuid,
+            _pachaUuid,
+            block.timestamp
+        );
     }
 
     /**

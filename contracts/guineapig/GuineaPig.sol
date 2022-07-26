@@ -26,6 +26,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../info/IPachacuyInfo.sol";
+import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract GuineaPig is
@@ -126,6 +127,40 @@ contract GuineaPig is
         _setLikelihoodAndPrices();
     }
 
+    function validateMint(bytes memory) external pure returns (bool) {
+        return true;
+    }
+
+    function registerNft(bytes memory _data) external {
+        (
+            address _account,
+            uint256 _gender,
+            uint256 _race,
+            uint256 _idForJsonFile,
+            uint256 _price,
+            uint256 _guineaPigUuid
+        ) = abi.decode(
+                _data,
+                (address, uint256, uint256, uint256, uint256, uint256)
+            );
+
+        GuineaPigInfo memory _guineaPig = _getGuineaPigStruct(
+            _gender,
+            _race,
+            _guineaPigUuid,
+            _idForJsonFile,
+            _account,
+            _price
+        );
+        _uuidToGuineaPigInfo[_guineaPigUuid] = _guineaPig;
+
+        uint256 current = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+
+        _guineaPigsIx[_guineaPigUuid] = current;
+        listOfUuidGuineaPigs.push(_guineaPigUuid);
+    }
+
     /**
      * @dev Trigger when it is minted
      * @param _account:
@@ -142,7 +177,7 @@ contract GuineaPig is
         uint256 _guineaPigUuid,
         uint256 _price
     ) external onlyRole(GAME_MANAGER) {
-        GuineaPigInfo memory _guineaPig = _getGuinieaPigStruct(
+        GuineaPigInfo memory _guineaPig = _getGuineaPigStruct(
             _gender,
             _race,
             _guineaPigUuid,
@@ -325,7 +360,7 @@ contract GuineaPig is
         pachacuyInfo = IPachacuyInfo(_pachacuyInfo);
     }
 
-    function _getGuinieaPigStruct(
+    function _getGuineaPigStruct(
         uint256 _gender,
         uint256 _race,
         uint256 _uuid,
