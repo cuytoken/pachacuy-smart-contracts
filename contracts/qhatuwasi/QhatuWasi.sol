@@ -219,11 +219,13 @@ contract QhatuWasi is
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
 
-    function tokenUri(uint256 _chakraUuid)
-        public
+    function tokenUri(string memory _prefix, uint256)
+        external
         view
         returns (string memory)
-    {}
+    {
+        return string(abi.encodePacked(_prefix, "QHATUWASI.json"));
+    }
 
     function getListOfQhatuWasi()
         external

@@ -177,11 +177,13 @@ contract HatunWasi is
         _tokenIdCounter.decrement();
     }
 
-    function tokenUri(uint256 _hatunWasiUuid)
-        public
+    function tokenUri(string memory _prefix, uint256)
+        external
         view
         returns (string memory)
-    {}
+    {
+        return string(abi.encodePacked(_prefix, "HATUNWASI.json"));
+    }
 
     function getListOfHatunWasis()
         external

@@ -670,17 +670,6 @@ describe("Tesing Pachacuy Game", function () {
         "Pacha: Out of bounds"
       );
     });
-
-    it("Check correct URI", async () => {
-      var locations = [1, 2, 3, 4, 5];
-      var uuids = [6, 7, 8, 9, 10];
-      var uris = locations.map((location) => `${_prefix}PACHA${location}.json`);
-      var promises = uuids.map((uuid) => nftProducerPachacuy.tokenURI(uuid));
-      var tokenUris = await Promise.all(promises);
-      tokenUris.forEach((tokenUri, ix) =>
-        expect(tokenUri).to.equal(uris[ix], `Failed at ${ix}`)
-      );
-    });
   });
 
   describe("Chakra", () => {
@@ -1610,6 +1599,74 @@ describe("Tesing Pachacuy Game", function () {
         var list = listOfParticipants.filter((add) => add === buyer.address);
         expect(list.length).to.be.equal(amount[ix]);
       });
+    });
+  });
+
+  describe("Token Uri", () => {
+    it("Guinea pig", async () => {
+      var uuid = 1;
+      var { idForJsonFile } = await guineaPig.getGuineaPigWithUuid(uuid);
+      var tokenUri = await nftProducerPachacuy.tokenURI(uuid);
+      expect(tokenUri).to.be.equal(`${_prefix}${idForJsonFile}.json`);
+    });
+
+    it("Pacha", async () => {
+      var locations = [1, 2, 3, 4, 5];
+      var uuids = [6, 7, 8, 9, 10];
+      var uris = locations.map((location) => `${_prefix}PACHA${location}.json`);
+      var promises = uuids.map((uuid) => nftProducerPachacuy.tokenURI(uuid));
+      var tokenUris = await Promise.all(promises);
+      tokenUris.forEach((tokenUri, ix) =>
+        expect(tokenUri).to.equal(uris[ix], `Failed at ${ix}`)
+      );
+    });
+
+    it("Hatun Wasi", async () => {
+      var hwUuid = 34;
+      var tokenUri = await nftProducerPachacuy.tokenURI(hwUuid);
+      expect(tokenUri).to.be.equal(`${_prefix}HATUNWASI.json`);
+    });
+
+    it("Wiracocha", async () => {
+      var wirUuid = 35;
+      var tokenUri = await nftProducerPachacuy.tokenURI(wirUuid);
+      expect(tokenUri).to.be.equal(`${_prefix}WIRACOCHA.json`);
+    });
+
+    it("Tatacuy", async () => {
+      var ttcyUuid = 36;
+      var tokenUri = await nftProducerPachacuy.tokenURI(ttcyUuid);
+      expect(tokenUri).to.be.equal(`${_prefix}TATACUY.json`);
+    });
+
+    it("Misay Wasi", async () => {
+      var mswsUuid = 20;
+      var tokenUri = await nftProducerPachacuy.tokenURI(mswsUuid);
+      expect(tokenUri).to.be.equal(`${_prefix}MISAYWASI.json`);
+    });
+
+    it("Qhatu Wasi", async () => {
+      var qhatuWasiUuid = 27;
+      var tokenUri = await nftProducerPachacuy.tokenURI(qhatuWasiUuid);
+      expect(tokenUri).to.be.equal(`${_prefix}QHATUWASI.json`);
+    });
+
+    it("CHakra", async () => {
+      var chakraUuid = 12;
+      var tokenUri = await nftProducerPachacuy.tokenURI(chakraUuid);
+      expect(tokenUri).to.be.equal(`${_prefix}CHAKRA.json`);
+    });
+
+    it("Pacha pass", async () => {
+      var pcpsUuid = 33; // pacha pass uuid
+      var tokenUri = await nftProducerPachacuy.tokenURI(pcpsUuid);
+      expect(tokenUri).to.be.equal(`${_prefix}PACHAPASS.json`);
+    });
+
+    it("Ticket misay wasi", async () => {
+      var ticketMswsUuid = 25; // ticket raffle msws uuid
+      var tokenUri = await nftProducerPachacuy.tokenURI(ticketMswsUuid);
+      expect(tokenUri).to.be.equal(`${_prefix}TICKETMISAYWASI.json`);
     });
   });
 });
