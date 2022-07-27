@@ -1365,7 +1365,7 @@ describe("Tesing Pachacuy Game", function () {
     it("Tatacuy", async () => {
       // uuid pacha 6 alice
       var pachaUuid = 6;
-      await testing.mintTatacuy(alice, [pachaUuid, ++uuid]); // uuid 35 wiracocha
+      await testing.mintTatacuy(alice, [pachaUuid, ++uuid]); // uuid 36 Tatacuy
       var ttcyUuid = 36;
       expect(
         nftProducerPachacuy
@@ -1400,7 +1400,7 @@ describe("Tesing Pachacuy Game", function () {
     });
 
     it("Qhatu Wasi", async () => {
-      // alice misay wasi uuid 20
+      // alice misay wasi uuid 20q
       var pachaUuid = 6;
       var qtwsUuid = 27;
 
@@ -1516,6 +1516,100 @@ describe("Tesing Pachacuy Game", function () {
         await nftProducerPachacuy.getListOfUuidsPerAccount(huidobro.address)
       )[0].filter((uuid) => uuid.toNumber() === pachaUuid);
       expect(uuidList.length).to.be.equal(1, "Pacha after transfer");
+    });
+
+    it("Ticket Misay Wasi", async () => {
+      var campaignEndDate = async () =>
+        (await ethers.provider.getBlock()).timestamp + 200;
+
+      // carl misay wasi uuid 22
+      var mswsUuid = 22;
+      var prize = pe("5");
+      var tPr = pe("10");
+      var endDate = await campaignEndDate();
+      await misayWasi
+        .connect(carl)
+        .startMisayWasiRaffle(mswsUuid, prize, tPr, endDate); // uuid 37 ticket raffle
+      ++uuid;
+
+      var buyers = [bob, earl, deysi, fephe];
+      var tickets = [3, 10, 50, 100];
+      var t = uuid; // ticket uuid of this msws
+      // purchaseTicket(bob, [mswsUuid, amountTickets])
+      var d = deysi;
+      await testing.purchaseTicket(bob, [carl, mswsUuid, tPr, tickets[0], t]);
+      await testing.purchaseTicket(earl, [carl, mswsUuid, tPr, tickets[1], t]);
+      await testing.purchaseTicket(d, [carl, mswsUuid, tPr, tickets[2], t]);
+      await testing.purchaseTicket(fephe, [carl, mswsUuid, tPr, tickets[3], t]);
+
+      var { listOfParticipants } = await misayWasi.getMisayWasiWithUuid(
+        mswsUuid
+      );
+      expect(listOfParticipants.length).to.be.equal(buyers.length);
+      buyers.forEach((buyer, ix) => {
+        var list = listOfParticipants.filter((add) => add === buyer.address);
+        expect(list.length).to.be.equal(1);
+      });
+
+      var promises = buyers.map((buyer, ix) =>
+        nftProducerPachacuy.balanceOf(buyer.address, t)
+      );
+      var responses = await Promise.all(promises);
+      responses.forEach((response, ix) =>
+        expect(response.toString()).to.be.equal(String(tickets[ix]))
+      );
+
+      // tranferring 2 tickets from bob to earl
+      await nftProducerPachacuy
+        .connect(bob)
+        .safeTransferFrom(bob.address, earl.address, t, 2, "0x");
+
+      // new quantity after sending two tickets
+      var buyers = [bob, earl, deysi, fephe];
+      var tickets = [1, 12, 50, 100];
+      var promises = buyers.map((buyer, ix) =>
+        nftProducerPachacuy.balanceOf(buyer.address, t)
+      );
+      var responses = await Promise.all(promises);
+      responses.forEach((response, ix) =>
+        expect(response.toString()).to.be.equal(String(tickets[ix]))
+      );
+
+      var { listOfParticipants } = await misayWasi.getMisayWasiWithUuid(
+        mswsUuid
+      );
+      expect(listOfParticipants.length).to.be.equal(buyers.length);
+      buyers.forEach((buyer, ix) => {
+        var list = listOfParticipants.filter((add) => add === buyer.address);
+        expect(list.length).to.be.equal(1);
+      });
+
+      // transferring 1 ticket from bob
+      await nftProducerPachacuy
+        .connect(bob)
+        .safeTransferFrom(bob.address, earl.address, t, 1, "0x");
+
+      // new quantity after sending two tickets
+      var buyers = [bob, earl, deysi, fephe];
+      var tickets = [0, 13, 50, 100];
+      var promises = buyers.map((buyer, ix) =>
+        nftProducerPachacuy.balanceOf(buyer.address, t)
+      );
+      var responses = await Promise.all(promises);
+      responses.forEach((response, ix) =>
+        expect(response.toString()).to.be.equal(String(tickets[ix]))
+      );
+
+      var buyers = [bob, earl, deysi, fephe];
+      var amount = [0, 1, 1, 1];
+      var { listOfParticipants } = await misayWasi.getMisayWasiWithUuid(
+        mswsUuid
+      );
+      expect(listOfParticipants.length).to.be.equal(buyers.length - 1);
+      buyers.forEach((buyer, ix) => {
+        var list = listOfParticipants.filter((add) => add === buyer.address);
+        expect(list.length).to.be.equal(amount[ix]);
+      });
     });
   });
 });

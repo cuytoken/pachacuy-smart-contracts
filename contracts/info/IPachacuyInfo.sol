@@ -54,14 +54,6 @@ interface IPachacuyInfo {
     //////////////////////////////////////////////////////////////////
     ///                  BUSINESS PRICES (BUSD)                    ///
     //////////////////////////////////////////////////////////////////
-    function chakraPrice() external returns (uint256);
-
-    function pachaPrice() external returns (uint256);
-
-    function qhatuWasiPrice() external returns (uint256);
-
-    function misayWasiPrice() external returns (uint256);
-
     function getPriceInPcuy(bytes memory _type) external returns (uint256);
 
     //////////////////////////////////////////////////////////////////

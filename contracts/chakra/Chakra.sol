@@ -166,7 +166,8 @@ contract Chakra is
     function transfer(
         address,
         address _newOwner,
-        uint256 _chakraUuid
+        uint256 _chakraUuid,
+        uint256
     ) external onlyRole(GAME_MANAGER) {
         ChakraInfo storage chakraInfo1 = uuidToChakraInfo[_chakraUuid];
         chakraInfo1.pachaUuid = 0;

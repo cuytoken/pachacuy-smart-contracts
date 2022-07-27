@@ -267,7 +267,7 @@ contract NftProducerPachacuy is
         _mint(_account, _ticketUuid, _amountOfTickets, "");
 
         // save in list of uuids for owner
-        _ownerToUuids[_account].push(_ticketUuid);
+        if (newCustomer) _ownerToUuids[_account].push(_ticketUuid);
 
         IMisayWasi(pachacuyInfo.misayWasiAddress()).registerTicketPurchase(
             _account,
@@ -344,13 +344,13 @@ contract NftProducerPachacuy is
         );
         require(_nftInfo[_nftTypes[uuid]].canTransfer, "NFP: Cannot transfer");
 
-        // remove uuid from _ownerToUuids => uuid[]
-        _rmvElFromOwnerToUuids(from, uuid);
-
         // add that uuid to new owner's array
         _ownerToUuids[to].push(uuid);
 
         _safeTransferFrom(from, to, uuid, amount, data);
+
+        // remove uuid from _ownerToUuids => uuid[]
+        _rmvElFromOwnerToUuids(from, uuid);
 
         // update smart contract
         (bool success, ) = _nftInfo[_nftTypes[uuid]].scAddress.call(
@@ -380,6 +380,8 @@ contract NftProducerPachacuy is
 
     function _rmvElFromOwnerToUuids(address _account, uint256 _uuid) internal {
         require(_ownerToUuids[_account].length > 0, "NFP: Array is empty");
+
+        if (balanceOf(_account, _uuid) != 0) return;
 
         if (_ownerToUuids[_account].length == 1) {
             if (_ownerToUuids[_account][0] == _uuid) {

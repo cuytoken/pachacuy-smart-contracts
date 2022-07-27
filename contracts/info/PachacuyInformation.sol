@@ -73,12 +73,6 @@ contract PachacuyInfo is
     uint256 public amountOfMinimumSamiPoints;
     uint256 public amountOfMaximumSamiPoints;
 
-    // Business Prices in BUSD
-    uint256 public chakraPrice;
-    uint256 public pachaPrice;
-    uint256 public qhatuWasiPrice;
-    uint256 public misayWasiPrice;
-
     // Rates
     uint256 public exchangeRatePcuyToSami;
     uint256 public exchangeRateBusdToPcuy;
@@ -179,12 +173,6 @@ contract PachacuyInfo is
         // Food at chakra
         totalFood = 12;
         pricePerFood = 25 * 10**18;
-
-        // business prices en BUSD
-        chakraPrice = 10 * 10**18;
-        pachaPrice = 200 * 10**18;
-        qhatuWasiPrice = 3 * 10**18;
-        misayWasiPrice = 10 * 10**18;
 
         // rates
         // 1 BUSD = 25 PCUY

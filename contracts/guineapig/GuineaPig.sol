@@ -172,7 +172,8 @@ contract GuineaPig is
     function transfer(
         address,
         address _newOwner,
-        uint256 _guineaPigUuid
+        uint256 _guineaPigUuid,
+        uint256
     ) external onlyRole(GAME_MANAGER) {
         GuineaPigInfo storage _guineaPig = _uuidToGuineaPigInfo[_guineaPigUuid];
         _guineaPig.owner = _newOwner;

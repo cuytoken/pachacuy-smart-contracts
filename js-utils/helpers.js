@@ -90,7 +90,7 @@ const money_transfer = ethers.utils.keccak256(
 function toBytes32(KEY) {
   return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(KEY));
 }
-var businessesPrice = [3, 210, 1, 4, 2, 4, 6];
+var businessesPrice = [10, 200, 3, 10, 5, 10, 15];
 var businesses = [
   "CHAKRA",
   "PACHA",

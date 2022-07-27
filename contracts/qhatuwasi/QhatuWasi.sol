@@ -244,7 +244,8 @@ contract QhatuWasi is
     function transfer(
         address,
         address _newOwner,
-        uint256 _qhatuWasiUuid
+        uint256 _qhatuWasiUuid,
+        uint256
     ) external onlyRole(GAME_MANAGER) {
         QhatuWasiInfo storage _qhatuWasiInfo = _uuidToQhatuWasiInfo[
             _qhatuWasiUuid

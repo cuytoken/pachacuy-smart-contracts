@@ -152,20 +152,6 @@ contract MisayWasi is
     // misayWasi uuid => HistoricWinners
     mapping(uint256 => HistoricWinners[]) historicWinners;
 
-    struct TicketRaffle {
-        bool isTicketRaffle;
-        address owner;
-        uint256 misayWasiUuid;
-        uint256 ticketUuid;
-        uint256 purchaseDate;
-        uint256 ticketPrice;
-        uint256 rafflePrize;
-        uint256 tickets;
-        uint256 campaignStartDate;
-        uint256 campaignEndDate;
-    }
-    mapping(uint256 => mapping(address => TicketRaffle)) _mswsUuidToAccToTicket;
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -314,21 +300,7 @@ contract MisayWasi is
         misayWasiInfo.numberTicketsPurchased += _amountOfTickets;
         if (newCustomer) {
             misayWasiInfo.listOfParticipants.push(_account);
-            _mswsUuidToAccToTicket[_misayWasiUuid][_account] = TicketRaffle({
-                isTicketRaffle: true,
-                owner: _account,
-                misayWasiUuid: _misayWasiUuid,
-                ticketUuid: misayWasiInfo.ticketUuid,
-                purchaseDate: block.timestamp,
-                ticketPrice: misayWasiInfo.ticketPrice,
-                rafflePrize: misayWasiInfo.rafflePrize,
-                tickets: _amountOfTickets,
-                campaignStartDate: misayWasiInfo.campaignStartDate,
-                campaignEndDate: misayWasiInfo.campaignEndDate
-            });
         }
-        _mswsUuidToAccToTicket[_misayWasiUuid][_account]
-            .tickets += _amountOfTickets;
 
         emit PurchaseTicketFromMisayWasi(
             _account,
@@ -438,17 +410,51 @@ contract MisayWasi is
     function transfer(
         address _oldOwner,
         address _newOwner,
-        uint256 _uuid
+        uint256 _uuid,
+        uint256 _amount
     ) external onlyRole(GAME_MANAGER) {
-        // MisayWasiInfo storage miswinfo = uuidToMisayWasiInfo[
-        //         _ticketUuidToMisayWasiUuid[_uuid]
-        //     ];
-        // if (uuidToMisayWasiInfo[_uuid].hasMisayWasi) {
-        //     MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[_uuid];
-        //     misayWasiInfo.owner = _newOwner;
-        //     misayWasiInfo.pachaUuid = 0;
-        // } else if(_mswsUuidToAccToTicket[_misayWasiUuid][_account]) {
-        // }
+        if (uuidToMisayWasiInfo[_uuid].hasMisayWasi) {
+            MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[_uuid];
+            misayWasiInfo.owner = _newOwner;
+            misayWasiInfo.pachaUuid = 0;
+            return;
+        } else {
+            MisayWasiInfo storage mswsInfo = uuidToMisayWasiInfo[
+                _ticketUuidToMisayWasiUuid[_uuid]
+            ];
+            require(mswsInfo.hasMisayWasi, "MSWS: Wrong ticket uuid");
+
+            // tranferring a ticket from an old campaign
+            if (mswsInfo.ticketUuid != _uuid) return;
+
+            // increase and decrease amount of tickets for a wallet
+            uint256 oldOwnerQ = _misayWasiToTickets[mswsInfo.misayWasiUuid][
+                _oldOwner
+            ];
+            require(oldOwnerQ >= _amount, "MSWS: Not enough tickets");
+            _misayWasiToTickets[mswsInfo.misayWasiUuid][_oldOwner] -= _amount;
+            // remove from list of participants
+            if (_misayWasiToTickets[mswsInfo.misayWasiUuid][_oldOwner] == 0) {
+                address[] storage _participants = mswsInfo.listOfParticipants;
+                uint256 _lengthP = _participants.length;
+                for (uint256 ix = 0; ix < _lengthP; ix++) {
+                    if (_participants[ix] == _oldOwner) {
+                        _participants[ix] = _participants[_lengthP - 1];
+                        _participants.pop();
+                        break;
+                    }
+                }
+            }
+
+            bool newCustomer = INftProducerPachacuy(
+                pachacuyInfo.nftProducerAddress()
+            ).balanceOf(_newOwner, _uuid) == 0;
+            // include in list of participants
+            if (newCustomer) {
+                mswsInfo.listOfParticipants.push(_newOwner);
+            }
+            _misayWasiToTickets[mswsInfo.misayWasiUuid][_newOwner] += _amount;
+        }
     }
 
     ///////////////////////////////////////////////////////////////

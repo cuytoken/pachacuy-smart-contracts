@@ -174,7 +174,8 @@ contract Pacha is
     function transfer(
         address _oldOwner,
         address _newOwner,
-        uint256 _uuid
+        uint256 _uuid,
+        uint256
     ) external onlyRole(GAME_MANAGER) {
         if (_uuidToPachaInfo[_uuid].isPacha) {
             _uuidToPachaInfo[_uuid].owner = _newOwner;
