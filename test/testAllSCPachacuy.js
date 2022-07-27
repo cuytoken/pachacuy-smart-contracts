@@ -181,7 +181,7 @@ describe("Tesing Pachacuy Game", function () {
       PurchaseAssetController = await gcf("PurchaseAssetController");
       purchaseAssetController = await dp(
         PurchaseAssetController,
-        [randomNumberGenerator.address, process.env.WALLET_FOR_FUNDS],
+        [process.env.WALLET_FOR_FUNDS],
         {
           kind: "uups",
         }
@@ -494,7 +494,7 @@ describe("Tesing Pachacuy Game", function () {
       await executeSet(nftP, "grantRole", [game_manager, mswsAdd], "nftP 004");
       await executeSet(nftP, "grantRole", [game_manager, pachaAdd], "nftP 005");
       await executeSet(nftP, "setBurnOp", [allScAdd], "nftP 006");
-      await executeSet(nftP, "fillNftsInfo", [nftData], "nftP 0071");
+      await executeSet(nftP, "fillNftsInfo", [nftData], "nftP 007");
 
       // Tatacuy
       var tt = tatacuy;

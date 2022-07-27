@@ -19,13 +19,6 @@ interface IMisayWasi {
         address[] listOfParticipants;
     }
 
-    function registerMisayWasi(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _misayWasiUuid,
-        uint256 _misayWasiPrice
-    ) external;
-
     function getMisayWasiWithUuid(uint256 _misayWasiUuid)
         external
         returns (MisayWasiInfo memory);

@@ -129,52 +129,16 @@ contract Wiracocha is
         return (_q > 0) && !_ownerHasWiracochaAtPacha[_account][_pachaUuid];
     }
 
+    // /**
+    //  * @dev Trigger when it is minted
+    //  * @param _account: Wallet address of the current owner of the Pacha
+    //  * @param _pachaUuid: Uuid of the pacha when it was minted
+    //  * @param _wiracochaUuid: Uuid of the Wiracocha when it was minted
+    //  */
     function registerNft(bytes memory _data) external {
         (address _account, uint256 _pachaUuid, , uint256 _wiracochaUuid) = abi
             .decode(_data, (address, uint256, uint256, uint256));
 
-        require(
-            !_ownerHasWiracochaAtPacha[_account][_pachaUuid],
-            "Tatacuy: Already exists one for this pacha"
-        );
-
-        _ownerHasWiracochaAtPacha[_account][_pachaUuid] = true;
-
-        uuidToWiracochaInfo[_wiracochaUuid] = WiracochaInfo({
-            owner: _account,
-            wiracochaUuid: _wiracochaUuid,
-            pachaUuid: _pachaUuid,
-            creationDate: block.timestamp,
-            amountPcuyExchanged: 0,
-            hasWiracocha: true
-        });
-
-        uint256 current = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-
-        _wiracochaIx[_wiracochaUuid] = current;
-        listUuidWiracocha.push(_wiracochaUuid);
-
-        emit MintWiracocha(
-            _account,
-            _wiracochaUuid,
-            _pachaUuid,
-            block.timestamp
-        );
-    }
-
-    /**
-     * @dev Trigger when it is minted
-     * @param _account: Wallet address of the current owner of the Pacha
-     * @param _pachaUuid: Uuid of the pacha when it was minted
-     * @param _wiracochaUuid: Uuid of the Wiracocha when it was minted
-     */
-    function registerWiracocha(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _wiracochaUuid,
-        bytes memory
-    ) external onlyRole(GAME_MANAGER) {
         require(
             !_ownerHasWiracochaAtPacha[_account][_pachaUuid],
             "Tatacuy: Already exists one for this pacha"

@@ -28,14 +28,12 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "../vrf/IRandomNumberGenerator.sol";
 import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 import "../chakra/IChakra.sol";
 import "../pacha/IPacha.sol";
 import "../info/IPachacuyInfo.sol";
 import "../misayWasi/IMisayWasi.sol";
 import "../guineapig/IGuineaPig.sol";
-import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract PurchaseAssetController is
@@ -61,29 +59,11 @@ contract PurchaseAssetController is
     // Pachacuy Information
     IPachacuyInfo pachacuyInfo;
 
-    IRandomNumberGenerator public randomNumberGenerator;
-
     // GuineaPig ERC1155
     INftProducerPachacuy public nftProducerPachacuy;
 
     // pool rewards address
     address public poolRewardsAddress;
-
-    // Verifies that customer has one transaction at a time
-    /**
-     * @dev Transaction objects that indicates type of the current transaction
-     * @param transactionType - Type of the current transaction: PURCHASE_GUINEA_PIG
-     * @param account - The wallet address caller of the customer
-     * @param ongoing - Indicates whether the customer has an ongoing transaction
-     * @param ix - Indicates the price range (1, 2 or 3) of the current transaction
-     */
-    struct Transaction {
-        string transactionType;
-        address account;
-        bool ongoing;
-        uint256 ix;
-    }
-    mapping(address => Transaction) ongoingTransaction;
 
     // Marks the end of a guinea pig purchase
     event GuineaPigPurchaseFinish(
@@ -149,17 +129,10 @@ contract PurchaseAssetController is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
-    function initialize(
-        address _randomNumberGeneratorAddress,
-        address _poolRewardsAddress
-    ) public initializer {
+    function initialize(address _poolRewardsAddress) public initializer {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
-
-        randomNumberGenerator = IRandomNumberGenerator(
-            _randomNumberGeneratorAddress
-        );
 
         poolRewardsAddress = _poolRewardsAddress;
 
@@ -180,12 +153,6 @@ contract PurchaseAssetController is
             "PurchaseAC: Index must be 1, 2 or 3"
         );
 
-        // Verify that customer does not have an ongoing transaction
-        require(
-            !ongoingTransaction[_msgSender()].ongoing,
-            "PurchaseAC: Multiple ongoing transactions"
-        );
-
         uint256 price = pachacuyInfo.getPriceInPcuy(
             abi.encodePacked("GUINEA_PIG_", _ix.toString())
         ) * 10**18;
@@ -193,16 +160,17 @@ contract PurchaseAssetController is
         // Make transfer with appropiate token address
         _purchaseAtPriceInPcuy(price);
 
-        // Mark as ongoing transaction for a customer
-        ongoingTransaction[_msgSender()] = Transaction({
-            transactionType: "PURCHASE_GUINEA_PIG",
-            account: _msgSender(),
-            ongoing: true,
-            ix: _ix
-        });
-
         // Ask for two random numbers
-        randomNumberGenerator.requestRandomNumber(_msgSender(), 2);
+        uint256[] memory _randomNumbers = IGuineaPig(
+            pachacuyInfo.guineaPigAddress()
+        ).requestRandomNumber(_msgSender(), 2);
+
+        _finishPurchaseGuineaPig(
+            _ix,
+            _msgSender(),
+            _randomNumbers[0],
+            _randomNumbers[1]
+        );
 
         // Emit event
         emit GuineaPigPurchaseInit(
@@ -211,24 +179,6 @@ contract PurchaseAssetController is
             _ix,
             poolRewardsAddress
         );
-    }
-
-    function fulfillRandomness(
-        address _account,
-        uint256[] memory _randomNumbers
-    ) external onlyRole(RNG_GENERATOR) {
-        Transaction memory _tx = ongoingTransaction[_account];
-
-        if (_compareStrings(_tx.transactionType, "PURCHASE_GUINEA_PIG")) {
-            _finishPurchaseGuineaPig(
-                _tx.ix,
-                _account,
-                _randomNumbers[0],
-                _randomNumbers[1]
-            );
-            delete ongoingTransaction[_account];
-            return;
-        }
     }
 
     /**
@@ -568,14 +518,6 @@ contract PurchaseAssetController is
     {
         return (keccak256(abi.encodePacked((a))) ==
             keccak256(abi.encodePacked((b))));
-    }
-
-    function setRandomNumberGeneratorAddress(
-        address _randomNumberGeneratorAddress
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        randomNumberGenerator = IRandomNumberGenerator(
-            _randomNumberGeneratorAddress
-        );
     }
 
     function setNftPAddress(address _NftProducerPachacuy)

@@ -2,15 +2,6 @@
 pragma solidity ^0.8.4;
 
 interface IGuineaPig {
-    function registerGuineaPig(
-        address _account,
-        uint256 _gender,
-        uint256 _race,
-        uint256 _idForJsonFile,
-        uint256 _guineaPigUuid,
-        uint256 _price
-    ) external;
-
     function getRaceGenderGuineaPig(
         uint256 _ix,
         uint256 _raceRN, // [1, 100]
@@ -31,4 +22,8 @@ interface IGuineaPig {
         external
         view
         returns (string memory);
+
+    function requestRandomNumber(address _account, uint256 _amount)
+        external
+        returns (uint256[] memory randomNumbers);
 }

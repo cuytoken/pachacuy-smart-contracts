@@ -29,7 +29,6 @@ import "../purchaseAssetController/IPurchaseAssetController.sol";
 import "../info/IPachacuyInfo.sol";
 import "../token/IPachaCuy.sol";
 import "../NftProducerPachacuy/INftProducerPachacuy.sol";
-import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract QhatuWasi is
@@ -99,49 +98,6 @@ contract QhatuWasi is
     }
 
     /**
-     * @dev Trigger when it is minted
-     * @param _qhatuWasiUuid: uuid of the qhatu wasi when it was minted
-     * @param _owner: wallet owner of th owner
-     */
-    function registerQhatuWasi(
-        uint256 _qhatuWasiUuid,
-        uint256 _pachaUuid,
-        address _owner,
-        uint256 _qhatuWasiPrice
-    ) external onlyRole(GAME_MANAGER) {
-        QhatuWasiInfo memory _qhatuWasiInfo = QhatuWasiInfo({
-            uuid: _qhatuWasiUuid,
-            pachaUuid: _pachaUuid,
-            owner: _owner,
-            creationDate: block.timestamp,
-            totalPcuyDeposited: 0,
-            pcuyForCurrentCampaign: 0,
-            samiPointsToGiveAway: 0,
-            qhatuWasiPrice: _qhatuWasiPrice,
-            prizePerView: 0
-        });
-        _uuidToQhatuWasiInfo[_qhatuWasiUuid] = _qhatuWasiInfo;
-
-        uint256 current = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-
-        _qhatuWasiIx[_qhatuWasiUuid] = current;
-        listUuidQhatuWasis.push(_qhatuWasiUuid);
-
-        uint256 balanceConsumer = IPachaCuy(pachacuyInfo.pachaCuyTokenAddress())
-            .balanceOf(_owner);
-
-        emit PurchaseQhatuWasi(
-            _owner,
-            _qhatuWasiUuid,
-            _pachaUuid,
-            _qhatuWasiPrice,
-            block.timestamp,
-            balanceConsumer
-        );
-    }
-
-    /**
      *
      * @param _qhatuWasiUuid: Uuid of the Qhatu Wasi when it was minted
      * @param _amountPcuyCampaign: Amount in PCUY to be deposited by the campaign
@@ -201,6 +157,11 @@ contract QhatuWasi is
         return _q > 0;
     }
 
+    // /**
+    //  * @dev Trigger when it is minted
+    //  * @param _qhatuWasiUuid: uuid of the qhatu wasi when it was minted
+    //  * @param _owner: wallet owner of th owner
+    //  */
     function registerNft(bytes memory _data) external {
         (
             address _owner,

@@ -18,8 +18,10 @@ const {
   executeSet,
   businessesPrice,
   businessesKey,
+  toBytes32,
 } = require("../js-utils/helpers");
 var pe = ethers.utils.parseEther;
+var nftData;
 
 // const NETWORK = "BSCNET";
 const NETWORK = "BSCTESTNET";
@@ -101,7 +103,7 @@ async function main() {
   const PurchaseAssetController = await gcf("PurchaseAssetController");
   const purchaseAssetController = await dp(
     PurchaseAssetController,
-    [randomNumberGenerator.address, process.env.WALLET_FOR_FUNDS],
+    [process.env.WALLET_FOR_FUNDS],
     {
       kind: "uups",
     }
@@ -294,6 +296,104 @@ async function main() {
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Finish Setting up Smart Contracts");
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
+  nftData = [
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bool", "address", "bool", "string", "string"],
+      [
+        toBytes32("PACHA"),
+        true,
+        pacha.address,
+        true,
+        "NFP: location taken",
+        "Pacha: Out of bounds",
+      ]
+    ),
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bool", "address", "bool", "string", "string"],
+      [toBytes32("PACHAPASS"), true, pacha.address, true, "", ""]
+    ),
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bool", "address", "bool", "string", "string"],
+      [
+        toBytes32("QHATUWASI"),
+        true,
+        qhatuWasi.address,
+        true,
+        "NFP: No pacha found",
+        "",
+      ]
+    ),
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bool", "address", "bool", "string", "string"],
+      [
+        toBytes32("MISAYWASI"),
+        true,
+        misayWasi.address,
+        true,
+        "NFP: No pacha found",
+        "",
+      ]
+    ),
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bool", "address", "bool", "string", "string"],
+      [toBytes32("TICKETRAFFLE"), true, misayWasi.address, true, "", ""]
+    ),
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bool", "address", "bool", "string", "string"],
+      [
+        toBytes32("HATUNWASI"),
+        false,
+        hatunWasi.address,
+        false,
+        "NFP: No pacha found",
+        "",
+      ]
+    ),
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bool", "address", "bool", "string", "string"],
+      [
+        toBytes32("CHAKRA"),
+        true,
+        chakra.address,
+        true,
+        "NFP: No pacha found",
+        "",
+      ]
+    ),
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bool", "address", "bool", "string", "string"],
+      [
+        toBytes32("TATACUY"),
+        false,
+        tatacuy.address,
+        false,
+        "NFP: No pacha found",
+        "",
+      ]
+    ),
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bool", "address", "bool", "string", "string"],
+      [
+        toBytes32("WIRACOCHA"),
+        false,
+        wiracocha.address,
+        false,
+        "NFP: No pacha found",
+        "",
+      ]
+    ),
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bool", "address", "bool", "string", "string"],
+      [
+        toBytes32("GUINEAPIG"),
+        true,
+        guineaPig.address,
+        true,
+        "NFP: No pacha found",
+        "",
+      ]
+    ),
+  ];
 
   var allScAdd = [
     qhatuWasi.address,
@@ -350,6 +450,7 @@ async function main() {
   await executeSet(nftP, "grantRole", [game_manager, mswsAdd], "nftP 004");
   await executeSet(nftP, "grantRole", [game_manager, pachaAdd], "nftP 005");
   await executeSet(nftP, "setBurnOp", [allScAdd], "nftP 006");
+  await executeSet(nftP, "fillNftsInfo", [nftData], "nftP 007");
 
   // Tatacuy
   var tt = tatacuy;
@@ -675,9 +776,9 @@ async function fixRelayer() {
 // upgrade()
 // resetOngoingTransaction()
 // fixDeployment()
-// main()
-// sendTokens()
-fixRelayer()
+main()
+  // sendTokens()
+  // fixRelayer()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

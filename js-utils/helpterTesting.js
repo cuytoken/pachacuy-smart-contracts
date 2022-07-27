@@ -153,8 +153,8 @@ function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws, rNumb, nftP) {
       var prevBalCustodianW = await tkn.balanceOf(cw);
 
       // purchase
-      await pac.connect(signer).purchaseGuineaPigWithPcuy(ix);
-      var tx = await rNumb.fulfillRandomWords(324324, [1232, 123244333]);
+      var tx = await pac.connect(signer).purchaseGuineaPigWithPcuy(ix);
+      // var tx = await rNumb.fulfillRandomWords(324324, [1232, 123244333]);
 
       // check correct uuid
       var res = (await getDataFromEvent(tx, "GPP")).toString();

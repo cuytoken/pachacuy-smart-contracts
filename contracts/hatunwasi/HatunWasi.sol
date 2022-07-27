@@ -27,7 +27,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 import "../info/IPachacuyInfo.sol";
-import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract HatunWasi is
@@ -102,6 +101,12 @@ contract HatunWasi is
         return (_q > 0) && !ownerHasHatunWasi[_account];
     }
 
+    // /**
+    //  * @dev Trigger when it is minted
+    //  * @param _account: Wallet address of the current owner of the Pacha
+    //  * @param _pachaUuid: Uuid of the pacha when it was minted
+    //  * @param _hatunWasiUuid: Uuid of the Hatun Wasi when it was minted
+    //  */
     function registerNft(bytes memory _data) external {
         (address _account, uint256 _pachaUuid, , uint256 _hatunWasiUuid) = abi
             .decode(_data, (address, uint256, uint256, uint256));
@@ -129,44 +134,6 @@ contract HatunWasi is
         );
 
         ownerHasHatunWasi[_account] = true;
-    }
-
-    /**
-     * @dev Trigger when it is minted
-     * @param _account: Wallet address of the current owner of the Pacha
-     * @param _pachaUuid: Uuid of the pacha when it was minted
-     * @param _hatunWasiUuid: Uuid of the Hatun Wasi when it was minted
-     */
-    function registerHatunWasi(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _hatunWasiUuid
-    ) external onlyRole(GAME_MANAGER) {
-        require(!ownerHasHatunWasi[_account], "Hatun Wasi: Has a HatunWasi");
-
-        // ownerHasHatunWasi[_account] = true;
-
-        HatunWasiInfo memory hatunWasi = HatunWasiInfo({
-            owner: _account,
-            hatunWasiUuid: _hatunWasiUuid,
-            pachaUuid: _pachaUuid,
-            creationDate: block.timestamp,
-            hasHatunWasi: true
-        });
-        uuidToHatunWasiInfo[_hatunWasiUuid] = hatunWasi;
-
-        uint256 current = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-
-        _hatunWasiIx[_hatunWasiUuid] = current;
-        listUuidOfHatunWasi.push(_hatunWasiUuid);
-
-        emit MintHatunWasi(
-            _account,
-            _hatunWasiUuid,
-            _pachaUuid,
-            block.timestamp
-        );
     }
 
     function burnHatunWasi(uint256 _hatunWasiUuid)

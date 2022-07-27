@@ -8,11 +8,5 @@ interface IHatunWasi {
 
     function hasHatunWasi(address _account) external view returns (bool);
 
-    function registerHatunWasi(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _hatunWasiUuid
-    ) external;
-
     function burnHatunWasi(address _account, uint256 _pachaUuid) external;
 }

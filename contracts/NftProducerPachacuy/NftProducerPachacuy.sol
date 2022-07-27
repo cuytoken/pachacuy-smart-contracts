@@ -39,8 +39,6 @@ import "../info/IPachacuyInfo.sol";
 import "../misayWasi/IMisayWasi.sol";
 import "../guineapig/IGuineaPig.sol";
 import "../pacha/IPacha.sol";
-import "../qhatuwasi/IQhatuWasi.sol";
-import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract NftProducerPachacuy is
@@ -135,16 +133,6 @@ contract NftProducerPachacuy is
         // starts counter at one
         _tokenIdCounter.increment();
     }
-
-    // DONE
-    // function mintGuineaPigNft(
-    // function mintLandNft(
-    // function mintWiracocha(uint256 _pachaUuid) external returns (uint256) {
-    // function mintTatacuy(uint256 _pachaUuid) external returns (uint256) {
-    // function mintChakra(
-    // function mintHatunWasi(uint256 _pachaUuid) external returns (uint256) {
-    // function mintMisayWasi(
-    // function mintQhatuWasi(
 
     function purchaseFood(
         address _account,
@@ -299,7 +287,6 @@ contract NftProducerPachacuy is
         (bool success, bytes memory data) = nft.scAddress.call(
             abi.encodeWithSignature("validateMint(bytes)", _data)
         );
-        // require(success, "Nft P.: Wrong call");
         require(success, nft.errorMessage);
         require(abi.decode(data, (bool)), "Nft P.: Invalid mint");
         // get counter
@@ -321,7 +308,6 @@ contract NftProducerPachacuy is
         (bool success2, ) = nft.scAddress.call(
             abi.encodeWithSignature("registerNft(bytes)", _dataWithUuid)
         );
-        // require(success2, "Nft P.: Error registering NFT");
         require(success2, nft.errorRegister);
 
         // increase counter

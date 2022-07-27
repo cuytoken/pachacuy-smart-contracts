@@ -183,41 +183,16 @@ contract Tatacuy is
         return _q > 0;
     }
 
+    // /**
+    //  * @dev Trigger when it is minted
+    //  * @param _account: Wallet address of the current owner of the Pacha
+    //  * @param _pachaUuid: Uuid of the pacha when it was minted
+    //  * @param _tatacuyUuid: Uuid of the Tatacuy when it was minted
+    //  */
     function registerNft(bytes memory _data) external {
         (address _account, uint256 _pachaUuid, , uint256 _tatacuyUuid) = abi
             .decode(_data, (address, uint256, uint256, uint256));
 
-        uuidToTatacuyInfo[_tatacuyUuid] = TatacuyInfo({
-            owner: _account,
-            tatacuyUuid: _tatacuyUuid,
-            pachaUuid: _pachaUuid,
-            creationDate: block.timestamp,
-            totalFundsPcuyDeposited: 0,
-            ratePcuyToSamiPoints: 0,
-            totalFundsSamiPoints: 0,
-            prizePerWinnerSamiPoints: 0,
-            totalSamiPointsClaimed: 0,
-            campaignStartDate: 0,
-            campaignEndDate: 0,
-            hasTatacuy: true,
-            isCampaignActive: false
-        });
-
-        emit MintTatacuy(_account, _tatacuyUuid, _pachaUuid, block.timestamp);
-    }
-
-    /**
-     * @dev Trigger when it is minted
-     * @param _account: Wallet address of the current owner of the Pacha
-     * @param _pachaUuid: Uuid of the pacha when it was minted
-     * @param _tatacuyUuid: Uuid of the Tatacuy when it was minted
-     */
-    function registerTatacuy(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _tatacuyUuid,
-        bytes memory
-    ) external onlyRole(GAME_MANAGER) {
         uuidToTatacuyInfo[_tatacuyUuid] = TatacuyInfo({
             owner: _account,
             tatacuyUuid: _tatacuyUuid,

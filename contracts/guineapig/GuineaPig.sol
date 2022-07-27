@@ -26,7 +26,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../info/IPachacuyInfo.sol";
-import "hardhat/console.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract GuineaPig is
@@ -45,6 +44,9 @@ contract GuineaPig is
     CountersUpgradeable.Counter private _tokenIdCounter;
 
     using StringsUpgradeable for uint256;
+
+    // random nonce
+    uint256 public randNonce;
 
     // Guinea pig data
     /**
@@ -125,6 +127,8 @@ contract GuineaPig is
 
         // Guniea pig purchase - likelihood
         _setLikelihoodAndPrices();
+
+        randNonce = 0;
     }
 
     function validateMint(bytes memory) external pure returns (bool) {
@@ -179,39 +183,6 @@ contract GuineaPig is
         _guineaPig.owner = _newOwner;
     }
 
-    /**
-     * @dev Trigger when it is minted
-     * @param _account:
-     * @param _gender:
-     * @param _race:
-     * @param _idForJsonFile:
-     * @param _guineaPigUuid:
-     */
-    function registerGuineaPig(
-        address _account,
-        uint256 _gender, // 0, 1
-        uint256 _race, // 1 -> 4
-        uint256 _idForJsonFile, // 1 -> 8
-        uint256 _guineaPigUuid,
-        uint256 _price
-    ) external onlyRole(GAME_MANAGER) {
-        GuineaPigInfo memory _guineaPig = _getGuineaPigStruct(
-            _gender,
-            _race,
-            _guineaPigUuid,
-            _idForJsonFile,
-            _account,
-            _price
-        );
-        _uuidToGuineaPigInfo[_guineaPigUuid] = _guineaPig;
-
-        uint256 current = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-
-        _guineaPigsIx[_guineaPigUuid] = current;
-        listOfUuidGuineaPigs.push(_guineaPigUuid);
-    }
-
     function setDaysUntilHungry(uint256[4] memory _daysUntilHungry_)
         external
         onlyRole(GAME_MANAGER)
@@ -257,6 +228,37 @@ contract GuineaPig is
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
+    function requestRandomNumber(address _account, uint256 _amount)
+        external
+        returns (uint256[] memory randomNumbers)
+    {
+        ++randNonce;
+        randomNumbers = new uint256[](_amount);
+        randomNumbers[0] = uint256(
+            keccak256(
+                abi.encodePacked(
+                    block.difficulty,
+                    block.timestamp,
+                    _account,
+                    randNonce
+                )
+            )
+        );
+        if (_amount == 2) {
+            ++randNonce;
+            randomNumbers[1] = uint256(
+                keccak256(
+                    abi.encodePacked(
+                        block.difficulty,
+                        block.timestamp,
+                        _account,
+                        randNonce
+                    )
+                )
+            );
+        }
+    }
+
     /**
      * @dev Returns the race and gender based on a random number from VRF
      * @param _raceRN is the random number (from VRF) used to calculate the race

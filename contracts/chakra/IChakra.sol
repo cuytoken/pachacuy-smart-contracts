@@ -14,13 +14,6 @@ interface IChakra {
         bool hasChakra;
     }
 
-    function registerChakra(
-        address _account,
-        uint256 _pachaUuid,
-        uint256 _chackraUuid,
-        uint256 _chakraPrice
-    ) external;
-
     function getChakraWithUuid(uint256 _chakraUuid)
         external
         returns (ChakraInfo memory);
