@@ -647,6 +647,7 @@ describe("Tesing Pachacuy Game", function () {
     });
 
     it("Purchase 5 pachas 6-10", async () => {
+      // [location, uuid]
       await testing.purchaseLand(alice, [1, ++uuid]); // uuid 6 pacha
       await testing.purchaseLand(bob, [2, ++uuid]); // uuid 7 pacha
       await testing.purchaseLand(carl, [3, ++uuid]); // uuid 8 pacha
@@ -1600,8 +1601,13 @@ describe("Tesing Pachacuy Game", function () {
         expect(list.length).to.be.equal(amount[ix]);
       });
     });
-  });
 
+    it("Alice has another HW", async () => {
+      await testing.purchaseLand(alice, [7, ++uuid]); // uuid 38 pacha
+      await testing.mintHatunWasi(alice, [uuid, ++uuid]);
+    });
+  });
+  return;
   describe("Token Uri", () => {
     it("Guinea pig", async () => {
       var uuid = 1;
