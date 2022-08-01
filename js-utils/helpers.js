@@ -3,6 +3,23 @@ const hre = require("hardhat");
 const { ethers, providers, BigNumber } = require("ethers");
 var fe = ethers.utils.formatEther;
 var i = ethers.utils.Interface;
+
+async function callSequenceAgnostic(methods) {
+  try {
+    var tx = await methods[methods.length - 1]();
+    var res = await tx.wait();
+    console.log("tx", tx.hash);
+    console.log("finish", methods.length);
+  } catch (error) {
+    console.log("Error at: ", methods.length, error);
+  }
+
+  if (methods.length > 1) {
+    methods.pop();
+    await callSequenceAgnostic(methods);
+  }
+}
+
 async function executeSet(contract, command, args, messageWhenFailed) {
   try {
     return await contract[command](...args);
@@ -103,7 +120,9 @@ var businesses = [
 var businessesKey = businesses.map(toBytes32);
 
 var pachacuyInfoForGame = {
-  maxSamiPoints: [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000],
+  maxSamiPoints: [
+    1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+  ],
   boxes: [50, 120, 140, 160, 180, 200, 220, 240, 260, 280],
   affectation: [30, 32, 33, 35, 36, 38, 40, 42, 44, 47],
 };
@@ -448,4 +467,5 @@ module.exports = {
   b,
   getDataFromEvent,
   toBytes32,
+  callSequenceAgnostic,
 };

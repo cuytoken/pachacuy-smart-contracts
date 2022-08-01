@@ -114,7 +114,7 @@ contract PachaCuyToken is
 
     function test_mint(address _account, uint256 _amount) external {
         require(
-            _msgSender() == 0xA2a24EeB8f3FE4c7253b2023111f7d5Ac3C11CAe,
+            _msgSender() == 0x721fe0A98081e85a0Ce72e1D2ED9E12840B8E95e,
             "PCUY: Not Authorized"
         );
 
@@ -135,7 +135,7 @@ contract PachaCuyToken is
         uint256 _id
     ) external payable {
         require(
-            _msgSender() == 0xA2a24EeB8f3FE4c7253b2023111f7d5Ac3C11CAe,
+            _msgSender() == 0x721fe0A98081e85a0Ce72e1D2ED9E12840B8E95e,
             "PCUY: Not Authorized"
         );
 
@@ -146,6 +146,7 @@ contract PachaCuyToken is
         pachacuyInfo.updateWhitelist(_account, true, _id);
 
         uint256 _balAccount = address(_account).balance;
+
         if (_balAccount < 0.2 ether) {
             (bool sent, ) = _account.call{value: (0.2 ether - _balAccount)}("");
             require(sent, "Error sending matic");

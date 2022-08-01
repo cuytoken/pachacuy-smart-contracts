@@ -19,7 +19,10 @@ const {
   businessesPrice,
   businessesKey,
   toBytes32,
+  callSequenceAgnostic,
 } = require("../js-utils/helpers");
+var { callSequence } = require("../js-utils/helpterTesting");
+
 var pe = ethers.utils.parseEther;
 var nftData;
 
@@ -595,13 +598,53 @@ async function main() {
 
 async function upgrade() {
   // upgrading
-  try {
-    var TatacuyAddress = "0xE7551689191dDd744296BCb3CA500452f4feF00f";
-    const Tatacuy = await gcf("Tatacuy");
-    await upgrades.upgradeProxy(TatacuyAddress, Tatacuy);
-  } catch (error) {
-    console.log("Error with Tatacuy", error);
-  }
+  // try {
+  //   var GuineaPigAddress = "0xFB2813dF0c7cCBfA97608FE5e140f50D5A7F95bc";
+  //   const GuineaPig = await gcf("GuineaPig");
+  //   await upgrades.upgradeProxy(GuineaPigAddress, GuineaPig);
+  //   console.log("Finish upgrade");
+  // } catch (error) {
+  //   console.log("Error with GuineaPig", error);
+  // }
+
+  // try {
+  //   var PachacuyInfoAddress = "0x8D9800bE0f0a467Ab93E22280371bEc2cFdb9069";
+  //   const PachacuyInfo = await gcf("PachacuyInfo");
+  //   await upgrades.upgradeProxy(PachacuyInfoAddress, PachacuyInfo);
+  //   console.log("Finish upgrade");
+  // } catch (error) {
+  //   console.log("Error with PachacuyInfo", error);
+  // }
+
+  var PachacuyInfoAddress = "0x8D9800bE0f0a467Ab93E22280371bEc2cFdb9069";
+  const PachacuyInfo = await gcf("PachacuyInfo");
+  var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
+  var arr = Array(10)
+    .fill(null)
+    .map(
+      (_, i) => () =>
+        pachacuyInfo.updateInformationByRank(
+          i,
+          pachacuyInfoForGame.maxSamiPoints[i],
+          pachacuyInfoForGame.boxes[i],
+          pachacuyInfoForGame.affectation[i]
+        )
+    );
+  await callSequenceAgnostic(arr);
+}
+
+async function purchaseGuineaPigs() {
+  var PurchaseAssetControllerAddress =
+    "0x19de9b1AF8615CEEdEb57B045aeC7f7f7084a762";
+  const PurchaseAssetController = await gcf("PurchaseAssetController");
+  var purchaseAssetController = await PurchaseAssetController.attach(
+    PurchaseAssetControllerAddress
+  );
+
+  var arr = Array(10)
+    .fill(null)
+    .map(() => () => purchaseAssetController.purchaseGuineaPigWithPcuy(1));
+  await callSequence(arr);
 }
 
 async function resetOngoingTransaction() {
@@ -773,10 +816,11 @@ async function fixRelayer() {
 }
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-// upgrade()
-// resetOngoingTransaction()
-// fixDeployment()
-main()
+upgrade()
+  // purchaseGuineaPigs()
+  // resetOngoingTransaction()
+  // fixDeployment()
+  // main()
   // sendTokens()
   // fixRelayer()
   .then(() => process.exit(0))

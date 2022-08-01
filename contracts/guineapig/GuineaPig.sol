@@ -228,36 +228,6 @@ contract GuineaPig is
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
-    function requestRandomNumber(address _account, uint256 _amount)
-        external
-        returns (uint256[] memory randomNumbers)
-    {
-        ++randNonce;
-        randomNumbers = new uint256[](_amount);
-        randomNumbers[0] = uint256(
-            keccak256(
-                abi.encodePacked(
-                    block.difficulty,
-                    block.timestamp,
-                    _account,
-                    randNonce
-                )
-            )
-        );
-        if (_amount == 2) {
-            ++randNonce;
-            randomNumbers[1] = uint256(
-                keccak256(
-                    abi.encodePacked(
-                        block.difficulty,
-                        block.timestamp,
-                        _account,
-                        randNonce
-                    )
-                )
-            );
-        }
-    }
 
     /**
      * @dev Returns the race and gender based on a random number from VRF
@@ -296,11 +266,11 @@ contract GuineaPig is
         }
 
         i += 1;
-        assert(i >= 1 && i <= 4);
+        require(i >= 1 && i <= 4, "GP: Incorrect Race");
 
         // 0: male, 1: female
         uint256 id = i + _genderRN * 4;
-        assert(id >= 1 && i <= 8);
+        require(id >= 1 && i <= 8, "GP: Incorrect id for gp");
 
         if (id == 1) return (_genderRN, i, id, "PERU MALE");
         else if (id == 2) return (_genderRN, i, id, "INTI MALE");

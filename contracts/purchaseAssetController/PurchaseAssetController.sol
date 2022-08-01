@@ -126,6 +126,9 @@ contract PurchaseAssetController is
         uint256 balanceConsumer
     );
 
+    event ErrorString(string reason);
+    event ErrorNotHandled(bytes reason);
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -161,15 +164,14 @@ contract PurchaseAssetController is
         _purchaseAtPriceInPcuy(price);
 
         // Ask for two random numbers
-        uint256[] memory _randomNumbers = IGuineaPig(
-            pachacuyInfo.guineaPigAddress()
-        ).requestRandomNumber(_msgSender(), 2);
+        uint256 _randomNumberOne = (block.timestamp % 100) + 1;
+        uint256 _randomNumberTwo = block.timestamp % 2;
 
         _finishPurchaseGuineaPig(
             _ix,
             _msgSender(),
-            _randomNumbers[0],
-            _randomNumbers[1]
+            _randomNumberOne,
+            _randomNumberTwo
         );
 
         // Emit event
@@ -472,16 +474,31 @@ contract PurchaseAssetController is
         uint256 _randomNumber1,
         uint256 _randomNumber2
     ) internal {
-        (
-            uint256 _gender,
-            uint256 _race,
-            uint256 _guineaPigId, // idForJsonFile 1 -> 8
-            string memory _raceAndGender
-        ) = IGuineaPig(pachacuyInfo.guineaPigAddress()).getRaceGenderGuineaPig(
+        uint256 _gender = 1;
+        uint256 _race = 3;
+        uint256 _guineaPigId = 5; // idForJsonFile 1 -> 8
+        string memory _raceAndGender = "PERU FEMALE D";
+        try
+            IGuineaPig(pachacuyInfo.guineaPigAddress()).getRaceGenderGuineaPig(
                 _ix,
-                (_randomNumber1 % 100) + 1,
-                _randomNumber2 % 2
-            );
+                _randomNumber1,
+                _randomNumber2
+            )
+        returns (
+            uint256 _g,
+            uint256 _r,
+            uint256 _gId, // idForJsonFile 1 -> 8
+            string memory _ra
+        ) {
+            _gender = _g;
+            _race = _r;
+            _guineaPigId = _gId;
+            _raceAndGender = _ra;
+        } catch Error(string memory reason) {
+            emit ErrorString(reason);
+        } catch (bytes memory reason) {
+            emit ErrorNotHandled(reason);
+        }
 
         require(
             address(nftProducerPachacuy) != address(0),
@@ -493,12 +510,20 @@ contract PurchaseAssetController is
         ) * 10**18;
 
         // Mint Guinea Pigs
-        uint256 _uuid = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
-            .mint(
+        uint256 _uuid = 999;
+        try
+            INftProducerPachacuy(pachacuyInfo.nftProducerAddress()).mint(
                 keccak256("GUINEAPIG"),
                 abi.encode(_account, _gender, _race, _guineaPigId, price),
                 _account
-            );
+            )
+        returns (uint256 _uu) {
+            _uuid = _uu;
+        } catch Error(string memory reason) {
+            emit ErrorString(reason);
+        } catch (bytes memory reason) {
+            emit ErrorNotHandled(reason);
+        }
 
         uint256 _balance = pachaCuyToken.balanceOf(_account);
         emit GuineaPigPurchaseFinish(
