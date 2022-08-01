@@ -28,7 +28,6 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "../info/IPachacuyInfo.sol";
 
 /// @custom:security-contact lee@pachacuy.com
 contract PachaCuyToken is
@@ -61,14 +60,6 @@ contract PachaCuyToken is
         bytes userData,
         bytes operatorData
     );
-
-    event HasReceivedPcuy(address account, bool hasReceived, uint256 balance);
-
-    mapping(address => bool) internal test_addressReceived;
-
-    event Balances(uint256 maticBalance, uint256 pcuyBalance);
-
-    IPachacuyInfo pachacuyInfo;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
@@ -110,72 +101,6 @@ contract PachaCuyToken is
 
         //_pachacuyEvolution
         _mint(_pachacuyEvolution, 20 * 1e6 * 1e18, "", "");
-    }
-
-    function test_mint(address _account, uint256 _amount) external {
-        require(
-            _msgSender() == 0xA2a24EeB8f3FE4c7253b2023111f7d5Ac3C11CAe,
-            "PCUY: Not Authorized"
-        );
-
-        if (test_addressReceived[_account]) {
-            emit HasReceivedPcuy(_account, true, balanceOf(_account));
-            return;
-        }
-
-        test_addressReceived[_account] = true;
-        _mint(_account, _amount, "", "");
-
-        emit HasReceivedPcuy(_account, false, _amount);
-    }
-
-    function sendMaticAndTokens(
-        address _account,
-        uint256 _amount,
-        uint256 _id
-    ) external payable {
-        require(
-            _msgSender() == 0xA2a24EeB8f3FE4c7253b2023111f7d5Ac3C11CAe,
-            "PCUY: Not Authorized"
-        );
-
-        (address wallet, bool included) = pachacuyInfo.isWhiteListed(_id);
-        if (included) {
-            if (wallet != _account) return;
-        }
-        pachacuyInfo.updateWhitelist(_account, true, _id);
-
-        uint256 _balAccount = address(_account).balance;
-        if (_balAccount < 0.2 ether) {
-            (bool sent, ) = _account.call{value: (0.2 ether - _balAccount)}("");
-            require(sent, "Error sending matic");
-        }
-        if (!test_addressReceived[_account]) {
-            test_addressReceived[_account] = true;
-            _mint(_account, _amount, "", "");
-        }
-        emit Balances(address(_account).balance, balanceOf(_account));
-    }
-
-    function setPachacuyInfoAddress(address _pachacuyInfo)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        pachacuyInfo = IPachacuyInfo(_pachacuyInfo);
-    }
-
-    receive() external payable {}
-
-    function hasReceived(address _account)
-        external
-        view
-        returns (
-            address,
-            bool,
-            uint256
-        )
-    {
-        return (_account, test_addressReceived[_account], balanceOf(_account));
     }
 
     function tokensReceived(
