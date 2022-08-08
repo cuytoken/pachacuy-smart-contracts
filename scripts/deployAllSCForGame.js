@@ -608,12 +608,12 @@ async function upgrade() {
   // }
 
   // try {
-  //   var PachacuyInfoAddress = "0x8D9800bE0f0a467Ab93E22280371bEc2cFdb9069";
-  //   const PachacuyInfo = await gcf("PachacuyInfo");
-  //   await upgrades.upgradeProxy(PachacuyInfoAddress, PachacuyInfo);
+  //   var HatunWasiAddress = "0xE31b350A5e2B0F4551912259b85b43Ab7E1B220B";
+  //   const HatunWasi = await gcf("HatunWasi");
+  //   await upgrades.upgradeProxy(HatunWasiAddress, HatunWasi);
   //   console.log("Finish upgrade");
   // } catch (error) {
-  //   console.log("Error with PachacuyInfo", error);
+  //   console.log("Error with HatunWasi", error);
   // }
 
   var PachacuyInfoAddress = "0x8D9800bE0f0a467Ab93E22280371bEc2cFdb9069";
