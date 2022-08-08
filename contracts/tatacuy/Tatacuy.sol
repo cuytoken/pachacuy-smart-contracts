@@ -444,6 +444,14 @@ contract Tatacuy is
         pachacuyInfo = IPachacuyInfo(_infoAddress);
     }
 
+    function tokenUri(string memory _prefix, uint256)
+        external
+        view
+        returns (string memory)
+    {
+        return string(abi.encodePacked(_prefix, "TATACUY.json"));
+    }
+
     ///////////////////////////////////////////////////////////////
     ////                   STANDARD FUNCTIONS                  ////
     ///////////////////////////////////////////////////////////////

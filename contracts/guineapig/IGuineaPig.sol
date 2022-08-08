@@ -23,7 +23,8 @@ interface IGuineaPig {
         view
         returns (string memory);
 
-    function requestRandomNumber(address _account, uint256 _amount)
+    function requestRandomNumber(uint256 _capOne, uint256 _capTwo)
         external
-        returns (uint256[] memory randomNumbers);
+        view
+        returns (uint256 randomNumberOne, uint256 randomNumberTwo);
 }

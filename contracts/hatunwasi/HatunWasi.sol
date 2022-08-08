@@ -68,6 +68,7 @@ contract HatunWasi is
     mapping(uint256 => uint256) internal _hatunWasiIx;
 
     mapping(address => bool) public ownerHasHatunWasi;
+    mapping(uint256 => mapping(address => bool)) public uuidToOwnerToHasHW;
 
     event MintHatunWasi(
         address owner,
@@ -98,7 +99,7 @@ contract HatunWasi is
         uint256 _q = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
             .balanceOf(_account, _pachaUuid);
 
-        return (_q > 0) && !ownerHasHatunWasi[_account];
+        return (_q > 0) && !uuidToOwnerToHasHW[_pachaUuid][_account];
     }
 
     // /**
@@ -133,14 +134,16 @@ contract HatunWasi is
             block.timestamp
         );
 
-        ownerHasHatunWasi[_account] = true;
+        uuidToOwnerToHasHW[_pachaUuid][_account] = true;
     }
 
     function burnHatunWasi(uint256 _hatunWasiUuid)
         external
         onlyRole(GAME_MANAGER)
     {
-        ownerHasHatunWasi[uuidToHatunWasiInfo[_hatunWasiUuid].owner] = false;
+        uuidToOwnerToHasHW[uuidToHatunWasiInfo[_hatunWasiUuid].pachaUuid][
+            uuidToHatunWasiInfo[_hatunWasiUuid].owner
+        ] = false;
         delete uuidToHatunWasiInfo[_hatunWasiUuid];
         _removeHatunWasiWithUuid(_hatunWasiUuid);
     }
@@ -177,11 +180,13 @@ contract HatunWasi is
         _tokenIdCounter.decrement();
     }
 
-    function tokenUri(uint256 _hatunWasiUuid)
-        public
+    function tokenUri(string memory _prefix, uint256)
+        external
         view
         returns (string memory)
-    {}
+    {
+        return string(abi.encodePacked(_prefix, "HATUNWASI.json"));
+    }
 
     function getListOfHatunWasis()
         external

@@ -12,12 +12,38 @@ var secsInADay = 60 * 60 * 24;
 const { expect } = require("chai");
 const { toBytes32 } = require("./helpers");
 
+async function callSequence(methods) {
+  try {
+    var tx = await methods[methods.length - 1]();
+    console.log(methods.length, "hash", tx.hash);
+    var [address, price, guineaPigId, uuid, race, balance] =
+      await getDataFromEvent(tx, "GNPFNSH");
+
+    console.log("address", address);
+    console.log("price", fe(price));
+    console.log("id", guineaPigId.toNumber());
+    console.log("uuid", uuid.toNumber());
+    console.log("race", race);
+    console.log("balance", fe(balance));
+    console.log("----------------------------------------------------");
+    console.log("finish", methods.length);
+  } catch (error) {
+    console.log("Error at: ", methods.length, error);
+  }
+
+  if (methods.length > 1) {
+    methods.pop();
+    await callSequence(methods);
+  }
+}
+
 /**
  * GPP = GUINEA_PIG_PURCHASE
  * PP = PACHA PURCHASE
  */
 function mapTopic(eventName) {
   var listEvents = [
+    "GNPFNSH",
     "GPP",
     "PP",
     "CHKR",
@@ -48,6 +74,10 @@ function mapTopic(eventName) {
   ]).getEventTopic("GuineaPigPurchaseFinish");
 
   var map = {
+    GNPFNSH: {
+      topic: tGNPFNSH,
+      params: ["address", "uint256", "uint256", "uint256", "string", "uint256"],
+    },
     GPP: {
       topic: tUuid,
       params: ["uint256"],
@@ -603,4 +633,5 @@ function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws, rNumb, nftP) {
 
 module.exports = {
   init,
+  callSequence,
 };

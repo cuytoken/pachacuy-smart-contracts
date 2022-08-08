@@ -253,11 +253,13 @@ contract Chakra is
         _tokenIdCounter.decrement();
     }
 
-    function tokenUri(uint256 _chakraUuid)
-        public
+    function tokenUri(string memory _prefix, uint256)
+        external
         view
         returns (string memory)
-    {}
+    {
+        return string(abi.encodePacked(_prefix, "CHAKRA.json"));
+    }
 
     function getListOfChakrasWithFood()
         external

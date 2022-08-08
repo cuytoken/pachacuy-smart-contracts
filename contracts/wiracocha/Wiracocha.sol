@@ -243,6 +243,14 @@ contract Wiracocha is
         return _ownerHasWiracochaAtPacha[_account][_pachaUuid];
     }
 
+    function tokenUri(string memory _prefix, uint256)
+        external
+        view
+        returns (string memory)
+    {
+        return string(abi.encodePacked(_prefix, "WIRACOCHA.json"));
+    }
+
     ///////////////////////////////////////////////////////////////
     ////                   STANDARD FUNCTIONS                  ////
     ///////////////////////////////////////////////////////////////
