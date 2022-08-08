@@ -70,24 +70,16 @@ describe("Tesing Pachacuy Game", function () {
        * 1. Gather all operators and pass it to the initialize
        */
       PachaCuyToken = await gcf("PachaCuyToken");
-      pachaCuyToken = await dp(
-        PachaCuyToken,
-        [
-          vesting.address,
-          owner.address,
-          owner.address,
-          owner.address,
-          owner.address,
-          [owner.address],
-        ],
-        {
-          kind: "uups",
-        }
+      pachaCuyToken = await PachaCuyToken.deploy(
+        vesting.address,
+        owner.address,
+        owner.address,
+        owner.address,
+        owner.address,
+        [owner.address]
       );
       await pachaCuyToken.deployed();
       console.log("PachaCuyToken Proxy:", pachaCuyToken.address);
-      pachacuyTokenImp = await getImplementation(pachaCuyToken);
-      console.log("PachaCuyToken Imp:", pachacuyTokenImp);
 
       console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
       console.log("Finish Setting up Smart Contracts");

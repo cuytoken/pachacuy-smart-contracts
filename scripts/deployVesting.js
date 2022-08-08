@@ -5,6 +5,7 @@ const {
   safeAwait,
   getImplementation,
   executeSet,
+  verify,
 } = require("../js-utils/helpers");
 var pe = ethers.utils.parseEther;
 
@@ -32,24 +33,16 @@ async function main() {
   var PachaCuyToken, pachaCuyToken, pachacuyTokenImp;
   if (process.env.HARDHAT_NETWORK) {
     PachaCuyToken = await gcf("PachaCuyToken");
-    pachaCuyToken = await dp(
-      PachaCuyToken,
-      [
-        vesting.address,
-        owner.address,
-        owner.address,
-        owner.address,
-        owner.address,
-        [owner.address],
-      ],
-      {
-        kind: "uups",
-      }
+    pachaCuyToken = await PachaCuyToken.deploy(
+      vesting.address,
+      owner.address,
+      owner.address,
+      owner.address,
+      owner.address,
+      [owner.address]
     );
     await pachaCuyToken.deployed();
-    console.log("PachaCuyToken Proxy:", pachaCuyToken.address);
-    pachacuyTokenImp = await getImplementation(pachaCuyToken);
-    console.log("PachaCuyToken Imp:", pachacuyTokenImp);
+    console.log("PachaCuyToken:", pachaCuyToken.address);
   }
 
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
@@ -79,6 +72,19 @@ async function main() {
   var pcuyA = pachaCuyToken.address;
   await executeSet(ves, "settingVestingStateStructs", [r, c], "ves 001");
   await executeSet(ves, "setPachaCuyAddress", [pcuyA], "ves 002");
+
+  // Verify smart contracts
+  if (!process.env.HARDHAT_NETWORK) return;
+
+  await verify(vestingImp, "Vesting");
+  await verify(pachaCuyToken.address, "PCUY", [
+    vesting.address,
+    owner.address,
+    owner.address,
+    owner.address,
+    owner.address,
+    [owner.address],
+  ]);
 }
 
 main()

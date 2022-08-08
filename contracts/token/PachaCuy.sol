@@ -20,24 +20,19 @@
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
-
-import "@openzeppelin/contracts-upgradeable/token/ERC777/IERC777SenderUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC777/IERC777RecipientUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC777/ERC777Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC777/ERC777.sol";
+import "@openzeppelin/contracts/token/ERC777/IERC777Sender.sol";
+import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @custom:security-contact lee@pachacuy.com
 contract PachaCuyToken is
-    Initializable,
-    ERC777Upgradeable,
-    IERC777SenderUpgradeable,
-    IERC777RecipientUpgradeable,
-    PausableUpgradeable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable
+    ERC777,
+    IERC777Sender,
+    IERC777Recipient,
+    Pausable,
+    AccessControl
 {
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -61,20 +56,14 @@ contract PachaCuyToken is
         bytes operatorData
     );
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
-
-    function initialize(
+    constructor(
         address _vesting,
         address _publicSale,
         address _gameRewards,
         address _proofOfHold,
         address _pachacuyEvolution,
         address[] memory defaultOperators_
-    ) public initializer {
-        __ERC777_init("Pachacuy", "PCUY", defaultOperators_);
-        __AccessControl_init();
-        __UUPSUpgradeable_init();
+    ) ERC777("Pachacuy", "PCUY", defaultOperators_) {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
 
@@ -133,12 +122,4 @@ contract PachaCuyToken is
     ) internal override whenNotPaused {
         super._beforeTokenTransfer(operator, from, to, amount);
     }
-
-    function revokeOperator(address operator) public virtual override {}
-
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(UPGRADER_ROLE)
-    {}
 }

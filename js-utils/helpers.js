@@ -28,11 +28,11 @@ async function executeSet(contract, command, args, messageWhenFailed) {
   }
 }
 
-async function verify(_implementation, _contractName) {
+async function verify(_implementation, _contractName, arguments = []) {
   try {
     await hre.run("verify:verify", {
       address: _implementation,
-      constructorArguments: [],
+      constructorArguments: [...arguments],
     });
   } catch (e) {
     if (e.message.includes("Contract source code already verified"))
