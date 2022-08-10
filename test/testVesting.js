@@ -12,8 +12,36 @@ const NETWORK = "BSCTESTNET";
 var cw = process.env.WALLET_FOR_FUNDS;
 var gcf = hre.ethers.getContractFactory;
 var dp = upgrades.deployProxy;
+var pe = ethers.utils.parseEther;
 
 describe("Tesing Pachacuy Game", function () {
+  async function getTimeStamp(show = false) {
+    var blockNumBefore = await ethers.provider.getBlockNumber();
+    var blockBefore = await ethers.provider.getBlock(blockNumBefore);
+    if (show) console.log(blockBefore.timestamp);
+    return blockBefore.timestamp;
+  }
+
+  async function advanceAMonth(month, ts = 1661990400, dx = 0) {
+    var secsM = 2592000;
+    await network.provider.send("evm_setNextBlockTimestamp", [
+      ts + secsM * month + dx,
+    ]);
+    await network.provider.send("evm_mine");
+  }
+
+  var hldrTkns = pe(String(1 * 1000000));
+  var mktTkns = pe(String(10 * 1000000));
+  var c = [
+    hldrTkns, // * HOLDER_CUY_TOKEN     -> 1
+    pe(String(1.5 * 1000000)), // * PRIVATE_SALE_1       -> 1.5
+    pe(String(0.6 * 1000000)), // * PRIVATE_SALE_2       -> 0.6
+    pe(String(1.2 * 1000000)), // * AIRDROP              -> 1.2
+    pe(String(12 * 1000000)), // * PACHACUY_TEAM        -> 12
+    pe(String(10 * 1000000)), // * PARTNER_ADVISOR      -> 10
+    mktTkns, // * MARKETING            -> 10
+  ];
+
   var owner,
     alice,
     bob,
@@ -24,7 +52,6 @@ describe("Tesing Pachacuy Game", function () {
     gary,
     huidobro,
     custodianWallet;
-  var pe = ethers.utils.parseEther;
   var PachaCuyToken, pachaCuyToken, pachacuyTokenImp;
   var Vesting, vesting;
 
@@ -44,14 +71,7 @@ describe("Tesing Pachacuy Game", function () {
     ] = signers;
   });
 
-  describe("Set Up", async function () {
-    async function getTimeStamp() {
-      var blockNumBefore = await ethers.provider.getBlockNumber();
-      var blockBefore = await ethers.provider.getBlock(blockNumBefore);
-      console.log(blockBefore.timestamp);
-      return blockBefore.timestamp;
-    }
-
+  describe("Set Up PCUY y Vesting SCs", async function () {
     it("Initializes all Smart Contracts", async () => {
       var [owner] = await ethers.getSigners();
       if (process.env.HARDHAT_NETWORK) upgrades.silenceWarnings();
@@ -61,9 +81,6 @@ describe("Tesing Pachacuy Game", function () {
         kind: "uups",
       });
       await vesting.deployed();
-      console.log("Vesting Proxy:", vesting.address);
-      var vestingImp = await getImplementation(vesting);
-      console.log("Vesting Imp:", vestingImp);
 
       /**
        * Pachacuy Token PCUY
@@ -79,11 +96,6 @@ describe("Tesing Pachacuy Game", function () {
         [owner.address]
       );
       await pachaCuyToken.deployed();
-      console.log("PachaCuyToken Proxy:", pachaCuyToken.address);
-
-      console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
-      console.log("Finish Setting up Smart Contracts");
-      console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
       var r = [
         "HOLDER_CUY_TOKEN",
         "PRIVATE_SALE_1",
@@ -94,23 +106,33 @@ describe("Tesing Pachacuy Game", function () {
         "MARKETING",
       ];
 
-      var c = [
-        pe("1"),
-        pe("1.5"),
-        pe("0.6"),
-        pe("1.2"),
-        pe("12"),
-        pe("10"),
-        pe("10"),
-      ];
       // Vesting
       var ves = vesting;
       var pcuyA = pachaCuyToken.address;
       await executeSet(ves, "settingVestingStateStructs", [r, c], "ves 001");
       await executeSet(ves, "setPachaCuyAddress", [pcuyA], "ves 002");
     });
+  });
 
-    it("Register vesting", async () => {
+  describe("Vesting SC", async function () {
+    it("Recibes balance", async () => {
+      var balance = await pachaCuyToken.balanceOf(vesting.address);
+      expect(balance).to.equal(c.reduce((prev, curr) => prev.add(curr)));
+    });
+  });
+
+  describe("Vesting", async function () {
+    it("Register for a non-existant role", async () => {
+      var ts = 1661990400;
+      await expect(
+        vesting.createVestingSchema(
+          alice.address,
+          pe("1"),
+          4,
+          ts,
+          "NON_EXISTANT_ROLE"
+        )
+      ).to.be.revertedWith("Vesting: Not a valid role.");
       /**
        * ROLES FOR VESTING       Q
        * -----
@@ -124,58 +146,264 @@ describe("Tesing Pachacuy Game", function () {
        * ------------------------------------
        * TOTAL                -> 36.3
        */
+    });
 
+    it("Register vesting HOLDER_CUY_TOKEN", async () => {
       // timestamp 1661990400: Thursday, 1 September 2022 0:00:00
       var ts = 1661990400;
-      var secMonth = 2592000;
-      await network.provider.send("evm_setNextBlockTimestamp", [ts]);
-      await network.provider.send("evm_mine");
-      // await network.provider.send("evm_increaseTime", [3600]);
-
-      await getTimeStamp();
-
-      var _accounts = [alice, bob, carl, deysi, earl, fephe].map(
-        (signer) => signer.address
-      );
+      var _accounts = [alice, bob, carl, deysi, earl];
+      var _addresses = _accounts.map((signer) => signer.address);
       var _fundsToVestArray = [
-        pe("1"),
-        pe("1"),
-        pe("1"),
-        pe("1"),
-        pe("1"),
-        pe("1"),
+        hldrTkns.div(_accounts.length), // uuid 0
+        hldrTkns.div(_accounts.length), // uuid 1
+        hldrTkns.div(_accounts.length), // uuid 2
+        hldrTkns.div(_accounts.length), // uuid 3
+        hldrTkns.div(_accounts.length), // uuid 4
       ];
-      var _vestingPeriods = [12, 12, 12, 12, 12, 12];
-      var _releaseDays = [
-        1661990400, 1661990400, 1661990400, 1661990400, 1661990400, 1661990400,
-      ];
-      var _roleOfAccounts = [
-        "MARKETING",
-        "MARKETING",
-        "MARKETING",
-        "MARKETING",
-        "MARKETING",
-        "MARKETING",
-      ];
+      var _vestingPeriods = [10, 10, 10, 10, 10];
+      var _releaseDays = [ts, ts, ts, ts, ts];
+      var _roleOfAccounts = Array(5)
+        .fill(null)
+        .map(() => "HOLDER_CUY_TOKEN");
 
       await vesting.createVestingSchemaBatch(
-        _accounts,
+        _addresses,
         _fundsToVestArray,
         _vestingPeriods,
         _releaseDays,
         _roleOfAccounts
       );
 
-      await network.provider.send("evm_increaseTime", [secMonth]);
-      await network.provider.send("evm_mine");
-      await getTimeStamp();
+      _addresses.map(async (address) => {
+        var res = await vesting.getArrayVestingSchema(address);
+        expect(res.length).to.equal(1);
+      });
+    });
 
-      var res = await vesting.getArrayVestingSchema(alice.address);
-      console.log(res);
+    it("Alice starts with zero tokens", async () => {
+      var balance = await pachaCuyToken.balanceOf(alice.address);
+      expect(balance.toString()).to.equal(String(0));
+    });
 
+    it("Claiming HOLDER_CUY_TOKEN wrong time", async () => {
+      await expect(
+        vesting.connect(alice).claimTokensWithVesting(0)
+      ).to.be.revertedWith(
+        "Vesting: You already claimed tokens for the current vesting period"
+      );
+    });
+
+    it("Claiming HOLDER_CUY_TOKEN", async () => {
+      // advance time to month 1
+      await advanceAMonth(1);
+
+      // vesting month one
       await vesting.connect(alice).claimTokensWithVesting(0);
-      var res = await vesting.getArrayVestingSchema(alice.address);
-      console.log(res);
+
+      var uuid = 0;
+      var [
+        fundsToVestForThisAccount,
+        currentVestingPeriod,
+        totalFundsVested,
+        datesForVesting,
+        roleOfAccount,
+        uuid,
+        vestingPeriods,
+        tokensPerPeriod,
+      ] = await vesting.getVestingSchemaWithUuid(alice.address, uuid);
+      expect(fundsToVestForThisAccount).to.equal(hldrTkns.div(5), "Error at 1");
+      expect(currentVestingPeriod.toNumber()).to.equal(1, "Error at 2");
+      expect(totalFundsVested).to.equal(hldrTkns.div(5).div(10), "Error at 3");
+      var ts = 1661990400;
+      var secsM = 2592000;
+      datesForVesting.forEach((date, ix) =>
+        expect(date.toString()).to.equal(
+          String(1661990400 + 2592000 * (ix + 1)),
+          `Error at 4 ${ix}`
+        )
+      );
+      expect(roleOfAccount).to.equal("HOLDER_CUY_TOKEN", "Error at 5");
+      expect(uuid.toNumber()).to.equal(0, "Error at 6");
+      expect(vestingPeriods.toNumber()).to.equal(10, "Error at 7");
+      expect(tokensPerPeriod).to.equal(hldrTkns.div(5).div(10), "Error at 8");
+    });
+
+    it("Alice receives one month vesting", async () => {
+      var balance = await pachaCuyToken.balanceOf(alice.address);
+      expect(balance).to.equal(hldrTkns.div(5).div(10));
+    });
+
+    it("Vesting is completed and fails", async () => {
+      // should failed if asked twice
+      await expect(
+        vesting.connect(alice).claimTokensWithVesting(0)
+      ).to.be.revertedWith(
+        "Vesting: You already claimed tokens for the current vesting period"
+      );
+    });
+
+    it("Completes a vesting for alice", async () => {
+      await advanceAMonth(2); // to month 2
+      await vesting.connect(alice).claimTokensWithVesting(0);
+      await advanceAMonth(3); // to month 3
+      await vesting.connect(alice).claimTokensWithVesting(0);
+      await advanceAMonth(4); // to month 4
+      await vesting.connect(alice).claimTokensWithVesting(0);
+      await advanceAMonth(5); // to month 5
+      await vesting.connect(alice).claimTokensWithVesting(0);
+      await advanceAMonth(6); // to month 6
+      await vesting.connect(alice).claimTokensWithVesting(0);
+      await advanceAMonth(7); // to month 7
+      await vesting.connect(alice).claimTokensWithVesting(0);
+      await advanceAMonth(8); // to month 8
+      await vesting.connect(alice).claimTokensWithVesting(0);
+      await advanceAMonth(9); // to month 9
+      await vesting.connect(alice).claimTokensWithVesting(0);
+      await advanceAMonth(10); // to month 10
+      await vesting.connect(alice).claimTokensWithVesting(0);
+    });
+
+    it("Vesting periods completed ", async () => {
+      // should failed if asked twice
+      await expect(
+        vesting.connect(alice).claimTokensWithVesting(0)
+      ).to.be.revertedWith("Vesting: All tokens for vesting have been claimed");
+    });
+
+    it("Alice receives 10 month vesting", async () => {
+      var balance = await pachaCuyToken.balanceOf(alice.address);
+      expect(balance).to.equal(hldrTkns.div(5));
+    });
+
+    it("After 10 months, claim all", async () => {
+      var balance = await pachaCuyToken.balanceOf(bob.address);
+      expect(balance.toString()).to.equal(String(0), "Initial Bob balance");
+
+      await vesting.connect(bob).claimTokensWithVesting(1);
+
+      var balance = await pachaCuyToken.balanceOf(bob.address);
+      expect(balance).to.equal(hldrTkns.div(5), "Final Bob balance");
+    });
+
+    it("All HOLDER_CUY_TOKEN is claimed", async () => {
+      await vesting.connect(carl).claimTokensWithVesting(2);
+      await vesting.connect(deysi).claimTokensWithVesting(3);
+      await vesting.connect(earl).claimTokensWithVesting(4);
+
+      var balance = await pachaCuyToken.balanceOf(vesting.address);
+      expect(balance).to.equal(
+        c.reduce((prev, curr) => prev.add(curr)).sub(hldrTkns),
+        "Vesting balance incorrect"
+      );
+    });
+
+    it("HOLDER_CUY_TOKEN reaches its limit", async () => {
+      var ts = 1661990400;
+      await expect(
+        vesting.createVestingSchema(
+          alice.address,
+          pe("1"),
+          10,
+          ts,
+          "HOLDER_CUY_TOKEN"
+        )
+      ).to.be.revertedWith(
+        "Vesting: Not enough funds to allocate for vesting."
+      );
+    });
+  });
+
+  describe("Vesting 2nd group - MARKETING", () => {
+    var ts;
+    var _accounts;
+    var _addresses;
+    it("Register vesting MARKETING", async () => {
+      ts = await getTimeStamp();
+      _accounts = [alice, bob, carl, deysi, earl];
+      _addresses = _accounts.map((signer) => signer.address);
+      var _fundsToVestArray = [
+        mktTkns.div(_accounts.length), // uuid 5
+        mktTkns.div(_accounts.length), // uuid 6
+        mktTkns.div(_accounts.length), // uuid 7
+        mktTkns.div(_accounts.length), // uuid 8
+        mktTkns.div(_accounts.length), // uuid 9
+      ];
+      var _vestingPeriods = [10, 10, 10, 10, 10];
+      var _releaseDays = [ts, ts, ts, ts, ts];
+      var _roleOfAccounts = Array(5)
+        .fill(null)
+        .map(() => "MARKETING");
+
+      await vesting.createVestingSchemaBatch(
+        _addresses,
+        _fundsToVestArray,
+        _vestingPeriods,
+        _releaseDays,
+        _roleOfAccounts
+      );
+    });
+
+    it("Fails when half month passes", async () => {
+      await advanceAMonth(0.5, ts);
+
+      _accounts.forEach(async (account, ix) => {
+        await expect(
+          vesting.connect(account).claimTokensWithVesting(5 + ix)
+        ).to.be.revertedWith(
+          "Vesting: You already claimed tokens for the current vesting period"
+        );
+      });
+    });
+
+    it("Succeds when a month passes", async () => {
+      await advanceAMonth(1, ts, 5);
+
+      _accounts.forEach(async (account, ix) => {
+        await vesting.connect(account).claimTokensWithVesting(5 + ix);
+      });
+    });
+
+    it("Fails when 1.5 month passes", async () => {
+      await advanceAMonth(1.5, ts);
+      var timestamp = await getTimeStamp();
+      console.log("current ts", timestamp);
+
+      var uuid = 5;
+      var [
+        fundsToVestForThisAccount,
+        currentVestingPeriod,
+        totalFundsVested,
+        datesForVesting,
+        roleOfAccount,
+        uuid,
+        vestingPeriods,
+        tokensPerPeriod,
+      ] = await vesting.getVestingSchemaWithUuid(alice.address, uuid);
+      // _currVestingPeriod < _vestingPeriods,
+      console.log("currentVestingPeriod", currentVestingPeriod.toString());
+      console.log(
+        "datesForVesting",
+        datesForVesting[0].toString(),
+        datesForVesting[1].toString()
+      );
+      console.log("vestingPeriods", vestingPeriods.toString());
+
+      try {
+        await expect(
+          vesting.connect(_accounts[0]).claimTokensWithVesting(5)
+        ).to.be.revertedWith(
+          "Vesting: You already claimed tokens for the current vesting period"
+        );
+      } catch (error) {
+        console.log("ERror", error);
+      }
+    });
+
+    xit("Succeds when two month pass", async () => {
+      await advanceAMonth(2, ts, 1000);
+      _accounts.forEach(async (account, ix) => {
+        await vesting.connect(account).claimTokensWithVesting(5 + ix);
+      });
     });
   });
 });

@@ -176,24 +176,17 @@ async function main() {
   var PachaCuyToken, pachaCuyToken, pachacuyTokenImp;
   if (process.env.HARDHAT_NETWORK) {
     PachaCuyToken = await gcf("PachaCuyToken");
-    pachaCuyToken = await dp(
-      PachaCuyToken,
-      [
-        owner.address,
-        owner.address,
-        owner.address,
-        owner.address,
-        owner.address,
-        [purchaseAssetController.address],
-      ],
-      {
-        kind: "uups",
-      }
+    pachaCuyToken = await PachaCuyToken.deploy(
+      owner.address,
+      owner.address,
+      owner.address,
+      owner.address,
+      owner.address,
+      [purchaseAssetController.address]
     );
     await pachaCuyToken.deployed();
     console.log("PachaCuyToken Proxy:", pachaCuyToken.address);
-    pachacuyTokenImp = await getImplementation(pachaCuyToken);
-    console.log("PachaCuyToken Imp:", pachacuyTokenImp);
+    pachacuyTokenImp = pachaCuyToken.address;
   }
 
   /**

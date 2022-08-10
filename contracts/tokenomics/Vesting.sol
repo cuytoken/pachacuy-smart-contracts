@@ -49,7 +49,7 @@ contract Vesting is
         keccak256("ERC777TokensRecipient");
 
     /**
-     * ROLES FOR VESTING       Q
+     * ROLES FOR VESTING       Q(M)
      * -----
      * HOLDER_CUY_TOKEN     -> 1
      * PRIVATE_SALE_1       -> 1.5
@@ -80,6 +80,7 @@ contract Vesting is
         string roleOfAccount;
         uint256 uuid;
         uint256 vestingPeriods;
+        uint256 tokensPerPeriod;
     }
     mapping(address => VestingPerAccount[]) vestingAccounts;
 
@@ -210,7 +211,8 @@ contract Vesting is
                 datesForVesting: _datesForVesting,
                 roleOfAccount: _roleOfAccount,
                 uuid: current,
-                vestingPeriods: _vestingPeriods
+                vestingPeriods: _vestingPeriods,
+                tokensPerPeriod: _fundsToVest / _vestingPeriods
             })
         );
 
@@ -289,29 +291,28 @@ contract Vesting is
         VestingPerAccount storage vestingAcc = _vestingArray[x];
         uint256 _vestingPeriods = vestingAcc.vestingPeriods;
         uint256 _currVestingPeriod = vestingAcc.currentVestingPeriod;
+        require(
+            _currVestingPeriod < _vestingPeriods,
+            "Vesting: All tokens for vesting have been claimed"
+        );
+
         uint256 _currentDateOfVesting = vestingAcc.datesForVesting[
             _currVestingPeriod
         ];
         uint256 _todayClaimTime = block.timestamp;
 
         require(
-            _todayClaimTime > _currentDateOfVesting,
+            _todayClaimTime >= _currentDateOfVesting,
             "Vesting: You already claimed tokens for the current vesting period"
-        );
-
-        require(
-            _currVestingPeriod < _vestingPeriods,
-            "Vesting: All tokens for vesting have been claimed"
         );
 
         uint256 _deltaIndex = _todayClaimTime.sub(_currentDateOfVesting).div(
             30 days
         );
 
-        uint256 _fundsToTransfer = vestingAcc
-            .fundsToVestForThisAccount
-            .div(_vestingPeriods)
-            .mul(_deltaIndex + 1);
+        uint256 _fundsToTransfer = vestingAcc.tokensPerPeriod.mul(
+            _deltaIndex + 1
+        );
 
         pachaCuyToken.send(_msgSender(), _fundsToTransfer, bytes("Vesting"));
 
@@ -341,7 +342,8 @@ contract Vesting is
             uint256[] memory datesForVesting,
             string memory roleOfAccount,
             uint256 uuid,
-            uint256 vestingPeriods
+            uint256 vestingPeriods,
+            uint256 tokensPerPeriod
         )
     {
         VestingPerAccount[] memory _vestingArray = vestingAccounts[_account];
@@ -366,6 +368,7 @@ contract Vesting is
         roleOfAccount = vestingAcc.roleOfAccount;
         uuid = vestingAcc.uuid;
         vestingPeriods = vestingAcc.vestingPeriods;
+        tokensPerPeriod = vestingAcc.tokensPerPeriod;
     }
 
     //////////////////////////////////////////////////////////////////////////

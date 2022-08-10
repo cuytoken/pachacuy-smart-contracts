@@ -20,26 +20,22 @@
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
-
-import "@openzeppelin/contracts-upgradeable/token/ERC777/IERC777SenderUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC777/IERC777RecipientUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC777/ERC777Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC777/ERC777.sol";
+import "@openzeppelin/contracts/token/ERC777/IERC777Sender.sol";
+import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @custom:security-contact lee@pachacuy.com
 contract ERC777Mock is
-    Initializable,
-    ERC777Upgradeable,
-    IERC777SenderUpgradeable,
-    IERC777RecipientUpgradeable,
-    PausableUpgradeable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable
+    ERC777,
+    IERC777Sender,
+    IERC777Recipient,
+    Pausable,
+    AccessControl
 {
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     event TokensReceived(
@@ -60,23 +56,26 @@ contract ERC777Mock is
         bytes operatorData
     );
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
-
-    function initialize(
+    constructor(
         address _vesting,
         address _publicSale,
         address _gameRewards,
         address _proofOfHold,
         address _pachacuyEvolution,
         address[] memory defaultOperators_
-    ) public initializer {
-        __ERC777_init("PachacuyMOCK", "PCUYMOCK", defaultOperators_);
-        __AccessControl_init();
-        __UUPSUpgradeable_init();
+    ) ERC777("Pachacuy", "PCUY", defaultOperators_) {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(UPGRADER_ROLE, _msgSender());
         _grantRole(MINTER_ROLE, _msgSender());
+
+        // Distribution:         (M)
+        // VESTING               36.3
+        // PUBLIC SALE           1.7
+        // PACHACUY  REWARDS     36
+        // PROOF OF HOLD         6
+        // PACHACUY EVOLUCION    20
+        // -------------------------
+        // TOTAL                 100
 
         //_vesting
         _mint(_vesting, 363 * 1e5 * 1e18, "", "");
@@ -92,13 +91,6 @@ contract ERC777Mock is
 
         //_pachacuyEvolution
         _mint(_pachacuyEvolution, 20 * 1e6 * 1e18, "", "");
-    }
-
-    function mint(address _account, uint256 _amount)
-        public
-        onlyRole(MINTER_ROLE)
-    {
-        _mint(_account, _amount, "", "");
     }
 
     function tokensReceived(
@@ -132,11 +124,10 @@ contract ERC777Mock is
         super._beforeTokenTransfer(operator, from, to, amount);
     }
 
-    function revokeOperator(address operator) public virtual override {}
-
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(UPGRADER_ROLE)
-    {}
+    function mint(address _account, uint256 _amount)
+        public
+        onlyRole(MINTER_ROLE)
+    {
+        _mint(_account, _amount, "", "");
+    }
 }

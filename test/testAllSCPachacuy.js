@@ -239,19 +239,13 @@ describe("Tesing Pachacuy Game", function () {
        */
       // PachaCuyToken = await gcf("PachaCuyToken");
       PachaCuyToken = await gcf("ERC777Mock");
-      pachaCuyToken = await dp(
-        PachaCuyToken,
-        [
-          owner.address,
-          owner.address,
-          owner.address,
-          owner.address,
-          owner.address,
-          [purchaseAssetController.address],
-        ],
-        {
-          kind: "uups",
-        }
+      pachaCuyToken = await PachaCuyToken.deploy(
+        owner.address,
+        owner.address,
+        owner.address,
+        owner.address,
+        owner.address,
+        [purchaseAssetController.address]
       );
       await pachaCuyToken.deployed();
       balanceOf = b(pachaCuyToken);
