@@ -371,6 +371,17 @@ contract Vesting is
         tokensPerPeriod = vestingAcc.tokensPerPeriod;
     }
 
+    function getStatusOfFundByRole(string memory _roleOfAccount)
+        external
+        view
+        returns (Fund memory)
+    {
+        // verify roles
+        require(_isAValidRole(_roleOfAccount), "Vesting: Not a valid role.");
+
+        return fundsMapping[_roleOfAccount];
+    }
+
     //////////////////////////////////////////////////////////////////////////
     /////////////////////////// Auxiliar Function ////////////////////////////
     //////////////////////////////////////////////////////////////////////////

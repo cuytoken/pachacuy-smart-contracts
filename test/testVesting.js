@@ -346,64 +346,61 @@ describe("Tesing Pachacuy Game", function () {
     it("Fails when half month passes", async () => {
       await advanceAMonth(0.5, ts);
 
-      _accounts.forEach(async (account, ix) => {
-        await expect(
+      var promises = _accounts.map((account, ix) =>
+        expect(
           vesting.connect(account).claimTokensWithVesting(5 + ix)
         ).to.be.revertedWith(
           "Vesting: You already claimed tokens for the current vesting period"
-        );
-      });
+        )
+      );
+      await Promise.all(promises);
     });
 
     it("Succeds when a month passes", async () => {
       await advanceAMonth(1, ts, 5);
 
-      _accounts.forEach(async (account, ix) => {
-        await vesting.connect(account).claimTokensWithVesting(5 + ix);
-      });
+      await vesting.connect(alice).claimTokensWithVesting(5);
+      await vesting.connect(bob).claimTokensWithVesting(6);
+      await vesting.connect(carl).claimTokensWithVesting(7);
+      await vesting.connect(deysi).claimTokensWithVesting(8);
+      await vesting.connect(earl).claimTokensWithVesting(9);
     });
 
     it("Fails when 1.5 month passes", async () => {
       await advanceAMonth(1.5, ts);
-      var timestamp = await getTimeStamp();
-      console.log("current ts", timestamp);
 
-      var uuid = 5;
-      var [
-        fundsToVestForThisAccount,
-        currentVestingPeriod,
-        totalFundsVested,
-        datesForVesting,
-        roleOfAccount,
-        uuid,
-        vestingPeriods,
-        tokensPerPeriod,
-      ] = await vesting.getVestingSchemaWithUuid(alice.address, uuid);
-      // _currVestingPeriod < _vestingPeriods,
-      console.log("currentVestingPeriod", currentVestingPeriod.toString());
-      console.log(
-        "datesForVesting",
-        datesForVesting[0].toString(),
-        datesForVesting[1].toString()
+      await expect(
+        vesting.connect(_accounts[0]).claimTokensWithVesting(5)
+      ).to.be.revertedWith(
+        "Vesting: You already claimed tokens for the current vesting period"
       );
-      console.log("vestingPeriods", vestingPeriods.toString());
-
-      try {
-        await expect(
-          vesting.connect(_accounts[0]).claimTokensWithVesting(5)
-        ).to.be.revertedWith(
-          "Vesting: You already claimed tokens for the current vesting period"
-        );
-      } catch (error) {
-        console.log("ERror", error);
-      }
     });
 
-    xit("Succeds when two month pass", async () => {
-      await advanceAMonth(2, ts, 1000);
-      _accounts.forEach(async (account, ix) => {
-        await vesting.connect(account).claimTokensWithVesting(5 + ix);
-      });
+    it("Succeds when two month pass", async () => {
+      await advanceAMonth(2, ts);
+      await vesting.connect(alice).claimTokensWithVesting(5);
+      await vesting.connect(bob).claimTokensWithVesting(6);
+      await vesting.connect(carl).claimTokensWithVesting(7);
+      await vesting.connect(deysi).claimTokensWithVesting(8);
+      await vesting.connect(earl).claimTokensWithVesting(9);
+    });
+
+    it("Removes vesting from account", async () => {
+      var [role, fundsForAllocation, fundsAllocatedPrev] =
+        await vesting.getStatusOfFundByRole("MARKETING");
+
+      await vesting.removesVestingSchemaForAccount(alice.address, 5);
+      var uuid = 5;
+      await expect(
+        vesting.getVestingSchemaWithUuid(alice.address, uuid)
+      ).to.be.revertedWith("Vesting: Account is not vesting.");
+
+      var [role, fundsForAllocation, fundsAllocatedAfter] =
+        await vesting.getStatusOfFundByRole("MARKETING");
+
+      expect(fundsAllocatedPrev.sub(fundsAllocatedAfter)).to.be.equal(
+        mktTkns.div(5).div(10).mul(8)
+      );
     });
   });
 });
