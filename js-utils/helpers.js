@@ -104,6 +104,10 @@ const money_transfer = ethers.utils.keccak256(
   ethers.utils.toUtf8Bytes("MONEY_TRANSFER")
 );
 
+const manager_vesting = ethers.utils.keccak256(
+  ethers.utils.toUtf8Bytes("MANAGER_VESTING")
+);
+
 function toBytes32(KEY) {
   return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(KEY));
 }
@@ -186,6 +190,7 @@ var roles = {
   rng_generator,
   game_manager,
   money_transfer,
+  manager_vesting,
 };
 
 // 2

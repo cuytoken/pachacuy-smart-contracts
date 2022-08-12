@@ -14,6 +14,19 @@ var gcf = hre.ethers.getContractFactory;
 var dp = upgrades.deployProxy;
 var pe = ethers.utils.parseEther;
 
+function formatDate(arrayDates) {
+  var options = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+  return arrayDates.map((date) => {
+    var today = new Date(date.toNumber() * 1000);
+    return today.toLocaleDateString(options);
+  });
+}
+
 describe("Tesing Pachacuy Game", function () {
   async function getTimeStamp(show = false) {
     var blockNumBefore = await ethers.provider.getBlockNumber();
@@ -178,6 +191,23 @@ describe("Tesing Pachacuy Game", function () {
         var res = await vesting.getArrayVestingSchema(address);
         expect(res.length).to.equal(1);
       });
+
+      function transform(vestingPerAccount) {
+        return {
+          fundsToVestForThisAccount: formatEther(vestingPerAccount[0]),
+          currentVestingPeriod: vestingPerAccount[1].toNumber(),
+          totalFundsVested: formatEther(vestingPerAccount[2]),
+          datesForVesting: formatDate(vestingPerAccount[3]),
+          roleOfAccount: vestingPerAccount[4],
+          uuid: vestingPerAccount[5].toString(),
+          vestingPeriods: vestingPerAccount[6].toNumber(),
+          tokensPerPeriod: formatEther(vestingPerAccount[7]),
+        };
+      }
+
+      var arrayOfVesting = await vesting.getArrayVestingSchema(alice.address);
+      var res2 = arrayOfVesting.map(transform);
+      console.log(res2);
     });
 
     it("Alice starts with zero tokens", async () => {
@@ -187,7 +217,7 @@ describe("Tesing Pachacuy Game", function () {
 
     it("Claiming HOLDER_CUY_TOKEN wrong time", async () => {
       await expect(
-        vesting.connect(alice).claimTokensWithVesting(0)
+        vesting.connect(alice).claimTokensWithUuid(0)
       ).to.be.revertedWith(
         "Vesting: You already claimed tokens for the current vesting period"
       );
@@ -198,7 +228,7 @@ describe("Tesing Pachacuy Game", function () {
       await advanceAMonth(1);
 
       // vesting month one
-      await vesting.connect(alice).claimTokensWithVesting(0);
+      await vesting.connect(alice).claimTokensWithUuid(0);
 
       var uuid = 0;
       var [
@@ -236,7 +266,7 @@ describe("Tesing Pachacuy Game", function () {
     it("Vesting is completed and fails", async () => {
       // should failed if asked twice
       await expect(
-        vesting.connect(alice).claimTokensWithVesting(0)
+        vesting.connect(alice).claimTokensWithUuid(0)
       ).to.be.revertedWith(
         "Vesting: You already claimed tokens for the current vesting period"
       );
@@ -244,29 +274,29 @@ describe("Tesing Pachacuy Game", function () {
 
     it("Completes a vesting for alice", async () => {
       await advanceAMonth(2); // to month 2
-      await vesting.connect(alice).claimTokensWithVesting(0);
+      await vesting.connect(alice).claimTokensWithUuid(0);
       await advanceAMonth(3); // to month 3
-      await vesting.connect(alice).claimTokensWithVesting(0);
+      await vesting.connect(alice).claimTokensWithUuid(0);
       await advanceAMonth(4); // to month 4
-      await vesting.connect(alice).claimTokensWithVesting(0);
+      await vesting.connect(alice).claimTokensWithUuid(0);
       await advanceAMonth(5); // to month 5
-      await vesting.connect(alice).claimTokensWithVesting(0);
+      await vesting.connect(alice).claimTokensWithUuid(0);
       await advanceAMonth(6); // to month 6
-      await vesting.connect(alice).claimTokensWithVesting(0);
+      await vesting.connect(alice).claimTokensWithUuid(0);
       await advanceAMonth(7); // to month 7
-      await vesting.connect(alice).claimTokensWithVesting(0);
+      await vesting.connect(alice).claimTokensWithUuid(0);
       await advanceAMonth(8); // to month 8
-      await vesting.connect(alice).claimTokensWithVesting(0);
+      await vesting.connect(alice).claimTokensWithUuid(0);
       await advanceAMonth(9); // to month 9
-      await vesting.connect(alice).claimTokensWithVesting(0);
+      await vesting.connect(alice).claimTokensWithUuid(0);
       await advanceAMonth(10); // to month 10
-      await vesting.connect(alice).claimTokensWithVesting(0);
+      await vesting.connect(alice).claimTokensWithUuid(0);
     });
 
     it("Vesting periods completed ", async () => {
       // should failed if asked twice
       await expect(
-        vesting.connect(alice).claimTokensWithVesting(0)
+        vesting.connect(alice).claimTokensWithUuid(0)
       ).to.be.revertedWith("Vesting: All tokens for vesting have been claimed");
     });
 
@@ -279,16 +309,16 @@ describe("Tesing Pachacuy Game", function () {
       var balance = await pachaCuyToken.balanceOf(bob.address);
       expect(balance.toString()).to.equal(String(0), "Initial Bob balance");
 
-      await vesting.connect(bob).claimTokensWithVesting(1);
+      await vesting.connect(bob).claimTokensWithUuid(1);
 
       var balance = await pachaCuyToken.balanceOf(bob.address);
       expect(balance).to.equal(hldrTkns.div(5), "Final Bob balance");
     });
 
     it("All HOLDER_CUY_TOKEN is claimed", async () => {
-      await vesting.connect(carl).claimTokensWithVesting(2);
-      await vesting.connect(deysi).claimTokensWithVesting(3);
-      await vesting.connect(earl).claimTokensWithVesting(4);
+      await vesting.connect(carl).claimTokensWithUuid(2);
+      await vesting.connect(deysi).claimTokensWithUuid(3);
+      await vesting.connect(earl).claimTokensWithUuid(4);
 
       var balance = await pachaCuyToken.balanceOf(vesting.address);
       expect(balance).to.equal(
@@ -348,7 +378,7 @@ describe("Tesing Pachacuy Game", function () {
 
       var promises = _accounts.map((account, ix) =>
         expect(
-          vesting.connect(account).claimTokensWithVesting(5 + ix)
+          vesting.connect(account).claimTokensWithUuid(5 + ix)
         ).to.be.revertedWith(
           "Vesting: You already claimed tokens for the current vesting period"
         )
@@ -359,18 +389,18 @@ describe("Tesing Pachacuy Game", function () {
     it("Succeds when a month passes", async () => {
       await advanceAMonth(1, ts, 5);
 
-      await vesting.connect(alice).claimTokensWithVesting(5);
-      await vesting.connect(bob).claimTokensWithVesting(6);
-      await vesting.connect(carl).claimTokensWithVesting(7);
-      await vesting.connect(deysi).claimTokensWithVesting(8);
-      await vesting.connect(earl).claimTokensWithVesting(9);
+      await vesting.connect(alice).claimTokensWithUuid(5);
+      await vesting.connect(bob).claimTokensWithUuid(6);
+      await vesting.connect(carl).claimTokensWithUuid(7);
+      await vesting.connect(deysi).claimTokensWithUuid(8);
+      await vesting.connect(earl).claimTokensWithUuid(9);
     });
 
     it("Fails when 1.5 month passes", async () => {
       await advanceAMonth(1.5, ts);
 
       await expect(
-        vesting.connect(_accounts[0]).claimTokensWithVesting(5)
+        vesting.connect(_accounts[0]).claimTokensWithUuid(5)
       ).to.be.revertedWith(
         "Vesting: You already claimed tokens for the current vesting period"
       );
@@ -378,11 +408,11 @@ describe("Tesing Pachacuy Game", function () {
 
     it("Succeds when two month pass", async () => {
       await advanceAMonth(2, ts);
-      await vesting.connect(alice).claimTokensWithVesting(5);
-      await vesting.connect(bob).claimTokensWithVesting(6);
-      await vesting.connect(carl).claimTokensWithVesting(7);
-      await vesting.connect(deysi).claimTokensWithVesting(8);
-      await vesting.connect(earl).claimTokensWithVesting(9);
+      await vesting.connect(alice).claimTokensWithUuid(5);
+      await vesting.connect(bob).claimTokensWithUuid(6);
+      await vesting.connect(carl).claimTokensWithUuid(7);
+      await vesting.connect(deysi).claimTokensWithUuid(8);
+      await vesting.connect(earl).claimTokensWithUuid(9);
     });
 
     it("Removes vesting from account", async () => {

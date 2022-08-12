@@ -271,7 +271,7 @@ contract Vesting is
         _vestingArray.pop();
     }
 
-    function claimTokensWithVesting(uint256 _uuid) public whenNotPaused {
+    function claimTokensWithUuid(uint256 _uuid) public whenNotPaused {
         VestingPerAccount[] storage _vestingArray = vestingAccounts[
             _msgSender()
         ];
