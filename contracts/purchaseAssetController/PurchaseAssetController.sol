@@ -473,11 +473,19 @@ contract PurchaseAssetController is
         );
     }
 
+    function transferPcuyWithTax(
+        address _from,
+        address _to,
+        uint256 _pcuyAmount
+    ) external onlyRole(MONEY_TRANSFER) returns (uint256 _net, uint256 _fee) {
+        return _transferPcuyWithTax(_from, _to, _pcuyAmount);
+    }
+
     function _transferPcuyWithTax(
         address _from,
         address _to,
         uint256 _pcuyAmount
-    ) public onlyRole(MONEY_TRANSFER) returns (uint256 _net, uint256 _fee) {
+    ) internal returns (uint256 _net, uint256 _fee) {
         require(
             pachaCuyToken.balanceOf(_from) >= _pcuyAmount,
             "PAC: Not enough PCUY"
@@ -494,6 +502,14 @@ contract PurchaseAssetController is
             "",
             ""
         );
+    }
+
+    function transferPcuyWithoutTax(
+        address _from,
+        address _to,
+        uint256 _pcuyAmount
+    ) external onlyRole(MONEY_TRANSFER) {
+        _transferPcuyWithoutTax(_from, _to, _pcuyAmount);
     }
 
     function _transferPcuyWithoutTax(

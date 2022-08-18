@@ -81,6 +81,10 @@ async function main() {
    * 2. rng 001 - Add PurchaseAssetController sc within the whitelist of Random Number Generator
    * 2. rng 002 - Add Tatacuy sc within the whitelist of Random Number Generator
    * 3. rng 003 - Add Misay Wasi sc within the whitelist of Random Number Generator
+   * 3. rng 004 - setKeyHash
+   * 3. rng 005 - setvrfCoordinator
+   * 3. rng 006 - setlinkToken
+   * 3. rng 007 - setSubscriptionId
    */
   const RandomNumberGenerator = await gcf("RandomNumberGenerator");
   const randomNumberGenerator = await dp(RandomNumberGenerator, [], {
@@ -106,7 +110,7 @@ async function main() {
   const PurchaseAssetController = await gcf("PurchaseAssetController");
   const purchaseAssetController = await dp(
     PurchaseAssetController,
-    [process.env.WALLET_FOR_FUNDS],
+    [randomNumberGenerator.address, process.env.WALLET_FOR_FUNDS],
     {
       kind: "uups",
     }
@@ -407,9 +411,19 @@ async function main() {
   var pacAdd = purchaseAssetController.address;
   var ttAdd = tatacuy.address;
   var mswsAdd = misayWasi.address;
+  // POLYGON DATA
+  var khash =
+    "0xcc294a196eeeb44da2888d17c0625cc88d70d9760a69d58d853ba6581a9ab0cd";
+  var vrfC = "0xAE975071Be8F8eE67addBC1A82488F1C24858067";
+  var lnkTkn = "0xb0897686c545045afc77cf20ec7a532e3120e0f1";
+  var id = 235;
   await executeSet(rng, "addToWhiteList", [pacAdd], "rng 001");
   await executeSet(rng, "addToWhiteList", [ttAdd], "rng 002");
   await executeSet(rng, "addToWhiteList", [mswsAdd], "rng 003");
+  await executeSet(rng, "setKeyHash", [khash], "rng 004");
+  await executeSet(rng, "setvrfCoordinator", [vrfC], "rng 005");
+  await executeSet(rng, "setlinkToken", [lnkTkn], "rng 006");
+  await executeSet(rng, "setSubscriptionId", [id], "rng 007");
 
   // PURCHASE ASSET CONTROLLER
   var pac = purchaseAssetController;
@@ -554,14 +568,18 @@ async function main() {
   await executeSet(qw, "grantRole", [game_manager, nftAdd], "qw 002");
 
   // VRF
-  var url = "https://matic-mumbai.chainstacklabs.com";
+  // var url = "https://matic-mumbai.chainstacklabs.com";
+  var url = "https://polygon-rpc.com";
   var provider = new ethers.providers.JsonRpcProvider(url);
   var signer = await ethers.getSigner();
-  var vrfAddress = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed";
+  // var vrfAddress = "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed";
+  var vrfAddress = "0xAE975071Be8F8eE67addBC1A82488F1C24858067";
   var abiVrf = ["function addConsumer(uint64 subId, address consumer)"];
   var vrfC = new ethers.Contract(vrfAddress, abiVrf, provider);
   var rngA = randomNumberGenerator.address;
-  await executeSet(vrfC.connect(signer), "addConsumer", [581, rngA], "VRF 001");
+  // var id = 581;
+  var id = 235;
+  await executeSet(vrfC.connect(signer), "addConsumer", [id, rngA], "VRF 001");
 
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
   console.log("Final setting finished!");

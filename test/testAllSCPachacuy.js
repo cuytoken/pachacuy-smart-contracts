@@ -181,7 +181,7 @@ describe("Tesing Pachacuy Game", function () {
       PurchaseAssetController = await gcf("PurchaseAssetController");
       purchaseAssetController = await dp(
         PurchaseAssetController,
-        [process.env.WALLET_FOR_FUNDS],
+        [randomNumberGenerator.address, process.env.WALLET_FOR_FUNDS],
         {
           kind: "uups",
         }
