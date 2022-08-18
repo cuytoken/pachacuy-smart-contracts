@@ -27,7 +27,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "../vrf/IRandomNumberGenerator.sol";
-import "../purchaseAssetController/IPurchaseAssetController.sol";
 import "../info/IPachacuyInfo.sol";
 import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 

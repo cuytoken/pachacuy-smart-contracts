@@ -328,17 +328,12 @@ contract PurchaseAssetController is
 
         _purchaseAtPriceInPcuy(_misayWasiPrice);
 
+        // mint a Misay Wasi
         INftProducerPachacuy(pachacuyInfo.nftProducerAddress()).mint(
             keccak256("MISAYWASI"),
             abi.encode(_msgSender(), _pachaUuid, _misayWasiPrice),
             _msgSender()
         );
-        // mint a Misay Wasi
-        // nftProducerPachacuy.mintMisayWasi(
-        // _msgSender(),
-        // _pachaUuid,
-        // _misayWasiPrice
-        // );
     }
 
     function purchaseQhatuWasi(uint256 _pachaUuid) external {
@@ -433,7 +428,7 @@ contract PurchaseAssetController is
         address _from,
         address _to,
         uint256 _pcuyAmount
-    ) internal returns (uint256 _net, uint256 _fee) {
+    ) public onlyRole(MONEY_TRANSFER) returns (uint256 _net, uint256 _fee) {
         require(
             pachaCuyToken.balanceOf(_from) >= _pcuyAmount,
             "PAC: Not enough PCUY"

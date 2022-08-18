@@ -54,12 +54,12 @@ contract Vesting is
      * HOLDER_CUY_TOKEN     -> 1
      * PRIVATE_SALE_1       -> 1.5
      * PRIVATE_SALE_2       -> 0.6
-     * AIRDROP              -> 1.2
-     * PACHACUY_TEAM        -> 12
-     * PARTNER_ADVISOR      -> 10
-     * MARKETING            -> 10
+     * AIRDROP              -> 1.4
+     * PACHACUY_TEAM        -> 10
+     * PARTNER_ADVISOR      -> 5
+     * MARKETING            -> 5
      * ------------------------------------
-     * TOTAL                -> 36.3
+     * TOTAL                -> 24.5
      */
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
