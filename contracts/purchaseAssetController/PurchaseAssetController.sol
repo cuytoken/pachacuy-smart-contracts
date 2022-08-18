@@ -27,6 +27,7 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "../vrf/IRandomNumberGenerator.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 import "../chakra/IChakra.sol";
@@ -64,6 +65,25 @@ contract PurchaseAssetController is
 
     // pool rewards address
     address public poolRewardsAddress;
+
+    // Random number generator
+    IRandomNumberGenerator public randomNumberGenerator;
+
+    // Verifies that customer has one transaction at a time
+    /**
+     * @dev Transaction objects that indicates type of the current transaction
+     * @param transactionType - Type of the current transaction: PURCHASE_GUINEA_PIG
+     * @param account - The wallet address caller of the customer
+     * @param ongoing - Indicates whether the customer has an ongoing transaction
+     * @param ix - Indicates the price range (1, 2 or 3) of the current transaction
+     */
+    struct Transaction {
+        string transactionType;
+        address account;
+        bool ongoing;
+        uint256 ix;
+    }
+    mapping(address => Transaction) ongoingTransaction;
 
     // Marks the end of a guinea pig purchase
     event GuineaPigPurchaseFinish(
@@ -132,12 +152,19 @@ contract PurchaseAssetController is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
-    function initialize(address _poolRewardsAddress) public initializer {
+    function initialize(
+        address _randomNumberGeneratorAddress,
+        address _poolRewardsAddress
+    ) public initializer {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
         poolRewardsAddress = _poolRewardsAddress;
+
+        randomNumberGenerator = IRandomNumberGenerator(
+            _randomNumberGeneratorAddress
+        );
 
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
@@ -156,23 +183,28 @@ contract PurchaseAssetController is
             "PurchaseAC: Index must be 1, 2 or 3"
         );
 
+        require(
+            !ongoingTransaction[_msgSender()].ongoing,
+            "PurchaseAC: Multiple ongoing transactions"
+        );
+
         uint256 price = pachacuyInfo.getPriceInPcuy(
             abi.encodePacked("GUINEA_PIG_", _ix.toString())
         ) * 10**18;
 
-        // Make transfer with appropiate token address
+        // Make transfer from user to business wallet
         _purchaseAtPriceInPcuy(price);
 
-        // Ask for two random numbers
-        uint256 _randomNumberOne = (block.timestamp % 100) + 1;
-        uint256 _randomNumberTwo = block.timestamp % 2;
+        // Mark as ongoing transaction for a customer
+        ongoingTransaction[_msgSender()] = Transaction({
+            transactionType: "PURCHASE_GUINEA_PIG",
+            account: _msgSender(),
+            ongoing: true,
+            ix: _ix
+        });
 
-        _finishPurchaseGuineaPig(
-            _ix,
-            _msgSender(),
-            _randomNumberOne,
-            _randomNumberTwo
-        );
+        // Ask for two random numbers
+        randomNumberGenerator.requestRandomNumber(_msgSender(), 2);
 
         // Emit event
         emit GuineaPigPurchaseInit(
@@ -181,6 +213,23 @@ contract PurchaseAssetController is
             _ix,
             poolRewardsAddress
         );
+    }
+
+    function fulfillRandomness(
+        address _account,
+        uint256[] memory _randomNumbers
+    ) external onlyRole(RNG_GENERATOR) {
+        Transaction memory _tx = ongoingTransaction[_account];
+        if (_compareStrings(_tx.transactionType, "PURCHASE_GUINEA_PIG")) {
+            _finishPurchaseGuineaPig(
+                _tx.ix,
+                _account,
+                _randomNumbers[0],
+                _randomNumbers[1]
+            );
+            delete ongoingTransaction[_account];
+            return;
+        }
     }
 
     /**
