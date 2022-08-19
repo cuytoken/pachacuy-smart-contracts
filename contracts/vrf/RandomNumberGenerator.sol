@@ -51,7 +51,7 @@ contract RandomNumberGenerator is
     /**
      * @dev Interface for VRF Coordinator
      */
-    VRFCoordinatorV2Interface vrfCoordinator;
+    VRFCoordinatorV2Interface public vrfCoordinator;
 
     /**
      * @dev The request fee of the Chainlink VRF
@@ -61,37 +61,37 @@ contract RandomNumberGenerator is
     /**
      * @dev Minimum LINK tokens balance in subscription before triggering an event
      */
-    uint96 minimunLinkBalance;
+    uint96 public minimunLinkBalance;
 
     /**
      * @dev Interface for Link Token
      */
-    LinkTokenInterface linkToken;
+    LinkTokenInterface public linkToken;
 
     /**
      * @dev Subscription Id from VRF Coordinator
      */
-    uint64 subscriptionId;
+    uint64 public subscriptionId;
 
     /**
      * @dev VRF Coordinator Address for current chain
      */
-    address vrfCoordinatorAddress;
+    address public vrfCoordinatorAddress;
 
     /**
      * @dev The keyhash used by the Chainlink VRF
      */
-    bytes32 internal keyHash;
+    bytes32 public keyHash;
 
     /**
      * @dev LINK Token address
      */
-    address link;
+    address public link;
 
     /**
      * @dev Amount of confirmatinons for the VRF Random Number to be valid
      */
-    uint16 requestConfirmations;
+    uint16 public requestConfirmations;
 
     /**
      * @dev A mapping from address to a boolean representing if a request is ongoing for that address

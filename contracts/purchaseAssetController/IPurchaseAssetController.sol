@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 interface IPurchaseAssetController {
-    function transferPcuyFromUserToPoolReward(
+    function transferPcuyFromUserToBizWallet(
         address _account,
         uint256 _pcuyAmount
     ) external;
@@ -13,7 +13,7 @@ interface IPurchaseAssetController {
         uint256 _pcuyAmount
     ) external returns (uint256 _net, uint256 _fee);
 
-    function transferPcuyFromPoolRewardToUser(
+    function transferPcuyFromBizWalletToUser(
         address _account,
         uint256 _pcuyAmount
     ) external;

@@ -183,7 +183,7 @@ contract Wiracocha is
         uint256 _amountPcuy = pachacuyInfo.convertSamiToPcuy(_samiPoints);
 
         IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-            .transferPcuyFromPoolRewardToUser(_exchanger, _amountPcuy);
+            .transferPcuyFromBizWalletToUser(_exchanger, _amountPcuy);
         uuidToWiracochaInfo[_wiracochaUuid].amountPcuyExchanged += _amountPcuy;
 
         emit WiracochaExchange(

@@ -64,7 +64,7 @@ contract PachaCuyToken is ERC777, IERC777Sender, IERC777Recipient {
         //_vesting
         _mint(_vesting, 245 * 1e5 * 1e18, "", "");
 
-        //_publicSale
+        //_publicSale - Liquidity
         _mint(_publicSale, 295 * 1e5 * 1e18, "", "");
 
         //_gameRewards

@@ -117,10 +117,7 @@ contract QhatuWasi is
         );
 
         IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-            .transferPcuyFromUserToPoolReward(
-                _msgSender(),
-                _amountPcuyCampaign
-            );
+            .transferPcuyFromUserToBizWallet(_msgSender(), _amountPcuyCampaign);
 
         uint256 _tax = (_amountPcuyCampaign * pachacuyInfo.qhatuWasiTax()) /
             100;

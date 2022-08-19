@@ -239,7 +239,7 @@ contract MisayWasi is
         require(_ticketPrice > 0, "Misay Wasi: Zero price");
 
         IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-            .transferPcuyFromUserToPoolReward(_msgSender(), _rafflePrize);
+            .transferPcuyFromUserToBizWallet(_msgSender(), _rafflePrize);
 
         MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[
             _misayWasiUuid
@@ -353,7 +353,7 @@ contract MisayWasi is
         if (_lengthP == 0) {
             // Gives full prize to owner
             IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-                .transferPcuyFromPoolRewardToUser(
+                .transferPcuyFromBizWalletToUser(
                     misayWasiInfo.owner,
                     misayWasiInfo.rafflePrize
                 );
@@ -401,7 +401,7 @@ contract MisayWasi is
 
         // Gives prize
         IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-            .transferPcuyFromPoolRewardToUser(_winner, _netPrize);
+            .transferPcuyFromBizWalletToUser(_winner, _netPrize);
 
         // Cleans raffle from Misay Wasi
         _removeMisayWasiFromActive(_misayWasiUuid);

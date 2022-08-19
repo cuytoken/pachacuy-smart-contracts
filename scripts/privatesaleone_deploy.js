@@ -36,7 +36,7 @@ async function main() {
 
   // try {
   //   await pachaCuyBSC.mint(owner.address, _3M);
-  //   await pachaCuyBSC.mint(process.env.WALLET_FOR_FUNDS, _3M);
+  //   await pachaCuyBSC.mint(process.env.WALLET_PACHACUY_BUSINESS, _3M);
   // } catch (error) {
   //   console.log("Error final setting:", error);
   // }

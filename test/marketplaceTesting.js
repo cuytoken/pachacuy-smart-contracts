@@ -85,7 +85,7 @@ describe("NFT Moche Collection", function () {
           200, //_maxSupply
           _nftCurrentPrice,
           bUSD.address,
-          process.env.WALLET_FOR_FUNDS,
+          process.env.WALLET_PACHACUY_BUSINESS,
           _baseUri,
           FENOMENO,
           MISTICO,

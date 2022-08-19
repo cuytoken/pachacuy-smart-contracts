@@ -63,8 +63,8 @@ contract PurchaseAssetController is
     // GuineaPig ERC1155
     INftProducerPachacuy public nftProducerPachacuy;
 
-    // pool rewards address
-    address public poolRewardsAddress;
+    // business wallet address
+    address public bizWalletAddress;
 
     // Random number generator
     IRandomNumberGenerator public randomNumberGenerator;
@@ -100,7 +100,7 @@ contract PurchaseAssetController is
         address _account,
         uint256 price,
         uint256 _ix,
-        address poolRewardsAddress
+        address bizWalletAddress
     );
 
     // Purchase of Land event
@@ -109,7 +109,7 @@ contract PurchaseAssetController is
         uint256 uuid,
         uint256 landPrice,
         uint256 _location,
-        address poolRewardsAddress,
+        address bizWalletAddress,
         uint256 balanceConsumer
     );
 
@@ -154,13 +154,13 @@ contract PurchaseAssetController is
 
     function initialize(
         address _randomNumberGeneratorAddress,
-        address _poolRewardsAddress
+        address _bizWalletAddress
     ) public initializer {
         __Pausable_init();
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
-        poolRewardsAddress = _poolRewardsAddress;
+        bizWalletAddress = _bizWalletAddress;
 
         randomNumberGenerator = IRandomNumberGenerator(
             _randomNumberGeneratorAddress
@@ -207,12 +207,7 @@ contract PurchaseAssetController is
         randomNumberGenerator.requestRandomNumber(_msgSender(), 2);
 
         // Emit event
-        emit GuineaPigPurchaseInit(
-            _msgSender(),
-            price,
-            _ix,
-            poolRewardsAddress
-        );
+        emit GuineaPigPurchaseInit(_msgSender(), price, _ix, bizWalletAddress);
     }
 
     function fulfillRandomness(
@@ -256,7 +251,7 @@ contract PurchaseAssetController is
             uuid,
             pachaPrice,
             _location,
-            poolRewardsAddress,
+            bizWalletAddress,
             pachaCuyToken.balanceOf(_msgSender())
         );
     }
@@ -268,7 +263,7 @@ contract PurchaseAssetController is
         );
         pachaCuyToken.operatorSend(
             _msgSender(),
-            poolRewardsAddress,
+            bizWalletAddress,
             _priceInPcuy,
             "",
             ""
@@ -442,7 +437,7 @@ contract PurchaseAssetController is
         );
     }
 
-    function transferPcuyFromUserToPoolReward(
+    function transferPcuyFromUserToBizWallet(
         address _account,
         uint256 _pcuyAmount
     ) external onlyRole(MONEY_TRANSFER) {
@@ -453,19 +448,19 @@ contract PurchaseAssetController is
 
         pachaCuyToken.operatorSend(
             _account,
-            poolRewardsAddress,
+            bizWalletAddress,
             _pcuyAmount,
             "",
             ""
         );
     }
 
-    function transferPcuyFromPoolRewardToUser(
+    function transferPcuyFromBizWalletToUser(
         address _account,
         uint256 _pcuyAmount
     ) external onlyRole(MONEY_TRANSFER) {
         pachaCuyToken.operatorSend(
-            poolRewardsAddress,
+            bizWalletAddress,
             _account,
             _pcuyAmount,
             "",
@@ -497,7 +492,7 @@ contract PurchaseAssetController is
         pachaCuyToken.operatorSend(_from, _to, _net, "", "");
         pachaCuyToken.operatorSend(
             _from,
-            pachacuyInfo.poolRewardAddress(),
+            pachacuyInfo.bizWalletAddress(),
             _fee,
             "",
             ""

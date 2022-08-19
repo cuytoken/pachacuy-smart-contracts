@@ -26,7 +26,7 @@ const { init } = require("../js-utils/helpterTesting");
 const NETWORK = "BSCTESTNET";
 var _prefix = "ipfs://QmbbGgo93M6yr5WSUMj53SWN2vC7L6aMS1GZSPNkVRY8e4/";
 var testing;
-var cw = process.env.WALLET_FOR_FUNDS;
+var cw = process.env.WALLET_PACHACUY_BUSINESS;
 var nftData;
 
 describe("Tesing Pachacuy Game", function () {
@@ -105,7 +105,7 @@ describe("Tesing Pachacuy Game", function () {
       /**
        * PACHACUY INFORMATION
        * - pI 001 - set chakra address
-       * - pI 002 - set pool reward address
+       * - pI 002 - set business wallet address
        * - pI 003 - DEFAULT - set purchase tax
        * - pI 004 - DEFAULT - set minimum sami points per box
        * - pI 005 - DEFAULT - set maximum sami points per box
@@ -182,7 +182,7 @@ describe("Tesing Pachacuy Game", function () {
       PurchaseAssetController = await gcf("PurchaseAssetController");
       purchaseAssetController = await dp(
         PurchaseAssetController,
-        [randomNumberGenerator.address, process.env.WALLET_FOR_FUNDS],
+        [randomNumberGenerator.address, process.env.WALLET_PACHACUY_BUSINESS],
         {
           kind: "uups",
         }
@@ -462,7 +462,7 @@ describe("Tesing Pachacuy Game", function () {
 
       // PACHACUY INFORMATION
       var pI = pachacuyInfo;
-      var wallet = process.env.WALLET_FOR_FUNDS;
+      var wallet = process.env.WALLET_PACHACUY_BUSINESS;
       var hwAdd = hatunWasi.address;
       var wir = wiracocha.address;
       var ttc = tatacuy.address;
@@ -478,7 +478,7 @@ describe("Tesing Pachacuy Game", function () {
       var Ps = businessesPrice;
       var Ts = businessesKey;
       await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
-      await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
+      await executeSet(pI, "setBizWalletAddress", [wallet], "pI 002");
       await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
       await executeSet(pI, "setTatacuyAddress", [ttc], "pI 009");
       await executeSet(pI, "setWiracochaAddress", [wir], "pI 010");

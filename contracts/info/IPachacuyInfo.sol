@@ -19,7 +19,7 @@ interface IPachacuyInfo {
 
     function tatacuyAddress() external view returns (address);
 
-    function poolRewardAddress() external view returns (address);
+    function bizWalletAddress() external view returns (address);
 
     function hatunWasiAddress() external view returns (address);
 

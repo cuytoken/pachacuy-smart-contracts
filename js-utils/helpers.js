@@ -270,7 +270,7 @@ function infoHelper(net = "") {
   if (net == "BSCTESTNET") {
     privateSaleNet = {
       _busdToken: "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee",
-      _walletPrivateSale: process.env.WALLET_FOR_FUNDS,
+      _walletPrivateSale: process.env.WALLET_BUSINESS,
     };
   } else if (net == "BSCNET") {
     privateSaleNet = {
@@ -287,7 +287,7 @@ function infoHelper(net = "") {
   var swapCuyTokenForPachaCuyNet;
   if (net == "TESTNET") {
     swapCuyTokenForPachaCuyNet = {
-      _swapWallet: process.env.WALLET_FOR_FUNDS,
+      _swapWallet: process.env.WALLET_BUSINESS,
     };
   } else if (net == "BSCNET") {
     swapCuyTokenForPachaCuyNet = {
@@ -320,7 +320,7 @@ function infoHelper(net = "") {
   var PachacuyNet;
   if (net == "TESTNET") {
     PachacuyNet = {
-      _liquidityPoolWallet: process.env.WALLET_FOR_FUNDS,
+      _liquidityPoolWallet: process.env.WALLET_BUSINESS,
     };
   } else if (net == "BSCNET") {
     PachacuyNet = {

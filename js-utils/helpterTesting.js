@@ -2,7 +2,7 @@ require("dotenv").config();
 const hre = require("hardhat");
 const { ethers, providers, BigNumber } = require("ethers");
 
-var cw = process.env.WALLET_FOR_FUNDS;
+var cw;
 var fe = ethers.utils.formatEther;
 var i = ethers.utils.Interface;
 var pe = ethers.utils.parseEther;
@@ -170,7 +170,8 @@ var businesses = [
 
 function _getRadomNumberOne(_random, _account) {}
 
-function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws, rNumb, nftP) {
+function init(pac, tkn, pInfo, chakra, pInfo, guineaP, msws, rNumb, nftP, biz) {
+  cw = biz.address;
   return {
     purchaseGuineaPig: async function (signer, args) {
       var [gpUuid, ix] = args;

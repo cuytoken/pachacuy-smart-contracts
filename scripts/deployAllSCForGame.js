@@ -38,7 +38,7 @@ async function main() {
   /**
    * PACHACUY INFORMATION
    * - pI 001 - set chakra address
-   * - pI 002 - set pool reward address
+   * - pI 002 - set business wallet address
    * - pI 003 - DEFAULT - set purchase tax
    * - pI 004 - DEFAULT - set minimum sami points per box
    * - pI 005 - DEFAULT - set maximum sami points per box
@@ -110,7 +110,7 @@ async function main() {
   const PurchaseAssetController = await gcf("PurchaseAssetController");
   const purchaseAssetController = await dp(
     PurchaseAssetController,
-    [randomNumberGenerator.address, process.env.WALLET_FOR_FUNDS],
+    [randomNumberGenerator.address, process.env.WALLET_PACHACUY_BUSINESS],
     {
       kind: "uups",
     }
@@ -493,7 +493,7 @@ async function main() {
 
   // PACHACUY INFORMATION
   var pI = pachacuyInfo;
-  var wallet = process.env.WALLET_FOR_FUNDS;
+  var wallet = process.env.WALLET_PACHACUY_BUSINESS;
   var hwAdd = hatunWasi.address;
   var wir = wiracocha.address;
   var ttc = tatacuy.address;
@@ -511,7 +511,7 @@ async function main() {
   var Ps = businessesPrice;
   var Ts = businessesKey;
   await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
-  await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
+  await executeSet(pI, "setBizWalletAddress", [wallet], "pI 002");
   await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
   await executeSet(pI, "setTatacuyAddress", [ttc], "pI 009");
   await executeSet(pI, "setWiracochaAddress", [wir], "pI 010");

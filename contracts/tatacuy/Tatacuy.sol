@@ -260,7 +260,7 @@ contract Tatacuy is
         );
 
         IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-            .transferPcuyFromUserToPoolReward(
+            .transferPcuyFromUserToBizWallet(
                 _msgSender(),
                 _totalFundsPcuyDeposited
             );

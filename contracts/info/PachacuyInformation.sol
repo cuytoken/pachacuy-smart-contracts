@@ -49,7 +49,7 @@ contract PachacuyInfo is
 
     // Contract addresses
     address public chakraAddress;
-    address public poolRewardAddress;
+    address public bizWalletAddress;
     address public hatunWasiAddress;
     address public wiracochaAddress;
     address public tatacuyAddress;
@@ -324,11 +324,11 @@ contract PachacuyInfo is
         chakraAddress = _chakraAddress;
     }
 
-    function setPoolRewardAddress(address _poolRewardAddress)
+    function setBizWalletAddress(address _bizWalletAddress)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        poolRewardAddress = _poolRewardAddress;
+        bizWalletAddress = _bizWalletAddress;
     }
 
     function setHatunWasiAddressAddress(address _hatunWasiAddress)

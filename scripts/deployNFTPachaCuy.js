@@ -36,7 +36,7 @@ async function main() {
   //     _maxSupply,
   //     _nftCurrentPrice,
   //     _busdToken,
-  //     process.env.WALLET_FOR_FUNDS,
+  //     process.env.WALLET_PACHACUY_BUSINESS,
   //     _baseUri,
   //     FENOMENO,
   //     MISTICO,

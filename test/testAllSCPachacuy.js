@@ -26,9 +26,8 @@ const { init } = require("../js-utils/helpterTesting");
 const NETWORK = "BSCTESTNET";
 var _prefix = "ipfs://QmbbGgo93M6yr5WSUMj53SWN2vC7L6aMS1GZSPNkVRY8e4/";
 var testing;
-var cw = process.env.WALLET_FOR_FUNDS;
 var nftData;
-
+var cw;
 describe("Tesing Pachacuy Game", function () {
   var owner,
     alice,
@@ -72,7 +71,9 @@ describe("Tesing Pachacuy Game", function () {
     pachaImp,
     QhatuWasi,
     qhatuWasi,
-    qhatuWasiImp;
+    qhatuWasiImp,
+    BusinessWallet,
+    businessWallet;
   var PachacuyInfo;
   var pachacuyInfo;
   var gcf = hre.ethers.getContractFactory;
@@ -103,9 +104,17 @@ describe("Tesing Pachacuy Game", function () {
   describe("Set Up", async function () {
     it("Initializes all Smart Contracts", async () => {
       /**
+       * BUSINESS WALLET SMART CONTRACT
+       */
+      BusinessWallet = await gcf("BusinessWallet");
+      businessWallet = await dp(BusinessWallet, [], {
+        kind: "uups",
+      });
+      cw = businessWallet.address;
+      /**
        * PACHACUY INFORMATION
        * - pI 001 - set chakra address
-       * - pI 002 - set pool reward address
+       * - pI 002 - set business wallet address
        * - pI 003 - DEFAULT - set purchase tax
        * - pI 004 - DEFAULT - set minimum sami points per box
        * - pI 005 - DEFAULT - set maximum sami points per box
@@ -125,18 +134,6 @@ describe("Tesing Pachacuy Game", function () {
        * - pI 019 - setQhatuWasiAddress
        * - pI 020 - setBusinessesPrice(_prices, _types)
        */
-      PachacuyInfo = await gcf("PachacuyInfo");
-      pachacuyInfo = await dp(
-        PachacuyInfo,
-        [
-          pachacuyInfoForGame.maxSamiPoints,
-          pachacuyInfoForGame.boxes,
-          pachacuyInfoForGame.affectation,
-        ],
-        {
-          kind: "uups",
-        }
-      );
       PachacuyInfo = await gcf("PachacuyInfo");
       pachacuyInfo = await dp(
         PachacuyInfo,
@@ -181,7 +178,7 @@ describe("Tesing Pachacuy Game", function () {
       PurchaseAssetController = await gcf("PurchaseAssetController");
       purchaseAssetController = await dp(
         PurchaseAssetController,
-        [randomNumberGenerator.address, process.env.WALLET_FOR_FUNDS],
+        [randomNumberGenerator.address, businessWallet.address],
         {
           kind: "uups",
         }
@@ -240,11 +237,11 @@ describe("Tesing Pachacuy Game", function () {
       // PachaCuyToken = await gcf("PachaCuyToken");
       PachaCuyToken = await gcf("ERC777Mock");
       pachaCuyToken = await PachaCuyToken.deploy(
-        owner.address,
-        owner.address,
-        owner.address,
-        owner.address,
-        owner.address,
+        owner.address, // _vesting
+        owner.address, // _publicSale
+        owner.address, // _gameRewards
+        owner.address, // _proofOfHold
+        owner.address, // _pachacuyEvolution
         [purchaseAssetController.address]
       );
       await pachaCuyToken.deployed();
@@ -520,7 +517,7 @@ describe("Tesing Pachacuy Game", function () {
 
       // PACHACUY INFORMATION
       var pI = pachacuyInfo;
-      var wallet = process.env.WALLET_FOR_FUNDS;
+      var wallet = businessWallet.address;
       var hwAdd = hatunWasi.address;
       var wir = wiracocha.address;
       var ttc = tatacuy.address;
@@ -536,7 +533,7 @@ describe("Tesing Pachacuy Game", function () {
       var Ps = businessesPrice;
       var Ts = businessesKey;
       await executeSet(pI, "setChakraAddress", [chakra.address], "pI 001");
-      await executeSet(pI, "setPoolRewardAddress", [wallet], "pI 002");
+      await executeSet(pI, "setBizWalletAddress", [wallet], "pI 002");
       await executeSet(pI, "setHatunWasiAddressAddress", [hwAdd], "pI 008");
       await executeSet(pI, "setTatacuyAddress", [ttc], "pI 009");
       await executeSet(pI, "setWiracochaAddress", [wir], "pI 010");
@@ -602,7 +599,8 @@ describe("Tesing Pachacuy Game", function () {
         guineaPig,
         misayWasi,
         randomNumberGenerator,
-        nftProducerPachacuy
+        nftProducerPachacuy,
+        businessWallet
       );
     });
   });

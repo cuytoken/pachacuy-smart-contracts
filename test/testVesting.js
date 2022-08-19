@@ -9,7 +9,6 @@ const {
 } = require("../js-utils/helpers");
 const { init } = require("../js-utils/helpterTesting");
 const NETWORK = "BSCTESTNET";
-var cw = process.env.WALLET_FOR_FUNDS;
 var gcf = hre.ethers.getContractFactory;
 var dp = upgrades.deployProxy;
 var pe = ethers.utils.parseEther;
@@ -44,15 +43,15 @@ describe("Tesing Pachacuy Game", function () {
   }
 
   var hldrTkns = pe(String(1 * 1000000));
-  var mktTkns = pe(String(10 * 1000000));
+  var mktTkns = pe(String(5 * 1000000));
   var c = [
     hldrTkns, // * HOLDER_CUY_TOKEN     -> 1
     pe(String(1.5 * 1000000)), // * PRIVATE_SALE_1       -> 1.5
     pe(String(0.6 * 1000000)), // * PRIVATE_SALE_2       -> 0.6
-    pe(String(1.2 * 1000000)), // * AIRDROP              -> 1.2
-    pe(String(12 * 1000000)), // * PACHACUY_TEAM        -> 12
-    pe(String(10 * 1000000)), // * PARTNER_ADVISOR      -> 10
-    mktTkns, // * MARKETING            -> 10
+    pe(String(1.4 * 1000000)), // * AIRDROP              -> 1.4
+    pe(String(10 * 1000000)), // * PACHACUY_TEAM        -> 10
+    pe(String(5 * 1000000)), // * PARTNER_ADVISOR      -> 5
+    mktTkns, // * MARKETING            -> 5
   ];
 
   var owner,
@@ -204,10 +203,6 @@ describe("Tesing Pachacuy Game", function () {
           tokensPerPeriod: formatEther(vestingPerAccount[7]),
         };
       }
-
-      var arrayOfVesting = await vesting.getArrayVestingSchema(alice.address);
-      var res2 = arrayOfVesting.map(transform);
-      console.log(res2);
     });
 
     it("Alice starts with zero tokens", async () => {

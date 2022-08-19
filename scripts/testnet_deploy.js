@@ -129,19 +129,22 @@ async function main() {
   // Final setting
   var { admin } = infoHelper("TESTNET");
   await privateSale.setPachaCuyAddress(pachaCuy.address);
-  await privateSale.grantRole(admin, process.env.WALLET_FOR_FUNDS);
+  await privateSale.grantRole(admin, process.env.WALLET_PACHACUY_BUSINESS);
 
   await swapCuyTokenForPachaCuy.setPachaCuyAddress(pachaCuy.address);
-  await swapCuyTokenForPachaCuy.grantRole(admin, process.env.WALLET_FOR_FUNDS);
+  await swapCuyTokenForPachaCuy.grantRole(
+    admin,
+    process.env.WALLET_PACHACUY_BUSINESS
+  );
 
   await publicSale.setPachaCuyAddress(pachaCuy.address);
-  await publicSale.grantRole(admin, process.env.WALLET_FOR_FUNDS);
+  await publicSale.grantRole(admin, process.env.WALLET_PACHACUY_BUSINESS);
 
   await vesting.setPachaCuyAddress(pachaCuy.address);
-  await vesting.grantRole(admin, process.env.WALLET_FOR_FUNDS);
+  await vesting.grantRole(admin, process.env.WALLET_PACHACUY_BUSINESS);
 
   await airdrop.setPachaCuyAddress(pachaCuy.address);
-  await airdrop.grantRole(admin, process.env.WALLET_FOR_FUNDS);
+  await airdrop.grantRole(admin, process.env.WALLET_PACHACUY_BUSINESS);
 }
 
 main()
