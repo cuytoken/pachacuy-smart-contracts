@@ -22,7 +22,8 @@ async function callSequenceAgnostic(methods) {
 
 async function executeSet(contract, command, args, messageWhenFailed) {
   try {
-    return await contract[command](...args);
+    var tx = await contract[command](...args);
+    return await tx.wait(1);
   } catch (e) {
     console.error(messageWhenFailed, e);
   }

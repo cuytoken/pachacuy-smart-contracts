@@ -239,6 +239,16 @@ contract Vesting is
         }
     }
 
+    function removesVestingSchemaBatch(
+        address[] memory _accounts,
+        uint256[] memory _uuids
+    ) external onlyRole(MANAGER_VESTING) {
+        uint256 l = _accounts.length;
+        for (uint256 i = 0; i < l; ++i) {
+            removesVestingSchemaForAccount(_accounts[i], _uuids[i]);
+        }
+    }
+
     function removesVestingSchemaForAccount(address _account, uint256 _uuid)
         public
         onlyRole(MANAGER_VESTING)
