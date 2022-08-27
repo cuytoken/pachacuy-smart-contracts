@@ -45,7 +45,7 @@ module.exports = {
     },
     rinkeby: {
       url: process.env.RINKEBY_TESNET_URL,
-      accounts: [process.env.MAINNET_ADMIN_ACCOUNT_PRIVATE_KEY],
+      accounts: [process.env.ADMIN_ACCOUNT_PRIVATE_KEY],
       timeout: 0,
       gas: "auto",
       gasPrice: "auto",
@@ -91,6 +91,6 @@ module.exports = {
     },
   },
   // etherscan: { apiKey: process.env.PACHACUY_BSCSCAN_API_KEY },
-  etherscan: { apiKey: process.env.PACHACUY_POLYGON_SCAN },
-  // etherscan: { apiKey: process.env.PACHACUY_ETHERSCAN },
+  // etherscan: { apiKey: process.env.PACHACUY_POLYGON_SCAN },
+  etherscan: { apiKey: process.env.PACHACUY_ETHERSCAN },
 };

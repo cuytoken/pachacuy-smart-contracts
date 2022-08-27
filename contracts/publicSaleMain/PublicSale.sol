@@ -132,7 +132,7 @@ contract PublicSalePcuy is
     /////////////////////////// Purchase Process /////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    function purhcasePcuyWithUsdc(uint256 _usdcAmount) external whenNotPaused {
+    function purchasePcuyWithUsdc(uint256 _usdcAmount) external whenNotPaused {
         // verify if approved
         uint256 usdcAllowance = usdcToken.allowance(
             _msgSender(),
@@ -174,7 +174,7 @@ contract PublicSalePcuy is
         totalPcuySold += pcuyToTransfer;
 
         // Vesting
-        uint256 pcuyExtraVesting = (pcuyToTransfer * 100) / 15;
+        uint256 pcuyExtraVesting = (pcuyToTransfer * 15) / 100;
         totalPcuyVesting += pcuyExtraVesting;
         uint256 vestingPeriods = 10;
         uint256 releaseDay = block.timestamp;
@@ -225,6 +225,13 @@ contract PublicSalePcuy is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         exchangeRateUsdcToPcuy = _exchangeRateUsdcToPcuy;
+    }
+
+    function setWalletForFunds(address _walletForFunds)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        walletForFunds = _walletForFunds;
     }
 
     function withdrawRemainingPcuy(address _to)
