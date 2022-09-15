@@ -17,30 +17,27 @@
 ////                                                  Misay Wasi                                                   ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// SPDX-License-Identifier: MIT
+
+
+/// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "../info/IPachacuyInfo.sol";
-import "../NftProducerPachacuy/INftProducerPachacuy.sol";
-import "../purchaseAssetController/IPurchaseAssetController.sol";
-import "../vrf/IRandomNumberGenerator.sol";
-import "../binarysearch/IBinarySearch.sol";
-import "../token/IPachaCuy.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import "https://github.com/cuytoken/pachacuy-smart-contracts/blob/polygon-main/contracts/info/IPachacuyInfo.sol";
+import "https://github.com/cuytoken/pachacuy-smart-contracts/blob/polygon-main/contracts/NftProducerPachacuy/INftProducerPachacuy.sol";
+import "https://github.com/cuytoken/pachacuy-smart-contracts/blob/polygon-main/contracts/purchaseAssetController/IPurchaseAssetController.sol";
+import "https://github.com/cuytoken/pachacuy-smart-contracts/blob/polygon-main/contracts/vrf/IRandomNumberGenerator.sol";
+import "https://github.com/cuytoken/pachacuy-smart-contracts/blob/polygon-main/contracts/binarysearch/IBinarySearch.sol";
+import "https://github.com/cuytoken/pachacuy-smart-contracts/blob/polygon-main/contracts/token/IPachaCuy.sol";
 
 /// @custom:security-contact lee@cuytoken.com
 contract MisayWasi is
-    Initializable,
-    PausableUpgradeable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable
+    AccessControlUpgradeable
 {
-    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant GAME_MANAGER = keccak256("GAME_MANAGER");
     bytes32 public constant RNG_GENERATOR = keccak256("RNG_GENERATOR");
 
@@ -49,22 +46,11 @@ contract MisayWasi is
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _tokenIdCounter;
 
-    /**
-     * @dev Details the information of a Tatacuy. Additional properties attached for its campaign
-     * @param owner: Wallet address of the current owner of the Tatacuy
-     * @param misayWasiUuid: Uuid of the misay waysi when it was minted
-     * @param pachaUuid: Uuid of the pacha where the misay waysi belongs to
-     * @param creationDate: Date when the misay waysi was minted
-     * @param ticketPrice: Price ticket to participate in the raffle
-     * @param ticketUuid: Uuid of the ticket of the Misay Wasi
-     * @param misayWasiPrice: Price in PCUY of the Misay Wasi
-     * @param rafflePrize: Prize of winning at the raffle
-     * @param numberTicketsPurchased: Number of raffle tickets bought
-     * @param campaignStartDate: Timestamp when the raffle initiated
-     * @param campaignEndDate: Timestamp when the raffle ends
-     * @param isCampaignActive: Indicates wheter this misay waysi is running a raffle or not
-     * @param hasMisayWasi: Indicates wheter a misay wasi exists or not
-     */
+
+     IERC20 public _USDCToken;
+     address public _bizWalletAddress;
+
+
     struct MisayWasiInfo {
         address owner;
         uint256 misayWasiUuid;
@@ -98,13 +84,6 @@ contract MisayWasi is
     // list misay wasis to raffle at once
     uint256[] misayWasiUuids;
 
-    /**
-     * @param winner: Wallet address of the winner of this raffle contest
-     * @param misayWasiUuid: Uuid of the Misay Wasi where the raffle contest took place
-     * @param rafflePrize: Net prize (minus fee) of the Misay Wasi allocated by the Misay Wasi's owner
-     * @param raffleTax: Tax applied to the prize
-     * @param ticketUuid: Uuid of the ticket purchased at this Misay Wasi
-     */
     event RaffleContestFinished(
         address winner,
         uint256 misayWasiUuid,
@@ -153,18 +132,15 @@ contract MisayWasi is
     mapping(uint256 => HistoricWinners[]) historicWinners;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+    constructor()  {
 
-    function initialize() public initializer {
-        __Pausable_init();
-        __AccessControl_init();
-        __UUPSUpgradeable_init();
-
+       
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _grantRole(PAUSER_ROLE, _msgSender());
-        _grantRole(UPGRADER_ROLE, _msgSender());
+ 
+ 
         _grantRole(GAME_MANAGER, _msgSender());
     }
+
 
     function validateMint(bytes memory _data) external view returns (bool) {
         (address _account, uint256 _pachaUuid, ) = abi.decode(
@@ -177,13 +153,25 @@ contract MisayWasi is
         return _q > 0;
     }
 
-    // /**
-    //  * @dev Trigger when it is minted
-    //  * @param _account: Wallet address of the current owner of the Pacha
-    //  * @param _pachaUuid: Uuid of the pacha when it was minted
-    //  * @param _misayWasiUuid: Uuid of the Tatacuy when it was minted
-    //  * @param _misayWasiPrice: Price in PCUY of the Misay Wasi
-    //  */
+
+    ///Set the business wallet address
+    function setBizWalletAddress(address bizWalletAddress)
+        public
+        onlyRole(GAME_MANAGER)
+       
+    {
+        _bizWalletAddress = bizWalletAddress;
+    }
+
+
+    function setUsdcTokenAddress(address uSDCTokenAddress)
+        public
+       onlyRole(GAME_MANAGER)
+    {
+        _USDCToken = IERC20(uSDCTokenAddress);
+    }
+
+
     function registerNft(bytes memory _data) external {
         (
             address _account,
@@ -223,13 +211,6 @@ contract MisayWasi is
         );
     }
 
-    /**
-     * @notice initiated by the owner of the misay wasi who deposits funds
-     * @param _misayWasiUuid: Uuid of the Misay Wasi where the owner is creating a raffle
-     * @param _rafflePrize: Prize of the raffle to be given by the owner
-     * @param _ticketPrice: Price to pay by a participant of the raffle
-     * @param _campaignEndDate: Timestamp ending date where the raffle will finish
-     */
     function startMisayWasiRaffle(
         uint256 _misayWasiUuid,
         uint256 _rafflePrize,
@@ -237,10 +218,7 @@ contract MisayWasi is
         uint256 _campaignEndDate
     ) external {
         require(_ticketPrice > 0, "Misay Wasi: Zero price");
-
-        IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-            .transferPcuyFromUserToBizWallet(_msgSender(), _rafflePrize);
-
+        _transferFromUSDC(_msgSender(), _bizWalletAddress,_rafflePrize);
         MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[
             _misayWasiUuid
         ];
@@ -311,12 +289,42 @@ contract MisayWasi is
         );
     }
 
-    /**
-     * @notice Initiated by the backend
-     * @param _misayWasiUuids Array of Uuid of the Misay Wasis that will start the raffle
-     * @dev Called only by the cloud using an access role
-     * @dev Called every day at 10 AM UTC-5
-     */
+
+
+  function _transferFromUSDC(address from, address to, uint256 amount) internal 
+   {
+   ///NEW CODE FOR USDC
+        uint256 usdcAllowance = _USDCToken.allowance(
+            from,
+            address(this)
+        );
+        
+        require(
+            usdcAllowance >= amount,
+            "MisayWasi: Not enough USDC allowance"
+        );
+
+
+        uint256 usdcBalance = _USDCToken.balanceOf(from);
+        require(
+            usdcBalance >= amount,
+            "MisayWasi: Not enough USDC balance"
+        );
+
+        /// Transfer the funds to the business wallet
+        bool success = _USDCToken.transferFrom(
+            from,
+            to,
+            amount
+        );
+
+ require(
+            success,
+            "MisayWasi: USDC Transfer Failed"
+        );
+
+}
+
     function startRaffleContest(uint256[] memory _misayWasiUuids)
         external
         onlyRole(GAME_MANAGER)
@@ -351,13 +359,9 @@ contract MisayWasi is
         address[] memory _participants = misayWasiInfo.listOfParticipants;
         uint256 _lengthP = _participants.length;
         if (_lengthP == 0) {
-            // Gives full prize to owner
-            IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-                .transferPcuyFromBizWalletToUser(
-                    misayWasiInfo.owner,
-                    misayWasiInfo.rafflePrize
-                );
-
+            
+        ///NEW CODE FOR USDC
+            _transferFromUSDC(_bizWalletAddress,  misayWasiInfo.owner, misayWasiInfo.rafflePrize);
             // remove misay wasi from active list
             _removeMisayWasiFromActive(_misayWasiUuid);
             return;
@@ -402,6 +406,10 @@ contract MisayWasi is
         // Gives prize
         IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
             .transferPcuyFromBizWalletToUser(_winner, _netPrize);
+
+        ///NEW CODE FOR USDC
+            _transferFromUSDC(_bizWalletAddress, _winner, _netPrize);
+
 
         // Cleans raffle from Misay Wasi
         _removeMisayWasiFromActive(_misayWasiUuid);
@@ -457,10 +465,6 @@ contract MisayWasi is
         }
     }
 
-    ///////////////////////////////////////////////////////////////
-    ////                   HELPER FUNCTIONS                    ////
-    ///////////////////////////////////////////////////////////////
-
     function getHistoricWinners(uint256 _misayWasiUuid)
         external
         view
@@ -499,10 +503,7 @@ contract MisayWasi is
         _misayWasiIx[_lastUuid] = _ix;
     }
 
-    /**
-     * @notice Get a list of Misay Wasis that are ready to start their raffle contest
-     * @dev It verifies that campaign ending data is less than actual timestamp
-     */
+   
     function getListOfMisayWasisReadyToRaffle()
         external
         view
@@ -575,21 +576,6 @@ contract MisayWasi is
         return "";
     }
 
-    ///////////////////////////////////////////////////////////////
-    ////                   STANDARD FUNCTIONS                  ////
-    ///////////////////////////////////////////////////////////////
+  
 
-    function pause() public onlyRole(PAUSER_ROLE) {
-        _pause();
-    }
-
-    function unpause() public onlyRole(PAUSER_ROLE) {
-        _unpause();
-    }
-
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(UPGRADER_ROLE)
-    {}
 }
