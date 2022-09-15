@@ -196,18 +196,25 @@ contract PurchaseAssetController is
         _purchaseAtPriceInPcuy(price);
 
         // Mark as ongoing transaction for a customer
-        ongoingTransaction[_msgSender()] = Transaction({
-            transactionType: "PURCHASE_GUINEA_PIG",
-            account: _msgSender(),
-            ongoing: true,
-            ix: _ix
-        });
+        // ongoingTransaction[_msgSender()] = Transaction({
+        //     transactionType: "PURCHASE_GUINEA_PIG",
+        //     account: _msgSender(),
+        //     ongoing: true,
+        //     ix: _ix
+        // });
 
         // Ask for two random numbers
-        randomNumberGenerator.requestRandomNumber(_msgSender(), 2);
+        // randomNumberGenerator.requestRandomNumber(_msgSender(), 2);
+        uint256 r1 = uint256(
+            keccak256(abi.encodePacked(_msgSender(), block.timestamp))
+        );
+        uint256 r2 = uint256(
+            keccak256(abi.encodePacked(_msgSender(), block.timestamp, _ix))
+        );
 
         // Emit event
         emit GuineaPigPurchaseInit(_msgSender(), price, _ix, bizWalletAddress);
+        _finishPurchaseGuineaPig(_ix, _msgSender(), r1, r2);
     }
 
     function fulfillRandomness(
@@ -529,31 +536,19 @@ contract PurchaseAssetController is
         uint256 _randomNumber1,
         uint256 _randomNumber2
     ) internal {
-        uint256 _gender = 1;
-        uint256 _race = 3;
-        uint256 _guineaPigId = 5; // idForJsonFile 1 -> 8
-        string memory _raceAndGender = "PERU FEMALE D";
-        try
-            IGuineaPig(pachacuyInfo.guineaPigAddress()).getRaceGenderGuineaPig(
+        (
+            uint256 _gender,
+            uint256 _race,
+            uint256 _guineaPigId, // idForJsonFile 1 -> 8
+            string memory _raceAndGender
+        ) = IGuineaPig(pachacuyInfo.guineaPigAddress()).getRaceGenderGuineaPig(
                 _ix,
-                _randomNumber1,
-                _randomNumber2
-            )
-        returns (
-            uint256 _g,
-            uint256 _r,
-            uint256 _gId, // idForJsonFile 1 -> 8
-            string memory _ra
-        ) {
-            _gender = _g;
-            _race = _r;
-            _guineaPigId = _gId;
-            _raceAndGender = _ra;
-        } catch Error(string memory reason) {
-            emit ErrorString(reason);
-        } catch (bytes memory reason) {
-            emit ErrorNotHandled(reason);
-        }
+                (_randomNumber1 % 100) + 1,
+                _randomNumber2 % 2
+            );
+
+        // Mark ongoing transaction as finished
+        ongoingTransaction[_account].ongoing = false;
 
         require(
             address(nftProducerPachacuy) != address(0),
@@ -565,20 +560,12 @@ contract PurchaseAssetController is
         ) * 10**18;
 
         // Mint Guinea Pigs
-        uint256 _uuid = 999;
-        try
-            INftProducerPachacuy(pachacuyInfo.nftProducerAddress()).mint(
+        uint256 _uuid = INftProducerPachacuy(pachacuyInfo.nftProducerAddress())
+            .mint(
                 keccak256("GUINEAPIG"),
                 abi.encode(_account, _gender, _race, _guineaPigId, price),
                 _account
-            )
-        returns (uint256 _uu) {
-            _uuid = _uu;
-        } catch Error(string memory reason) {
-            emit ErrorString(reason);
-        } catch (bytes memory reason) {
-            emit ErrorNotHandled(reason);
-        }
+            );
 
         uint256 _balance = pachaCuyToken.balanceOf(_account);
         emit GuineaPigPurchaseFinish(
@@ -619,6 +606,13 @@ contract PurchaseAssetController is
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         pachacuyInfo = IPachacuyInfo(_infoAddress);
+    }
+
+    function resetOngoinTransaction(address _account)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        ongoingTransaction[_account].ongoing = false;
     }
 
     ///////////////////////////////////////////////////////////////

@@ -14,7 +14,7 @@
 ////     \__\/       \__\/         \__\/         \__\/         \__\/         \__\/         \__\/                 ////
 ////                                                                                                             ////
 ////                                                 LAND OF CUYS                                                ////
-////                                                  Guniea Pig                                                 ////
+////                                                  Guinea Pig                                                 ////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // SPDX-License-Identifier: MIT
@@ -205,7 +205,7 @@ contract GuineaPig is
     }
 
     function feedGuineaPig(uint256 _guineaPigUuid, uint256 _amountFood)
-        external
+        public
         onlyRole(GAME_MANAGER)
     {
         GuineaPigInfo storage _guineaPig = _uuidToGuineaPigInfo[_guineaPigUuid];
@@ -223,6 +223,16 @@ contract GuineaPig is
             _guineaPig.burningDate,
             _guineaPig.owner
         );
+    }
+
+    function feedGuineaPigBatch(
+        uint256[] memory _guineaPigUuid,
+        uint256[] memory _amountFood
+    ) external onlyRole(GAME_MANAGER) {
+        uint256 length = _guineaPigUuid.length;
+        for (uint256 i = 0; i < length; i++) {
+            feedGuineaPig(_guineaPigUuid[i], _amountFood[i]);
+        }
     }
 
     ///////////////////////////////////////////////////////////////

@@ -91,6 +91,6 @@ module.exports = {
     },
   },
   // etherscan: { apiKey: process.env.PACHACUY_BSCSCAN_API_KEY },
-  // etherscan: { apiKey: process.env.PACHACUY_POLYGON_SCAN },
-  etherscan: { apiKey: process.env.PACHACUY_ETHERSCAN },
+  etherscan: { apiKey: process.env.PACHACUY_POLYGON_SCAN },
+  // etherscan: { apiKey: process.env.PACHACUY_ETHERSCAN },
 };

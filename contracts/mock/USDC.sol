@@ -33,6 +33,10 @@ contract USDC is
         _mint(to, amount);
     }
 
+    function decimals() public view virtual override returns (uint8) {
+        return 6;
+    }
+
     function _authorizeUpgrade(address newImplementation)
         internal
         override

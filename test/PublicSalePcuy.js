@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const { BigNumber } = require("ethers");
 const { formatEther } = require("ethers/lib/utils");
 const { ethers } = require("hardhat");
 const {
@@ -170,7 +171,7 @@ describe("Tesing Pachacuy Game", function () {
   });
 
   describe("Purchase", function () {
-    var usdcAmount = pe("1000");
+    var usdcAmount = BigNumber.from(String(1000 * 1000000));
     it("No USDC allowance", async () => {
       await expect(
         publicSalePcuy.connect(alice).purchasePcuyWithUsdc(usdcAmount)
@@ -182,15 +183,13 @@ describe("Tesing Pachacuy Game", function () {
       await expect(
         publicSalePcuy.connect(alice).purchasePcuyWithUsdc(usdcAmount)
       ).to.be.revertedWith("Public Sale: Not enough USDC balance");
-      await usdc.mint(alice.address, usdcAmount);
+      await usdc.mint(alice.address, usdcAmount); // Minting 1000 USDC
     });
-
     it("Not enough PUCY in SC", async () => {
       await expect(
         publicSalePcuy.connect(alice).purchasePcuyWithUsdc(usdcAmount)
       ).to.be.revertedWith("Public Sale: Not enough PCUY to sell");
       var pcuyAmount = pe(String(4 * 1000000));
-      //   console.log(publicSalePcuy.address, pcuyAmount);
       await pachaCuyToken.transfer(bob.address, pcuyAmount);
       await pachaCuyToken
         .connect(bob)
@@ -198,13 +197,17 @@ describe("Tesing Pachacuy Game", function () {
     });
 
     it("Alice sends USDC and gets PCUY", async () => {
+      // 1 USDC === 25 PCUY
+      // 1000 USDC === 25000 PCUY
       var prevAliceBal = await usdc.balanceOf(alice.address);
       var prevAliceBalPcuy = await pachaCuyToken.balanceOf(alice.address);
       await publicSalePcuy.connect(alice).purchasePcuyWithUsdc(usdcAmount);
       var afterAliceBal = await usdc.balanceOf(alice.address);
       var afterAliceBalPcuy = await pachaCuyToken.balanceOf(alice.address);
       expect(prevAliceBal.sub(afterAliceBal)).to.eq(usdcAmount);
-      expect(afterAliceBalPcuy.sub(prevAliceBalPcuy)).to.eq(usdcAmount.mul(25));
+      expect(afterAliceBalPcuy.sub(prevAliceBalPcuy)).to.eq(
+        usdcAmount.mul(10 ** 12).mul(25)
+      );
     });
 
     it("Alice has vesting", async () => {
@@ -221,7 +224,11 @@ describe("Tesing Pachacuy Game", function () {
         tokensPerPeriod,
       ] = vestArr[0];
       expect(fundsToVestForThisAccount).to.eq(
-        usdcAmount.mul(25).mul(15).div(100)
+        usdcAmount
+          .mul(10 ** 12)
+          .mul(25)
+          .mul(15)
+          .div(100)
       );
     });
 

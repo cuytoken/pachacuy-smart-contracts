@@ -244,7 +244,7 @@ contract RandomNumberGenerator is
         isRequestOngoing[_account] = true;
 
         // Calculate amount of gas to be spent
-        uint32 _callbackGasLimit = 1000000;
+        uint32 _callbackGasLimit = 2000000;
 
         // execute the request to VRF coordinator
         // uint256 requestId = 0;

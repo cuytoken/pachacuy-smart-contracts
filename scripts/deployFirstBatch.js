@@ -485,7 +485,67 @@ async function main() {
   console.log("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
 }
 
-main()
+async function upgrade() {
+  var GuineaPigAddress = "0x9DB35f5EA92dff63709d79398bABb6DBF1F4d6C4";
+  var GuineaPig = await gcf("GuineaPig");
+  // await upgrades.upgradeProxy(GuineaPigAddress, GuineaPig);
+  var guineaPig = await GuineaPig.attach(GuineaPigAddress);
+
+  var list1 = [4, 5, 6, 7, 8, 10, 11, 13, 14, 16, 17, 18, 21, 22];
+  var list2 = [24, 25, 26, 27, 29, 30, 32, 33, 34, 35, 36, 37, 38, 39];
+  var list3 = [40, 41, 42, 43, 44, 45, 46, 47, 49, 50, 52, 53, 54];
+
+  var tx = await guineaPig.feedGuineaPigBatch(
+    list3,
+    Array(list3.length).fill(2)
+  );
+  await tx.wait();
+  console.log("Finish GuineaPig");
+}
+
+async function resetTransaction() {
+  var _acc = "0xb7F06B93E0D8dDb6485792085796ace8Aa1b0980";
+
+  // SC
+  var PurchaseAssetControllerAddress =
+    "0xab8731881f248e6852728b9E36d9EbfE3468FcE7";
+  var PurchaseAssetController = await gcf("PurchaseAssetController");
+  var purchaseAssetController = await PurchaseAssetController.attach(
+    PurchaseAssetControllerAddress
+  );
+  var tx = await purchaseAssetController.resetOngoinTransaction(_acc);
+  await tx.wait();
+  console.log("Finish resetOngoinTransaction 1");
+
+  var RandomNumberGeneratorAddress =
+    "0x1141daC8e94a7134e831Bc44A3646881C78F51c8";
+  var RandomNumberGenerator = await gcf("RandomNumberGenerator");
+  var randomNumberGenerator = await RandomNumberGenerator.attach(
+    RandomNumberGeneratorAddress
+  );
+  var tx = await randomNumberGenerator.resetOngoinTransaction(_acc);
+  await tx.wait();
+  console.log("Finish resetOngoinTransaction 2");
+}
+
+async function updateBZPrice() {
+  var PachacuyInfoAddress = "0xf20750A7A2Ccc4c6c3d26a44454d36EaF4eE897b";
+  var PachacuyInfo = await gcf("PachacuyInfo");
+  var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
+
+  var pI = pachacuyInfo;
+  var businessesPrice = [3, 4, 6];
+  var businesses = ["GUINEA_PIG_1", "GUINEA_PIG_2", "GUINEA_PIG_3"];
+  var businessesKey = businesses.map(toBytes32);
+  var Ps = businessesPrice;
+  var Ts = businessesKey;
+  await executeSet(pI, "setBusinessesPrice", [Ps, Ts], "pI 020");
+}
+
+// main()
+upgrade()
+  // resetTransaction()
+  // updateBZPrice()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

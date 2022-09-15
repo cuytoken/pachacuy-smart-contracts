@@ -160,7 +160,7 @@ contract PublicSalePcuy is
         totalUsdcRaised += _usdcAmount;
 
         // total PCUY to transfer
-        uint256 pcuyToTransfer = _usdcAmount * exchangeRateUsdcToPcuy;
+        uint256 pcuyToTransfer = _usdcAmount * exchangeRateUsdcToPcuy * 10**12;
 
         // verify PCUY balance
         uint256 pcuyBalance = pachaCuyToken.balanceOf(address(this));
