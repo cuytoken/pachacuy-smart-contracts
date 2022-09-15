@@ -26,6 +26,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @custom:security-contact lee@cuytoken.com
+/// @custom:security-contact lenin@pachacuy.io
 contract PachacuyInfo is
     Initializable,
     PausableUpgradeable,
@@ -125,6 +126,7 @@ contract PachacuyInfo is
     mapping(uint256 => WhiteListS) public whitelistInfo;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
+     
     constructor() initializer {}
 
     function initialize(
@@ -160,10 +162,30 @@ contract PachacuyInfo is
         }
     }
 
+
+
+    function setInformationBasedOnRank(
+        uint256[] memory _maxSamiPoints,
+        uint256[] memory _boxes,
+        uint256[] memory _affectation
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 _rank = 0; _rank < _maxSamiPoints.length; _rank++) {
+            infoArrayBasedOnRank.push(
+                InformationBasedOnRank({
+                    maxSamiPoints: _maxSamiPoints[_rank],
+                    boxes: _boxes[_rank],
+                    affectation: _affectation[_rank]
+                })
+            );
+        }
+    }
+
+
+
     function _setGameVariables() internal {
-        amountOfBoxesPerPachaPerDay = 300;
+        amountOfBoxesPerPachaPerDay = 1000;
         amountOfMinimumSamiPoints = 1;
-        amountOfMaximumSamiPoints = 15;
+        amountOfMaximumSamiPoints = 150;
 
         // 18%
         purchaseTax = 18;
@@ -181,6 +203,31 @@ contract PachacuyInfo is
         // 1 BUSD = 25 PCUY
         // 1 PCUY = 4 sami points
         exchangeRatePcuyToSami = 100;
+    }
+
+
+    function setGameVariables( uint256 _amountOfBoxesPerPachaPerDay, uint256 _amountOfMinimumSamiPoints,
+    uint256 _amountOfMaximumSamiPoints,
+    uint256 _purchaseTax,
+    uint256 _raffleTax,
+    uint256 _qhatuWasiTax,
+    uint256 _exchangeRateBusdToPcuy,
+    uint256 _exchangeRatePcuyToSami
+
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        amountOfBoxesPerPachaPerDay = _amountOfBoxesPerPachaPerDay;
+        amountOfMinimumSamiPoints = _amountOfMinimumSamiPoints;
+        amountOfMaximumSamiPoints = _amountOfMaximumSamiPoints;
+
+        // 18%
+        purchaseTax = _purchaseTax;
+        raffleTax = _raffleTax;
+        qhatuWasiTax = _qhatuWasiTax;
+
+        
+        exchangeRateBusdToPcuy = _exchangeRateBusdToPcuy;
+       
+        exchangeRatePcuyToSami = _exchangeRatePcuyToSami;
     }
 
     function setBusinessesPrice(
@@ -456,19 +503,21 @@ contract PachacuyInfo is
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
+         exchangeRateBusdToPcuy = _exchangeRateBusdToPcuy;
         emit ExchangeRateBusdToPcuyDx(
             exchangeRatePcuyToSami,
             _exchangeRateBusdToPcuy
         );
-        exchangeRateBusdToPcuy = _exchangeRateBusdToPcuy;
+       
     }
 
     function setExchangeRatePcuyToSami(uint256 _amount)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        emit ExchangeRatePcuyToSamiDx(exchangeRatePcuyToSami, _amount);
         exchangeRatePcuyToSami = _amount;
+        emit ExchangeRatePcuyToSamiDx(exchangeRatePcuyToSami, _amount);
+        
     }
 
     function convertBusdToPcuy(uint256 _busdAmount)
