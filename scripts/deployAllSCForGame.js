@@ -610,14 +610,13 @@ async function main() {
 async function upgrade() {
   // upgrading
   // try {
-  //   var GuineaPigAddress = "0xFB2813dF0c7cCBfA97608FE5e140f50D5A7F95bc";
-  //   const GuineaPig = await gcf("GuineaPig");
-  //   await upgrades.upgradeProxy(GuineaPigAddress, GuineaPig);
+  //   var MisayWasiAddress = "0xdf07dD3C0129DcAeD7Ba7A62e0cce346DfA14E5F";
+  //   const MisayWasi = await gcf("MisayWasi");
+  //   await upgrades.upgradeProxy(MisayWasiAddress, MisayWasi);
   //   console.log("Finish upgrade");
   // } catch (error) {
-  //   console.log("Error with GuineaPig", error);
+  //   console.log("Error with MisayWasi", error);
   // }
-
   // try {
   //   var HatunWasiAddress = "0xE31b350A5e2B0F4551912259b85b43Ab7E1B220B";
   //   const HatunWasi = await gcf("HatunWasi");
@@ -626,22 +625,21 @@ async function upgrade() {
   // } catch (error) {
   //   console.log("Error with HatunWasi", error);
   // }
-
-  var PachacuyInfoAddress = "0x8D9800bE0f0a467Ab93E22280371bEc2cFdb9069";
-  const PachacuyInfo = await gcf("PachacuyInfo");
-  var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
-  var arr = Array(10)
-    .fill(null)
-    .map(
-      (_, i) => () =>
-        pachacuyInfo.updateInformationByRank(
-          i,
-          pachacuyInfoForGame.maxSamiPoints[i],
-          pachacuyInfoForGame.boxes[i],
-          pachacuyInfoForGame.affectation[i]
-        )
-    );
-  await callSequenceAgnostic(arr);
+  // var PachacuyInfoAddress = "0x8D9800bE0f0a467Ab93E22280371bEc2cFdb9069";
+  // const PachacuyInfo = await gcf("PachacuyInfo");
+  // var pachacuyInfo = await PachacuyInfo.attach(PachacuyInfoAddress);
+  // var arr = Array(10)
+  //   .fill(null)
+  //   .map(
+  //     (_, i) => () =>
+  //       pachacuyInfo.updateInformationByRank(
+  //         i,
+  //         pachacuyInfoForGame.maxSamiPoints[i],
+  //         pachacuyInfoForGame.boxes[i],
+  //         pachacuyInfoForGame.affectation[i]
+  //       )
+  //   );
+  // await callSequenceAgnostic(arr);
 }
 
 async function purchaseGuineaPigs() {
@@ -825,9 +823,27 @@ async function fixRelayer() {
   var msws = await MisayWasi.attach(MisayWasiAddress);
   await executeSet(msws, "grantRole", [game_manager, rel], "msws 003");
 }
+
+async function deployUsdc() {
+  /**
+   * USDC
+   */
+  var USDC = await gcf("USDC");
+  var usdc = await dp(USDC, [], {
+    kind: "uups",
+  });
+  await usdc.deployed();
+
+  console.log("USDC Proxy:", usdc.address);
+  var usdcImp = await getImplementation(usdc);
+  console.log("USDC Imp:", usdcImp);
+
+  await verify(usdcImp, "USDC");
+}
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-upgrade()
+deployUsdc()
+  // upgrade()
   // purchaseGuineaPigs()
   // resetOngoingTransaction()
   // fixDeployment()

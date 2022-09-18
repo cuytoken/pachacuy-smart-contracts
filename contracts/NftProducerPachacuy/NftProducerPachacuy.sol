@@ -486,8 +486,9 @@ contract NftProducerPachacuy is
     function tokenURI(uint256 _uuid) public view returns (string memory) {
         require(exists(_uuid), "NFP: Not minted.");
 
-        string memory fileName = ITokenUri(_nftInfo[_nftTypes[_uuid]].scAddress)
-            .tokenUri(_prefix, _uuid);
+        string memory fileName = ITokenUri(
+            pachacuyInfo.getAddressOfNftType(_nftTypes[_uuid])
+        ).tokenUri(_prefix, _uuid);
 
         return bytes(_prefix).length > 0 ? fileName : "";
     }

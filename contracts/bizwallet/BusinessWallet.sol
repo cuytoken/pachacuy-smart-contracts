@@ -29,6 +29,8 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC777/IERC777RecipientUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC1820RegistryUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "../info/IPachacuyInfo.sol";
 
 /// @custom:security-contact lee@cuytoken.com
@@ -71,6 +73,8 @@ contract BusinessWallet is
         bytes operatorData
     );
 
+    IERC20 public usdcToken;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -104,6 +108,20 @@ contract BusinessWallet is
         pcuy.send(_to, balance, "");
     }
 
+    function withdrawUsdc(address _to, uint256 _usdcAmount)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        require(usdcToken.transfer(_to, _usdcAmount), "Error USDC withdrawal");
+    }
+
+    function approveTo(address _spenderAddress)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        usdcToken.approve(_spenderAddress, 10**6 * 10**6);
+    }
+
     function setPachacuyInfoAddress(address _infoAddress)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -117,6 +135,13 @@ contract BusinessWallet is
 
     function unpause() public onlyRole(PAUSER_ROLE) {
         _unpause();
+    }
+
+    function setUsdcTokenAddress(address _usdcAddress)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        usdcToken = IERC20(_usdcAddress);
     }
 
     function tokensReceived(

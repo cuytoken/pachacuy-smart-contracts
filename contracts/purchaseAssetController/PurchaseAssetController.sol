@@ -373,6 +373,32 @@ contract PurchaseAssetController is
         );
     }
 
+    function mintTicketMisayWasiAdmin(
+        uint256 _misayWasiUuid,
+        address _participant
+    ) external onlyRole(GAME_MANAGER) {
+        IMisayWasi.MisayWasiInfo memory misayWasiInfo = IMisayWasi(
+            pachacuyInfo.misayWasiAddress()
+        ).getMisayWasiWithUuid(_misayWasiUuid);
+
+        require(misayWasiInfo.isCampaignActive, "PAC: No raffle running");
+
+        nftProducerPachacuy.purchaseTicketRaffle(
+            _participant,
+            misayWasiInfo.ticketUuid,
+            _misayWasiUuid,
+            1
+        );
+
+        emit PurchaseTicket(
+            misayWasiInfo.owner,
+            _misayWasiUuid,
+            misayWasiInfo.ticketUuid,
+            pachaCuyToken.balanceOf(misayWasiInfo.owner),
+            pachaCuyToken.balanceOf(_participant)
+        );
+    }
+
     function purchaseMisayWasi(uint256 _pachaUuid) external {
         uint256 _misayWasiPrice = pachacuyInfo.getPriceInPcuy("MISAY_WASI") *
             10**18;

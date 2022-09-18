@@ -25,6 +25,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../info/IPachacuyInfo.sol";
 import "../NftProducerPachacuy/INftProducerPachacuy.sol";
 import "../purchaseAssetController/IPurchaseAssetController.sol";
@@ -152,6 +153,9 @@ contract MisayWasi is
     // misayWasi uuid => HistoricWinners
     mapping(uint256 => HistoricWinners[]) historicWinners;
 
+    IERC20 public usdcToken;
+    address public _bizWalletAddress;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
@@ -238,8 +242,7 @@ contract MisayWasi is
     ) external {
         require(_ticketPrice > 0, "Misay Wasi: Zero price");
 
-        IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-            .transferPcuyFromUserToBizWallet(_msgSender(), _rafflePrize);
+        _transferFromUSDC(_msgSender(), _bizWalletAddress, _rafflePrize);
 
         MisayWasiInfo storage misayWasiInfo = uuidToMisayWasiInfo[
             _misayWasiUuid
@@ -322,23 +325,21 @@ contract MisayWasi is
         onlyRole(GAME_MANAGER)
     {
         misayWasiUuids = _misayWasiUuids;
-        IRandomNumberGenerator(pachacuyInfo.randomNumberGAddress())
-            .requestRandomNumber(_msgSender());
+
+        uint256 _randomNumber = uint256(
+            keccak256(abi.encodePacked(_msgSender(), block.timestamp))
+        );
+
+        _fulfillRandomness(_randomNumber);
     }
 
     // Callback from VRF
-    function fulfillRandomness(address, uint256[] memory _randomNumbers)
-        external
-        onlyRole(RNG_GENERATOR)
-    {
-        // random number
-        uint256 randomNumber = _randomNumbers[0];
-
+    function _fulfillRandomness(uint256 _randomNumber) internal {
         uint256[] memory _misayWasiUuids = misayWasiUuids;
         misayWasiUuids = new uint256[](0);
         uint256 length = _misayWasiUuids.length;
         for (uint256 ix = 0; ix < length; ix++) {
-            _findWinnerOfRaffle(_misayWasiUuids[ix], randomNumber);
+            _findWinnerOfRaffle(_misayWasiUuids[ix], _randomNumber);
         }
     }
 
@@ -352,11 +353,11 @@ contract MisayWasi is
         uint256 _lengthP = _participants.length;
         if (_lengthP == 0) {
             // Gives full prize to owner
-            IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-                .transferPcuyFromBizWalletToUser(
-                    misayWasiInfo.owner,
-                    misayWasiInfo.rafflePrize
-                );
+            _transferFromUSDC(
+                _bizWalletAddress,
+                misayWasiInfo.owner,
+                misayWasiInfo.rafflePrize
+            );
 
             // remove misay wasi from active list
             _removeMisayWasiFromActive(_misayWasiUuid);
@@ -400,8 +401,7 @@ contract MisayWasi is
         );
 
         // Gives prize
-        IPurchaseAssetController(pachacuyInfo.purchaseACAddress())
-            .transferPcuyFromBizWalletToUser(_winner, _netPrize);
+        _transferFromUSDC(_bizWalletAddress, _winner, _netPrize);
 
         // Cleans raffle from Misay Wasi
         _removeMisayWasiFromActive(_misayWasiUuid);
@@ -460,6 +460,31 @@ contract MisayWasi is
     ///////////////////////////////////////////////////////////////
     ////                   HELPER FUNCTIONS                    ////
     ///////////////////////////////////////////////////////////////
+
+    function setUsdcTokenAddress(address _usdcAddress)
+        public
+        onlyRole(GAME_MANAGER)
+    {
+        usdcToken = IERC20(_usdcAddress);
+    }
+
+    function _transferFromUSDC(
+        address from,
+        address to,
+        uint256 amount
+    ) internal {
+        // allowance
+        uint256 usdcAllowance = usdcToken.allowance(from, address(this));
+        require(usdcAllowance >= amount, "MSWS: Not enough USDC allowance");
+
+        // balance
+        uint256 usdcBalance = usdcToken.balanceOf(from);
+        require(usdcBalance >= amount, "MSWS: Not enough USDC balance");
+
+        /// Transfer funds
+        bool success = usdcToken.transferFrom(from, to, amount);
+        require(success, "MSWS: USDC Transfer Failed");
+    }
 
     function getHistoricWinners(uint256 _misayWasiUuid)
         external
@@ -557,6 +582,13 @@ contract MisayWasi is
         returns (MisayWasiInfo memory)
     {
         return uuidToMisayWasiInfo[_misayWasiUuid];
+    }
+
+    function setBizWalletAddress(address bizWalletAddress)
+        public
+        onlyRole(GAME_MANAGER)
+    {
+        _bizWalletAddress = bizWalletAddress;
     }
 
     // _uuid: either _misayWasiUuid or _pachaPassUuid
